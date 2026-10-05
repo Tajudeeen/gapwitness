@@ -524,3 +524,28 @@ a:focus-visible,button:focus-visible,input:focus-visible{
   cursor:pointer;
 }
 .why-button:hover{color:#963c36}
+
+@media(max-width:900px){
+  .explain-strip{grid-template-columns:1fr 1fr}
+  .explain-intro{grid-column:1/-1;border-right:0;border-bottom:1px solid #c8bfb1}
+  .explain-strip details:nth-of-type(2){border-right:0}
+  .explain-strip details:nth-of-type(3){border-top:1px solid #c8bfb1}
+  .explain-strip details:nth-of-type(4){border-top:1px solid #c8bfb1}
+}
+@media(max-width:560px){
+  .splash-logo{width:76px;height:76px;border-radius:19px}
+  .splash-line{font-size:25px}
+  .explain-strip{display:block}
+  .explain-intro{border-bottom:1px solid #c8bfb1}
+  .explain-strip details{border-right:0;border-bottom:1px solid #c8bfb1}
+  .explain-strip details:last-child{border-bottom:0}
+  .explain-strip details:nth-of-type(3),
+  .explain-strip details:nth-of-type(4){border-top:0}
+  .chart-empty{padding:18px;width:84%}
+  .why-button{margin-left:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .splash{transition:none}
+  .splash-logo,.splash-progress span{animation:none}
+  .splash-progress span{width:100%}
+}
