@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 import json
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 
 from scripts.select_openaq_window import (
     find_first_complete_window,
@@ -52,9 +57,7 @@ def test_finds_earliest_complete_window(tmp_path: Path) -> None:
 def test_skips_incomplete_candidate_and_selects_next_complete_window() -> None:
     rows = [
         (
-            __import__("datetime").datetime.fromisoformat(
-                f"2026-01-01T{hour:02d}:00:00+00:00"
-            ),
+            datetime(2026, 1, 1, hour, tzinfo=timezone.utc),
             f"2026-01-01T{hour:02d}:00:00Z",
             str(hour),
         )
@@ -97,9 +100,7 @@ def test_rejects_duplicate_timestamps(tmp_path: Path) -> None:
 def test_rejects_missing_complete_window() -> None:
     rows = [
         (
-            __import__("datetime").datetime.fromisoformat(
-                f"2026-01-01T{hour:02d}:00:00+00:00"
-            ),
+            datetime(2026, 1, 1, hour, tzinfo=timezone.utc),
             f"2026-01-01T{hour:02d}:00:00Z",
             str(hour),
         )
