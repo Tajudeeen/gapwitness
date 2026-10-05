@@ -174,6 +174,18 @@ forge script script/DemoGapPaperOver.s.sol:DemoGapPaperOver \
 
 The script commits File A first, then submits File B for the same station and exact window. The second submission is expected to revert with `GapPaperedOver`. A successful run therefore produces the concrete demo story on-chain rather than relying on a mocked revert.
 
+## Demo proof artifact
+
+`scripts/build_demo_proof.py` produces a deterministic JSON proof from the three frozen fixtures. It records the exact window, File A gap evidence, File B conflict expectation, File C impossible case, and the Sepolia target chain. It deliberately records deployment status as `pending` until a real contract address exists, so the repository never manufactures an on-chain claim.
+
+Generate it locally without adding secrets:
+
+```bash
+python scripts/build_demo_proof.py --output /tmp/gapwitness-demo-proof.json
+```
+
+The proof artifact is suitable for attaching to a demo review or using as the checklist for the live chain rehearsal. It contains no wallet key and no transaction hash.
+
 ## On-chain commitment rule
 
 A commitment is immutable for an exact station and UTC observation window. Re-submitting the identical series hash, gap hash, policy hash, and verdict is allowed. Changing any of those fields for an already committed window is rejected. A different gap specifically reverts with `GapPaperedOver` so the demo can expose a later attempt to paper over missing hours.
