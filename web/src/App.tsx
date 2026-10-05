@@ -262,10 +262,13 @@ function App() {
   return (
     <main className="lab">
       <header className="masthead">
-        <div>
-          <p className="eyebrow">GAPWITNESS / ENVIRONMENTAL INTEGRITY LAB</p>
+        <div className="brand">
+          <img className="brand-mark" src="/gapwitness-logo.svg" alt="GapWitness logo" />
+          <div>
+            <p className="eyebrow">GAPWITNESS / ENVIRONMENTAL INTEGRITY LAB</p>
           <h1>witness the hours that were missing.</h1>
-          <p className="dek">Temporal integrity for environmental time series. The checker decides. The chain remembers.</p>
+            <p className="dek">Temporal integrity for environmental time series. The checker decides. The chain remembers.</p>
+          </div>
         </div>
         <div className={`status ${checkerState}`}>
           <span className="dot" />
