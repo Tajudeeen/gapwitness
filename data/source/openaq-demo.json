@@ -3,12 +3,12 @@
   "source": {
     "sourceUrl": "https://openaq-data-archive.s3.amazonaws.com/records/csv.gz/locationid=2178/year=2026/month=09/location-2178-20260919.csv.gz",
     "locationId": 2178,
-    "locationName": null,
+    "locationName": "Del Norte",
     "sensorId": 3920,
     "date": "2026-09-19",
-    "provider": null,
-    "license": null,
-    "timezone": null,
+    "provider": "AirNow",
+    "license": "US Public Domain",
+    "timezone": "America/Denver",
     "archiveSha256": "01a5fcb88575e348712846687ec067ad31e725a365e8d39a066fefcb1507b76f",
     "acquisitionDateUtc": "2026-10-05"
   },
