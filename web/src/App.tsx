@@ -1,4 +1,5 @@
-import { ChangeEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import type { ChangeEvent } from "react";
 
 type Verdict = "INTACT" | "GAPPED" | "IMPOSSIBLE" | null;
 type Point = { timestamp: string; value: number };
