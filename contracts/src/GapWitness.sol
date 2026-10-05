@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 contract GapWitness {
     error GapPaperedOver(bytes32 priorGap, bytes32 nextGap);
-    error SeriesChanged(bytes32 priorSeries, bytes32 nextSeries);
+    error CommitmentChanged(bytes32 priorSeries, bytes32 nextSeries, bytes32 priorPolicy, bytes32 nextPolicy, uint8 priorVerdict, uint8 nextVerdict);
     error WindowTooWide();
     error EmptySeries();
     error InvalidHourBoundary();
@@ -58,7 +58,7 @@ contract GapWitness {
                 revert GapPaperedOver(prior.gapHash, gapHash);
             }
             if (prior.seriesHash != seriesHash || prior.policyHash != policyHash || prior.verdict != verdict) {
-                revert SeriesChanged(prior.seriesHash, seriesHash);
+                revert CommitmentChanged(prior.seriesHash, seriesHash, prior.policyHash, policyHash, prior.verdict, verdict);
             }
         }
 
