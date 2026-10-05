@@ -208,7 +208,7 @@ The proof artifact is suitable for attaching to a demo review or using as the ch
 
 ## On-chain commitment rule
 
-A commitment is immutable for an exact station and UTC observation window. Re-submitting the identical series hash, gap hash, policy hash, and verdict is allowed. Changing any of those fields for an already committed window is rejected. A different gap specifically reverts with `GapPaperedOver` so the demo can expose a later attempt to paper over missing hours.
+A commitment is immutable for an exact station and UTC observation window. Re-submitting the identical series hash, gap hash, policy hash, and verdict is a no-op in the corrected contract source. It preserves the original submitter and commitment timestamp and emits no additional `Committed` event. The earlier deployed contract does not have this protection; a fresh deployment is required before claiming it on-chain. Changing any of those fields for an already committed window is rejected. A different gap specifically reverts with `GapPaperedOver` so the demo can expose a later attempt to paper over missing hours.
 
 ## Verdicts
 

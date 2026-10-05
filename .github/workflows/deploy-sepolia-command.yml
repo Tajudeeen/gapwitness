@@ -28,7 +28,7 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
 
       - name: Install forge-std
-        run: forge install https://github.com/foundry-rs/forge-std --no-commit
+        run: forge install https://github.com/foundry-rs/forge-std --no-git
 
       - name: Preflight
         shell: bash
@@ -38,6 +38,9 @@ jobs:
             echo "SEPOLIA_RPC_URL is not configured. Using public Sepolia RPC."
             echo "SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com" >> "$GITHUB_ENV"
           fi
+
+      - name: Prove immutable witness behavior
+        run: forge test -vv
 
       - name: Dry-run deployment
         run: forge script script/DeployGapWitness.s.sol:DeployGapWitness --rpc-url "$SEPOLIA_RPC_URL"
@@ -49,6 +52,15 @@ jobs:
         run: |
           python ../scripts/record_sepolia_deployment.py             --broadcast broadcast/DeployGapWitness.s.sol/11155111/run-latest.json             --output deployments/sepolia.json             --deployment-commit "$GITHUB_SHA"
 
+      - name: Prove exact replay on Sepolia
+        run: python ../scripts/prove_replay_onchain.py
+
+      - name: Upload public replay proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapwitness-replay-proof
+          path: contracts/deployments/replay-proof.json
+
       - name: Publish deployment record branch
         shell: bash
         run: |
@@ -56,7 +68,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$BRANCH"
-          git add deployments/sepolia.json
+          git add deployments/sepolia.json deployments/replay-proof.json
           git commit -m "chore: record Sepolia deployment"
           git push origin "$BRANCH"
 
@@ -66,7 +78,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          ADDRESS=$(python scripts/read_sepolia_deployment.py --deployment deployments/sepolia.json)
+          ADDRESS=$(python ../scripts/read_sepolia_deployment.py --deployment deployments/sepolia.json)
           TX_HASH=$(python - <<'PY'
           import json
           from pathlib import Path
@@ -76,17 +88,17 @@ jobs:
           BLOCK=$(python - <<'PY'
           import json
           from pathlib import Path
-          print(json.loads(Path("contracts/deployments/sepolia.json").read_text())["blockNumber"])
+          print(json.loads(Path("deployments/sepolia.json").read_text())["blockNumber"])
           PY
           )
           BRANCH="ops/sepolia-deployment-${GITHUB_RUN_ID}"
           {
             echo "Sepolia deployment succeeded."
             echo
-            echo "Contract: `$ADDRESS`"
-            echo "Transaction: `$TX_HASH`"
-            echo "Block: `$BLOCK`"
-            echo "Record branch: `$BRANCH`"
+            echo "Contract: $ADDRESS"
+            echo "Transaction: $TX_HASH"
+            echo "Block: $BLOCK"
+            echo "Record branch: $BRANCH"
             echo
             echo "Explorer: https://sepolia.etherscan.io/address/$ADDRESS"
           } | gh issue comment "$ISSUE_NUMBER" --body-file -
