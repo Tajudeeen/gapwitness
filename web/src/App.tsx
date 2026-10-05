@@ -272,16 +272,25 @@ function App() {
           {checkerState === "checking" ? "checking checker" : checkerState === "ready" ? "checker ready" : "checker offline"}
         </div>
         <div className="steps">
-          {["01 SOURCE", "02 INSPECT", "03 COMMIT", "04 WITNESS"].map((step, index) => (
-            <div key={step} className={result || index < 2 ? "active" : ""}>
+          {[
+            ["01 SOURCE", "source"],
+            ["02 INSPECT", "inspect"],
+            ["03 COMMIT", "commit"],
+            ["04 WITNESS", "witness"],
+          ].map(([step, target], index) => (
+            <a
+              key={step}
+              className={result || index < 2 ? "active" : ""}
+              href={`#${target}`}
+            >
               <span>{step}</span><i />
-            </div>
+            </a>
           ))}
         </div>
       </header>
 
       <section className="workspace">
-        <aside className="rail">
+        <aside className="rail" id="source">
           <div className="field">
             <label>station</label>
             <input value={station} onChange={event => setStation(event.target.value)} />
@@ -320,17 +329,17 @@ function App() {
             <div className="readout">OpenAQ archive</div>
           </div>
 
-          <label className="upload">
+          <label className={`upload${busy ? " is-busy" : ""}`}>
             <input type="file" accept=".csv,text/csv" onChange={onFileChange} />
             <strong>{file ? file.name : "inspect a CSV"}</strong>
             <span>1 MB max · timestamp,value</span>
           </label>
 
-          <p className="message">{busy ? "● " : ""}{message}</p>
+          <p className="message" aria-live="polite">{busy ? "● " : ""}{message}</p>
         </aside>
 
-        <section className="main-panel">
-          <div className="panel-head">
+        <section className="main-panel" id="inspect">
+          <div className="panel-head" aria-label="Inspection results">
             <div>
               <span className="kicker">HOURLY OBSERVATION STRIP</span>
               <h2>PM2.5 · {result?.stationId ?? station}</h2>
@@ -397,7 +406,7 @@ function App() {
             <span>verdict = checker output</span>
           </div>
 
-          <div className={`verdict ${result?.verdict?.toLowerCase() ?? "none"}`}>
+          <div className={`verdict ${result?.verdict?.toLowerCase() ?? "none"}`} aria-live="polite">
             <div>
               <span className="kicker">CHECKER VERDICT</span>
               <strong>{result?.verdict ?? "—"}</strong>
@@ -476,7 +485,7 @@ function App() {
             </section>
           )}
 
-          <div className="commit-row">
+          <div className="commit-row" id="commit">
             <div>
               <span className="kicker">COMMIT</span>
               <p>
@@ -499,7 +508,7 @@ function App() {
         </section>
       </section>
 
-      <section className="principles">
+      <section className="principles" id="witness">
         <div><span>WHAT THIS PROVES</span><p>submitted bytes · expected missing timestamps · later rewrite attempts</p></div>
         <div><span>WHAT THIS DOES NOT PROVE</span><p>sensor calibration · physical truth · that the source was honest</p></div>
         <div><span>INSUFFICIENT DATA</span><p>not a verdict · checker returns 422 until the evidence is usable</p></div>
