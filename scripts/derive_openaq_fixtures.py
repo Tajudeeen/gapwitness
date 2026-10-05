@@ -133,7 +133,7 @@ def derive(
             "gappedSha256": sha256_file(gapped),
         },
         "integrity_note": (
-            "The complete file is copied from the selected source window. "
+            "The complete file contains the selected source-window rows with no measurement values changed. "
             "The gapped file is an adversarial derivative created only by "
             "removing the explicitly listed timestamps. No measurement values "
             "are invented or changed."
