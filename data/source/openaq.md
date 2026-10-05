@@ -37,6 +37,8 @@ Do not fill these fields with estimates. The manifest is generated from the down
 
 When the PM2.5 sensor is not known, run `scripts/discover_openaq_window.py` against a real archive day.
 
+The discovery command accepts OpenAQ archive sensor identifiers under either `sensor_id` or `sensors_id` and normalizes the selected identifier to `sensorId` in the manifest.
+
 The discovery command:
 
 - downloads exactly one public archive object
