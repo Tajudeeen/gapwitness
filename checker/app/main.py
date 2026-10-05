@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import deque
 from io import BytesIO
 import os
+import math
 import time
 
 import pandas as pd
@@ -131,13 +132,20 @@ def inspect_csv(
         start.minute
         or start.second
         or start.microsecond
+        or start.nanosecond
         or end.minute
         or end.second
         or end.microsecond
+        or end.nanosecond
     ):
         raise ValueError("WINDOW_MUST_ALIGN_TO_HOUR")
     if end <= start:
         raise ValueError("INVALID_WINDOW")
+
+    if end - start > pd.Timedelta(hours=MAX_WINDOW_HOURS):
+        raise ValueError("WINDOW_TOO_WIDE")
+    if start.timestamp() < 0:
+        raise ValueError("WINDOW_BEFORE_UNIX_EPOCH")
 
     expected = pd.date_range(
         start=start,
@@ -166,12 +174,17 @@ def inspect_csv(
     if timestamps.duplicated().any():
         raise ValueError("DUPLICATE_TIMESTAMP")
 
+    if (timestamps != timestamps.dt.floor("h")).any():
+        raise ValueError("TIMESTAMP_MUST_ALIGN_TO_HOUR")
+
     values = pd.to_numeric(df["value"], errors="coerce")
-    if values.isna().any():
+    if values.isna().any() or not values.map(math.isfinite).all():
         raise ValueError("INVALID_VALUE")
 
     in_window = (timestamps >= start) & (timestamps < end)
     observed = pd.DatetimeIndex(timestamps[in_window])
+    if observed.empty:
+        raise ValueError("NO_OBSERVATIONS_IN_WINDOW")
     missing = expected.difference(observed).sort_values()
 
     impossible: list[str] = []
