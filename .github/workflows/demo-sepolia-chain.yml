@@ -1,0 +1,76 @@
+name: demo-sepolia-chain
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  demo:
+    if: >
+      github.event.comment.user.login == 'Tajudeeen' &&
+      github.event.comment.body == '/demo-chain'
+    runs-on: ubuntu-latest
+    env:
+      PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+      SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+      GAPWITNESS_ADDRESS: 0xa7ab2d2e60a08a089f3749ac3e98b41449b23211
+      STATION_ID: "2178"
+      WINDOW_START: "2026-09-19T07:00:00Z"
+      WINDOW_END: "2026-09-20T07:00:00Z"
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install forge-std
+        run: forge install https://github.com/foundry-rs/forge-std --no-commit
+
+      - name: Preflight
+        shell: bash
+        run: |
+          test -n "$PRIVATE_KEY" || { echo "PRIVATE_KEY is not configured."; exit 1; }
+          if [ -z "$SEPOLIA_RPC_URL" ]; then
+            echo "SEPOLIA_RPC_URL is not configured. Using public Sepolia RPC."
+            echo "SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build exact chain-demo inputs
+        shell: bash
+        run: |
+          python ../scripts/prepare_chain_demo.py \
+            --contract "$GAPWITNESS_ADDRESS" \
+            --station-id "$STATION_ID" \
+            --window-start "$WINDOW_START" \
+            --window-end "$WINDOW_END" \
+            --format env > /tmp/gapwitness-demo.env
+          cat /tmp/gapwitness-demo.env >> "$GITHUB_ENV"
+
+      - name: Rehearse File A then File B
+        run: |
+          forge script script/DemoGapPaperOver.s.sol:DemoGapPaperOver \
+            --rpc-url "$SEPOLIA_RPC_URL" \
+            --private-key "$PRIVATE_KEY" \
+            --broadcast
+
+      - name: Comment demo result
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          {
+            echo "Live Sepolia chain demo completed."
+            echo
+            echo "Contract: `$GAPWITNESS_ADDRESS`"
+            echo "Window: `$WINDOW_START` → `$WINDOW_END`"
+            echo "Flow: File A = GAPPED → commit; File B = INTACT → expected GapPaperedOver"
+            echo
+            echo "The workflow completed only when the contract accepted File A and rejected File B with the expected custom error."
+          } | gh issue comment "$ISSUE_NUMBER" --body-file -
