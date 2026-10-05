@@ -17,3 +17,19 @@ GapWitness demo data source: OpenAQ public archive.
 OpenAQ states that archive files can be retroactively patched. GapWitness therefore commits the exact downloaded CSV bytes and separately records the source object URL and acquisition date. The chain proves the submitted file's temporal evidence, not that the upstream archive will never change.
 
 OpenAQ's hourly timestamps use an exclusive time-ending convention. GapWitness must document that convention beside the selected window rather than silently treating timestamps as interval starts.
+
+
+## Required provenance manifest
+
+The fetcher can emit a machine-readable manifest with `--manifest`. For a submission-ready source, the manifest must preserve:
+
+- exact archive object URL
+- OpenAQ location ID
+- selected PM2.5 sensor ID
+- archive object SHA-256
+- normalized CSV SHA-256
+- normalized row count
+- UTC acquisition date
+- OpenAQ exclusive-time-ending timestamp convention
+
+Do not fill these fields with estimates. The manifest is generated from the downloaded object and the selected sensor filter.
