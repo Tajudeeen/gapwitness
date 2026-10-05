@@ -9,6 +9,7 @@ on:
         description: "Issue or PR number to report the demo result on"
         required: false
         type: string
+  create:
 
 permissions:
   contents: read
@@ -17,9 +18,17 @@ permissions:
 jobs:
   demo:
     if: >
+      (
+        github.event_name == 'create' &&
+        github.actor == 'Tajudeeen' &&
+        github.ref_type == 'branch' &&
+        startsWith(github.ref_name, 'demo-chain/')
+      ) ||
       github.event_name == 'workflow_dispatch' ||
       (
-        github.event.comment.user.login == 'Tajudeeen' &&
+        github.event_name == 'issue_comment' &&
+        github.actor == 'Tajudeeen' &&
+        github.event.issue.pull_request &&
         startsWith(github.event.comment.body, '/demo-chain')
       )
     runs-on: ubuntu-latest
