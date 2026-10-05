@@ -152,10 +152,13 @@ After the real Sepolia contract is deployed, generate the exact on-chain inputs 
 ```bash
 python scripts/prepare_chain_demo.py \
   --contract <DEPLOYED_SEPOLIA_ADDRESS> \
-  > contracts/.env.demo
+  > /tmp/gapwitness-demo.env
+source /tmp/gapwitness-demo.env
+export PRIVATE_KEY=<DEPLOYER_PRIVATE_KEY>
+export SEPOLIA_RPC_URL=<SEPOLIA_RPC_URL>
 ```
 
-The generated values contain no private key. They bind the committed bytes, gap hashes, policy hash, exact UTC window, and station ID to the same values used by the web wallet client.
+The generated values contain no private key. They bind the committed bytes, gap hashes, policy hash, exact UTC window, and station ID to the same values used by the web wallet client. Do not commit the generated file.
 
 Load those values together with `PRIVATE_KEY` and `SEPOLIA_RPC_URL`, then rehearse the adversarial chain flow:
 
