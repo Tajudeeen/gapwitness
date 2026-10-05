@@ -52,6 +52,15 @@ jobs:
         run: |
           python ../scripts/record_sepolia_deployment.py             --broadcast broadcast/DeployGapWitness.s.sol/11155111/run-latest.json             --output deployments/sepolia.json             --deployment-commit "$GITHUB_SHA"
 
+      - name: Prove exact replay on Sepolia
+        run: python ../scripts/prove_replay_onchain.py
+
+      - name: Upload public replay proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapwitness-replay-proof
+          path: contracts/deployments/replay-proof.json
+
       - name: Publish deployment record branch
         shell: bash
         run: |
@@ -59,7 +68,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$BRANCH"
-          git add deployments/sepolia.json
+          git add deployments/sepolia.json deployments/replay-proof.json
           git commit -m "chore: record Sepolia deployment"
           git push origin "$BRANCH"
 
