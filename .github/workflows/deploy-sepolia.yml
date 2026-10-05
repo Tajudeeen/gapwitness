@@ -43,10 +43,53 @@ jobs:
       - name: Dry-run deployment
         run: forge script script/DeployGapWitness.s.sol:DeployGapWitness --rpc-url "$SEPOLIA_RPC_URL"
 
-      - name: Broadcast and verify
-        if: ${{ inputs.verify }}
-        run: forge script script/DeployGapWitness.s.sol:DeployGapWitness --rpc-url "$SEPOLIA_RPC_URL" --private-key "$PRIVATE_KEY" --broadcast --verify --etherscan-api-key "$ETHERSCAN_API_KEY"
-
-      - name: Broadcast without verification
-        if: ${{ !inputs.verify }}
+      - name: Broadcast deployment
         run: forge script script/DeployGapWitness.s.sol:DeployGapWitness --rpc-url "$SEPOLIA_RPC_URL" --private-key "$PRIVATE_KEY" --broadcast
+
+      - name: Record deployment
+        run: |
+          python ../scripts/record_sepolia_deployment.py \
+            --broadcast broadcast/DeployGapWitness.s.sol/11155111/run-latest.json \
+            --output deployments/sepolia.json \
+            --deployment-commit "$GITHUB_SHA"
+        shell: bash
+
+      - name: Verify deployed contract
+        if: ${{ inputs.verify }}
+        run: |
+          ADDRESS=$(python ../scripts/read_sepolia_deployment.py --deployment deployments/sepolia.json)
+          forge verify-contract \
+            "$ADDRESS" \
+            src/GapWitness.sol:GapWitness \
+            --chain sepolia \
+            --etherscan-api-key "$ETHERSCAN_API_KEY" \
+            --watch
+
+      - name: Mark deployment verified
+        if: ${{ inputs.verify && success() }}
+        run: |
+          python ../scripts/record_sepolia_deployment.py \
+            --broadcast broadcast/DeployGapWitness.s.sol/11155111/run-latest.json \
+            --output deployments/sepolia.json \
+            --deployment-commit "$GITHUB_SHA" \
+            --verified
+
+      - name: Publish deployment summary
+        if: ${{ always() }}
+        working-directory: .
+        shell: bash
+        run: |
+          if [ -f contracts/deployments/sepolia.json ]; then
+            echo "## GapWitness Sepolia deployment" >> "$GITHUB_STEP_SUMMARY"
+            cat contracts/deployments/sepolia.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No deployment record was produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload deployment record
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapwitness-sepolia-deployment
+          path: contracts/deployments/sepolia.json
+          if-no-files-found: warn
