@@ -16,8 +16,8 @@ from app.main import inspect_csv  # noqa: E402
 
 def bytes32_text(value: str) -> str:
     raw = value.encode("utf-8")
-    if len(raw) > 32:
-        raise ValueError("STATION_ID must be at most 32 UTF-8 bytes.")
+    if len(raw) > 31:
+        raise ValueError("STATION_ID must be at most 31 UTF-8 bytes.")
     return "0x" + raw.ljust(32, b"\x00").hex()
 
 
