@@ -18,7 +18,6 @@ OpenAQ states that archive files can be retroactively patched. GapWitness theref
 
 OpenAQ's hourly timestamps use an exclusive time-ending convention. GapWitness must document that convention beside the selected window rather than silently treating timestamps as interval starts.
 
-
 ## Required provenance manifest
 
 The fetcher can emit a machine-readable manifest with `--manifest`. For a submission-ready source, the manifest must preserve:
@@ -33,3 +32,22 @@ The fetcher can emit a machine-readable manifest with `--manifest`. For a submis
 - OpenAQ exclusive-time-ending timestamp convention
 
 Do not fill these fields with estimates. The manifest is generated from the downloaded object and the selected sensor filter.
+
+## Window freeze
+
+After fetching one sensor's normalized PM2.5 day, run `scripts/select_openaq_window.py`.
+
+The selector only accepts exact UTC-hour timestamps, rejects duplicate instants, and chooses the earliest complete window of the requested size. For the demo, the requested size is 24 hours.
+
+The selector writes a frozen source-window CSV and records:
+
+- source file SHA-256
+- location ID
+- sensor ID
+- exact UTC window
+- input and selected row counts
+- frozen output SHA-256
+- selection algorithm
+- OpenAQ exclusive-time-ending convention
+
+The frozen window becomes the only source input for the adversarial fixture derivation. No measurement values are altered.
