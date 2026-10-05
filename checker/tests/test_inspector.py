@@ -1,9 +1,15 @@
+from Crypto.Hash import keccak
 from app.main import inspect_csv, canonical_gap_text, canonical_gap_hash, series_hash
 
 START="2026-01-01T00:00:00Z"
 END="2026-01-01T10:00:00Z"
 
 def csv(rows): return ("timestamp,value\n" + rows).encode()
+
+def expected_keccak(payload: bytes) -> str:
+    h=keccak.new(digest_bits=256)
+    h.update(payload)
+    return h.hexdigest()
 
 def test_intact():
     rows="".join(f"2026-01-01T{i:02d}:00:00Z,{10+i}\n" for i in range(10))
@@ -34,8 +40,10 @@ def test_gap_canonicalization_is_order_independent():
     assert canonical_gap_text(a)==canonical_gap_text(b)
     assert canonical_gap_hash(a)==canonical_gap_hash(b)
 
-def test_hashes_are_exposed():
+def test_hashes_match_ethereum_keccak():
     payload=csv("2026-01-01T00:00:00Z,1\n")
     r=inspect_csv(payload,station_id="demo",window_start=START,window_end="2026-01-01T01:00:00Z")
-    assert r["seriesHashSha3"]==series_hash(payload)
-    assert r["gapHashSha3"]==canonical_gap_hash(r["missingTimestamps"])
+    assert r["seriesHash"]=="0x"+expected_keccak(payload)
+    assert r["gapHash"]=="0x"+expected_keccak(b"")
+    assert series_hash(payload)==expected_keccak(payload)
+    assert canonical_gap_hash([])==expected_keccak(b"")
