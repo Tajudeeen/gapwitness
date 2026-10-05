@@ -22,9 +22,9 @@ jobs:
       - name: Build deterministic demo proof
         run: |
           python scripts/build_demo_proof.py \
-            --contract 0xa7ab2d2e60a08a089f3749ac3e98b41449b23211 \
-            --deployment-tx 0xf0ab1c67eb1cdd68171268879e24b447210d53697ce65b56054dca9f55e6eb9e \
-            --deployment-block 11847390 \
+            --contract 0x81433d6bedf33b72defe0b90534dc16cc2b0bc57 \
+            --deployment-tx 0xe073807470287af98f97f903a54da5d13edf51cbeaad987c13e314c62f0c018d \
+            --deployment-block 11850947 \
             --output /tmp/gapwitness-demo-proof.json
       - name: Validate proof contents
         run: |
@@ -34,7 +34,7 @@ jobs:
           proof = json.loads(Path("/tmp/gapwitness-demo-proof.json").read_text())
           assert proof["chain"]["deploymentStatus"] == "recorded"
           assert proof["chain"]["chainId"] == 11155111
-          assert proof["chain"]["contract"] == "0xa7ab2d2e60a08a089f3749ac3e98b41449b23211"
+          assert proof["chain"]["contract"] == "0x81433d6bedf33b72defe0b90534dc16cc2b0bc57"
           assert proof["fileA"]["verdict"] == "GAPPED"
           assert proof["fileB"]["verdict"] == "INTACT"
           assert proof["fileC"]["verdict"] == "IMPOSSIBLE"

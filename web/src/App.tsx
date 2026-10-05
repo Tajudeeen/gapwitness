@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
+import { Footer } from "./components/Footer";
 import {
   CHECKER_URL,
   checkHealth,
@@ -374,7 +375,7 @@ function App() {
           <span className="splash-meta">TEMPORAL INTEGRITY / ENVIRONMENTAL TIME SERIES</span>
         </div>
       </div>
-      <main className={`lab ${showIntro ? "is-behind-splash" : ""}`}>
+      <main id="top" className={`lab ${showIntro ? "is-behind-splash" : ""}`}>
       <header className="masthead">
         <div className="brand">
           <img className="brand-mark" src="/gapwitness-logo.svg" alt="GapWitness logo" />
@@ -782,10 +783,7 @@ function App() {
         </div>
       </section>
 
-      <footer>
-        <span>GAPWITNESS · TEMPORAL INTEGRITY FOR ENVIRONMENTAL TIME SERIES</span>
-        <span>INTEGRITY ≠ TRUTH</span>
-      </footer>
+      <Footer checkerState={checkerState} />
     </main>
     </>
   );

@@ -17,7 +17,7 @@ export const CONTRACT_ADDRESS = (
 // The live deployment block is a public fallback for the current Sepolia contract.
 // VITE_CONTRACT_DEPLOYMENT_BLOCK remains the preferred override for future deployments.
 export const DEPLOYMENT_BLOCK = Number(
-  import.meta.env.VITE_CONTRACT_DEPLOYMENT_BLOCK || "11847390",
+  import.meta.env.VITE_CONTRACT_DEPLOYMENT_BLOCK || "11850947",
 );
 
 const EXPLORER_BASE = "https://sepolia.etherscan.io";

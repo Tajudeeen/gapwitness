@@ -8,6 +8,66 @@
   scroll-behavior:smooth;
   scroll-padding-top:22px;
 }
+/* Resource footer */
+.site-footer {
+  display: block;
+  margin-top: clamp(48px, 7vw, 96px);
+  padding: clamp(24px, 4vw, 52px);
+  background: #201f1c;
+  color: #f4eddf;
+  border-top: 3px solid #bfa775;
+  font: 14px/1.65 "DM Sans", sans-serif;
+  letter-spacing: normal;
+}
+.footer-heading {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 24px; padding-bottom: 32px; border-bottom: 1px solid #49463e;
+}
+.site-footer a { color: #e7dfcf; text-decoration: none; }
+.site-footer a:hover { color: #fff; text-decoration: underline; text-underline-offset: 5px; }
+.site-footer a:focus-visible { outline: 2px solid #e7c882; outline-offset: 5px; border-radius: 2px; }
+.footer-brand { display: inline-flex; align-items: center; gap: 14px; font-size: 23px; font-weight: 700; letter-spacing: -.03em; }
+.footer-brand img { background: #eee6d8; padding: 5px; border-radius: 10px; flex-shrink: 0; }
+.footer-brand small { display: block; color: #bdb5a7; font: 10px/1.5 "DM Mono", monospace; letter-spacing: .06em; margin-top: 4px; }
+.footer-top-link { font: 11px/1.5 "DM Mono", monospace; white-space: nowrap; padding-block: 12px; }
+.footer-top-link span { margin-left: 8px; }
+.footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: clamp(24px, 3vw, 48px); padding-block: 36px; }
+.footer-grid > * { min-width: 0; }
+.footer-purpose h2 { font: 400 clamp(22px, 2.2vw, 30px)/1.25 "Libre Baskerville", Georgia, serif; letter-spacing: -.025em; max-width: 330px; margin: 0 0 16px; }
+.footer-purpose p { color: #c8c0b2; max-width: 360px; margin: 0; }
+.footer-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.footer-tags span { border: 1px solid #655b46; color: #e6cd99; padding: 5px 9px; font: 9px/1.5 "DM Mono", monospace; }
+.footer-nav { display: flex; flex-direction: column; align-items: flex-start; }
+.footer-nav h3, .footer-notes h3 { margin: 0 0 14px; font: 500 10px/1.5 "DM Mono", monospace; text-transform: uppercase; letter-spacing: .1em; color: #dfc58d; }
+.footer-nav a { display: block; padding-block: 8px; line-height: 1.5; overflow-wrap: anywhere; }
+.footer-unavailable { padding-block: 8px; color: #bdb5a7; }
+.footer-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; border-block: 1px solid #49463e; padding-block: 26px; }
+.footer-notes h3 { margin-bottom: 8px; color: #ede4d4; }
+.footer-notes p { margin: 0; color: #bdb5a7; font-size: 12px; line-height: 1.8; }
+.footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px; padding-top: 26px; color: #bdb5a7; font: 10px/1.6 "DM Mono", monospace; }
+.footer-service { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.footer-service i { width: 6px; height: 6px; border-radius: 50%; background: #d1b66e; }
+.footer-service-ready i { background: #9acb9c; }
+.footer-service-offline i { background: #ed9a8f; }
+.footer-service small { color: #aaa293; font-size: 9px; }
+@media (max-width: 1100px) {
+  .footer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .footer-purpose { grid-column: 1 / -1; }
+  .footer-purpose h2, .footer-purpose p { max-width: 650px; }
+}
+@media (max-width: 700px) {
+  .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; }
+  .footer-notes { grid-template-columns: 1fr; gap: 22px; }
+  .footer-bottom { align-items: flex-start; flex-direction: column; gap: 14px; }
+}
+@media (max-width: 420px) {
+  .footer-grid { grid-template-columns: 1fr; }
+  .footer-heading { align-items: flex-start; gap: 14px; }
+  .footer-brand { font-size: 20px; gap: 10px; }
+  .footer-brand img { width: 38px; height: 38px; }
+  .footer-brand small { font-size: 8px; }
+  .footer-top-link { font-size: 9px; }
+}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{
@@ -292,15 +352,6 @@ button,a,input{touch-action:manipulation}
 .principles>div+div{border-left:1px solid #b6ac9e;padding-left:18px}
 .principles span{font:500 9px "DM Mono";letter-spacing:.12em;color:#756d63}
 .principles p{font:13px/1.55 "Libre Baskerville",Georgia,serif;color:#4f4941;margin:9px 0 0}
-footer{
-  display:flex;
-  justify-content:space-between;
-  gap:20px;
-  padding:32px 0 8px;
-  color:#756d63;
-  font:9px "DM Mono",monospace;
-  letter-spacing:.08em;
-}
 a:focus-visible,button:focus-visible,input:focus-visible{
   outline:2px solid #201d19;
   outline-offset:3px;
@@ -356,7 +407,6 @@ a:focus-visible,button:focus-visible,input:focus-visible{
   .chain-lines>div{grid-template-columns:1fr;gap:5px}
   .commit-row{align-items:stretch;flex-direction:column}
   .commit-row button{width:100%}
-  footer{display:grid;gap:8px;line-height:1.6}
 }
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}

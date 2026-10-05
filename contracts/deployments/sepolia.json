@@ -1,10 +1,10 @@
 {
   "chainId": 11155111,
   "contract": "GapWitness",
-  "address": "0xa7ab2d2e60a08a089f3749ac3e98b41449b23211",
+  "address": "0x81433d6bedf33b72defe0b90534dc16cc2b0bc57",
   "deployer": "0x541291139b59570d1cd5d0e64df217b3f6efd7c8",
-  "transactionHash": "0xf0ab1c67eb1cdd68171268879e24b447210d53697ce65b56054dca9f55e6eb9e",
-  "blockNumber": 11847390,
+  "transactionHash": "0xe073807470287af98f97f903a54da5d13edf51cbeaad987c13e314c62f0c018d",
+  "blockNumber": 11850947,
   "verified": false,
-  "deploymentCommit": "ad8d8566377d5f61317e1d60bd260e91d3eb0c21"
+  "deploymentCommit": "d93102c11f8076f73ab2bcbcfd039541ac36568b"
 }
