@@ -1,0 +1,50 @@
+name: reproducibility-proof
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install checker dependencies
+        working-directory: checker
+        run: pip install -r requirements.txt
+      - name: Build deterministic demo proof
+        run: |
+          python scripts/build_demo_proof.py \
+            --contract 0xa7ab2d2e60a08a089f3749ac3e98b41449b23211 \
+            --deployment-tx 0xf0ab1c67eb1cdd68171268879e24b447210d53697ce65b56054dca9f55e6eb9e \
+            --deployment-block 11847390 \
+            --output /tmp/gapwitness-demo-proof.json
+      - name: Validate proof contents
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          proof = json.loads(Path("/tmp/gapwitness-demo-proof.json").read_text())
+          assert proof["chain"]["deploymentStatus"] == "recorded"
+          assert proof["chain"]["chainId"] == 11155111
+          assert proof["chain"]["contract"] == "0xa7ab2d2e60a08a089f3749ac3e98b41449b23211"
+          assert proof["fileA"]["verdict"] == "GAPPED"
+          assert proof["fileB"]["verdict"] == "INTACT"
+          assert proof["fileC"]["verdict"] == "IMPOSSIBLE"
+          assert proof["fileB"]["expectedConflict"] == "GapPaperedOver"
+          assert proof["fileA"]["policyHash"] == proof["fileB"]["policyHash"]
+          assert proof["fileA"]["gapHash"] != proof["fileB"]["gapHash"]
+          print("reproducibility proof validated")
+          PY
+      - name: Upload proof artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gapwitness-demo-proof
+          path: /tmp/gapwitness-demo-proof.json
