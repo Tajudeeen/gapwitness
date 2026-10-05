@@ -26,8 +26,18 @@ def test_negative_pm25_is_impossible():
     assert r["verdict"]=="IMPOSSIBLE" and r["verdictCode"]==2
 
 def test_window_is_independent_of_rows():
-    r=inspect_csv(csv("2026-01-01T02:00:00Z,10\n"),station_id="demo",window_start=START,window_end="2026-01-01T04:00:00Z")
-    assert r["verdict"]=="GAPPED" and len(r["missingTimestamps"])==1
+    r=inspect_csv(
+        csv("2026-01-01T02:00:00Z,10\n"),
+        station_id="demo",
+        window_start=START,
+        window_end="2026-01-01T04:00:00Z",
+    )
+    assert r["verdict"] == "GAPPED"
+    assert r["missingTimestamps"] == [
+        "2026-01-01T00:00:00Z",
+        "2026-01-01T01:00:00Z",
+        "2026-01-01T03:00:00Z",
+    ]
 
 def test_duplicate_timestamp_rejected():
     try: inspect_csv(csv("2026-01-01T00:00:00Z,1\n2026-01-01T00:00:00Z,2\n"),station_id="demo",window_start=START,window_end="2026-01-01T01:00:00Z")

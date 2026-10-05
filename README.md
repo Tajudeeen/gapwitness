@@ -8,11 +8,14 @@ GapWitness inspects an environmental CSV against an independently declared hourl
 
 ## Core demo
 
-1. File A contains a real seven-hour gap.
+1. File A contains a seven-hour gap from 07:00Z through 13:00Z.
 2. GapWitness returns `GAPPED` and computes deterministic evidence.
-3. File A is committed on Sepolia.
-4. File B fills those seven hours.
-5. A conflicting commitment for the same station and exact window reverts with `GapPaperedOver`.
+3. File A is the first candidate for an on-chain commitment.
+4. File B contains the same 24-hour window with those hours present.
+5. A conflicting commitment for the same station and exact window must revert with `GapPaperedOver`.
+6. File C keeps the full window but contains a negative PM2.5 value, so the checker returns `IMPOSSIBLE`.
+
+The current checked-in files are deterministic demo fixtures. They are not presented as OpenAQ measurements yet. The production demo will replace File A and File B with a documented real OpenAQ station slice before submission.
 
 ## Verdicts
 
@@ -56,6 +59,22 @@ The checker now emits a `chainCommitment` object containing the exact values req
 
 The contract rejects unaligned hour boundaries and verdicts outside `INTACT=0`, `GAPPED=1`, and `IMPOSSIBLE=2`. This keeps the checker and contract using the same small proof vocabulary.
 
+## Demo fixtures
+
+The adversarial fixtures live in `checker/demo/`:
+
+- `file_a.csv` has 17 observed hours and 7 missing hours.
+- `file_b.csv` has all 24 expected hours.
+- `file_c_impossible.csv` contains one negative PM2.5 value.
+
+Run:
+
+`python checker/demo/run_demo.py`
+
+Reproduce a single proof payload with:
+
+`python verify.py checker/demo/file_a.csv --station-id demo-station-pm25 --window-start 2026-01-01T00:00:00Z --window-end 2026-01-02T00:00:00Z`
+
 ## Status
 
-Milestone 2 is on branch `feat/evidence-chain-integration`: chain-ready evidence payload, policy hashing, contract input validation, and tests. This branch will be reviewed and merged into `main` before the next milestone.
+Milestone 3 is on branch `feat/adversarial-demo-fixtures`: deterministic File A/File B/File C fixtures and a reproducible verification script.
