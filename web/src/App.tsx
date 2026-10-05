@@ -5,8 +5,17 @@ import {
   checkHealth,
   inspectCsv,
   type CheckResult,
-  type Verdict,
 } from "./lib/checker";
+import {
+  commitEvidence,
+  connectWallet,
+  explorerAddressUrl,
+  explorerTransactionUrl,
+  isContractConfigured,
+  watchWalletEvents,
+  CommitmentError,
+  WalletError,
+} from "./lib/wallet";
 
 type Point = { timestamp: string; value: number };
 
@@ -64,6 +73,14 @@ function App() {
   const [station, setStation] = useState(DEFAULT_STATION);
   const [windowStart, setWindowStart] = useState(DEFAULT_WINDOW_START);
   const [windowEnd, setWindowEnd] = useState(DEFAULT_WINDOW_END);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [commitBusy, setCommitBusy] = useState(false);
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<{
+    priorGap: string;
+    nextGap: string;
+    priorTransactionHash: string | null;
+  } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -77,6 +94,17 @@ function App() {
         setMessage("Inspect is offline. Commitment is disabled.");
       });
     return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    return watchWalletEvents(({ address, chainId }) => {
+      if (address !== null) {
+        setWalletAddress(address);
+      }
+      if (chainId !== null && chainId !== 11155111n) {
+        setMessage("Wallet network changed. Commitment requires Ethereum Sepolia.");
+      }
+    });
   }, []);
 
   const max = useMemo(
@@ -129,6 +157,8 @@ function App() {
       setResult(next);
       setPoints(parseChartPoints(csvText));
       setCheckerState("ready");
+      setTxHash(null);
+      setConflict(null);
       setMessage(
         next.verdict === "GAPPED"
           ? `${next.observedHours}/${next.expectedHours} observations verified. ${next.missingTimestamps.length} hours are missing.`
@@ -154,6 +184,44 @@ function App() {
       }
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleCommit() {
+    if (!result) return;
+
+    setCommitBusy(true);
+    setConflict(null);
+    setTxHash(null);
+    setMessage("Connecting wallet…");
+
+    try {
+      const wallet = await connectWallet();
+      setWalletAddress(wallet.address);
+      setMessage("Confirm the evidence commitment in your wallet…");
+
+      const receipt = await commitEvidence(result.chainCommitment);
+      setTxHash(receipt.transactionHash);
+      setMessage(`Evidence committed on Sepolia in block ${receipt.blockNumber}.`);
+    } catch (error) {
+      if (error instanceof CommitmentError) {
+        if (error.conflict) {
+          setConflict({
+            priorGap: error.conflict.priorGap,
+            nextGap: error.conflict.nextGap,
+            priorTransactionHash: error.conflict.priorTransactionHash,
+          });
+          setMessage("GapPaperedOver: the later submission conflicts with the prior commitment.");
+        } else {
+          setMessage(error.message);
+        }
+      } else if (error instanceof WalletError) {
+        setMessage(error.message);
+      } else {
+        setMessage("Commitment failed. The evidence remains unchanged.");
+      }
+    } finally {
+      setCommitBusy(false);
     }
   }
 
@@ -369,16 +437,54 @@ function App() {
             </section>
           )}
 
+          {result && (
+            <section className="chain-state">
+              <div>
+                <span className="kicker">CHAIN</span>
+                <h3>sepolia commitment</h3>
+              </div>
+              <div className="chain-lines">
+                <div><span>contract</span><code>{isContractConfigured() ? "configured" : "not configured"}</code></div>
+                <div><span>wallet</span><code>{walletAddress ? walletAddress : "not connected"}</code></div>
+                <div><span>verdict code</span><code>{result.chainCommitment.verdict}</code></div>
+              </div>
+              {txHash && (
+                <p className="chain-success">
+                  committed · <a href={explorerTransactionUrl(txHash)} target="_blank" rel="noreferrer">{txHash}</a>
+                  {walletAddress && <> · <a href={explorerAddressUrl(walletAddress)} target="_blank" rel="noreferrer">wallet</a></>}
+                </p>
+              )}
+              {conflict && (
+                <div className="conflict">
+                  <strong>GapPaperedOver</strong>
+                  <span>prior gap: <code>{conflict.priorGap}</code></span>
+                  <span>new gap: <code>{conflict.nextGap}</code></span>
+                  {conflict.priorTransactionHash && (
+                    <a href={explorerTransactionUrl(conflict.priorTransactionHash)} target="_blank" rel="noreferrer">
+                      view prior commitment →
+                    </a>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+
           <div className="commit-row">
             <div>
-              <span className="kicker">NEXT</span>
-              <p>{result ? "Evidence is ready. Wallet commitment is the next milestone." : "Inspect first. Commit only after the deterministic verdict is visible."}</p>
+              <span className="kicker">COMMIT</span>
+              <p>
+                {isContractConfigured()
+                  ? walletAddress
+                    ? "Wallet connected. The next click sends the checker evidence to Sepolia."
+                    : "Your wallet is only requested when you choose to commit."
+                  : "Sepolia contract address is not configured yet. Commitment is disabled."}
+              </p>
             </div>
             <button
-              disabled={!result || checkerState !== "ready" || busy}
-              onClick={() => setMessage("Wallet connection and Sepolia commitment arrive in the next milestone.")}
+              disabled={!result || checkerState !== "ready" || busy || commitBusy || !isContractConfigured()}
+              onClick={() => void handleCommit()}
             >
-              commit evidence →
+              {commitBusy ? "waiting for wallet…" : walletAddress ? "commit evidence →" : "connect wallet & commit →"}
             </button>
           </div>
 
