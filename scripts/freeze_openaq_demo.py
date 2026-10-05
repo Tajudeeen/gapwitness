@@ -124,9 +124,9 @@ def freeze(
             ],
         },
         "outputs": {
-            "fileB": str(file_b),
+            "fileB": "checker/demo/file_b.csv",
             "fileBSha256": sha256_file(file_b),
-            "fileA": str(file_a),
+            "fileA": "checker/demo/file_a.csv",
             "fileASha256": sha256_file(file_a),
         },
         "integrityNote": (
