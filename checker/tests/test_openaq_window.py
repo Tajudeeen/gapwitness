@@ -75,12 +75,7 @@ def test_skips_incomplete_candidate_and_selects_next_complete_window() -> None:
         "2026-01-01T05:00:00Z",
         "2026-01-01T06:00:00Z",
     ]
-    assert [row[2] for row in selected] == [
-        "2026-01-01T03:00:00Z",
-        "2026-01-01T04:00:00Z",
-        "2026-01-01T05:00:00Z",
-        "2026-01-01T06:00:00Z",
-    ]
+    assert [row[2] for row in selected] == ["3", "4", "5", "6"]
 
 
 def test_rejects_non_hour_timestamps(tmp_path: Path) -> None:
