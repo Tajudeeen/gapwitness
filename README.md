@@ -41,6 +41,15 @@ One environmental series, one checker, one chart, one contract, one public testn
 
 No sensor hardware, sensor network, token, IPFS layer, marketplace, KPI dashboard, chatbot, multi-chain deployment, or live ingestion infrastructure.
 
+## Evidence hashes
+
+The checker now uses Ethereum-compatible Keccak-256 for both proof values:
+
+- `seriesHash` = Keccak-256 of the exact submitted CSV bytes.
+- `gapHash` = Keccak-256 of the canonical sorted UTC gap list joined with newlines.
+
+The hash outputs are prefixed with `0x` so they can be passed directly into Solidity bytes32 fields. The checker tests the same Keccak implementation used by the on-chain proof format.
+
 ## Status
 
-Build started. Milestone 1 is the deterministic checker and contract core.
+Milestone 1 is complete: deterministic checker, Ethereum-compatible evidence hashes, contract core, and CI tests are in place. Next is the real evidence-to-chain integration and demo fixtures.
