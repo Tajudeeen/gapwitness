@@ -192,6 +192,24 @@ The checker is deterministic. AI is outside the trust boundary and may only turn
 
 **Integrity is not truth.** GapWitness does not prove sensor calibration or that a measurement is physically truthful. It proves what the submitted file contained, which expected hours were absent, and whether a later submission attempts to rewrite that temporal evidence.
 
+## Independent on-chain verification
+
+`scripts/verify_onchain.py` is the final reproducibility check. It re-runs the deterministic checker against a CSV, recomputes the exact station/window commitment key, reads `commitments(bytes32)` from the supplied EVM RPC, and compares `seriesHash`, `gapHash`, `policyHash`, and `verdictCode` with the chain record. It exits `0` only when an existing commitment matches every checked field.
+
+Example:
+
+```bash
+python scripts/verify_onchain.py \\
+  checker/demo/file_a.csv \\
+  --station-id 2178 \\
+  --window-start 2026-09-19T07:00:00Z \\
+  --window-end 2026-09-20T07:00:00Z \\
+  --contract <DEPLOYED_SEPOLIA_ADDRESS> \\
+  --rpc-url https://ethereum-sepolia-rpc.publicnode.com
+```
+
+This verification path does not trust the web client. A missing commitment, chain mismatch, hash mismatch, policy mismatch, or verdict mismatch produces a non-zero exit code and a machine-readable JSON report.
+
 ## Evidence hashes
 
 - `seriesHash` = Keccak-256 of the exact submitted CSV bytes.
