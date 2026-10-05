@@ -216,7 +216,7 @@ A commitment is immutable for an exact station and UTC observation window. Re-su
 - `GAPPED` - one or more expected timestamps are absent.
 - `IMPOSSIBLE` - a hard series-specific physical constraint is violated.
 
-Insufficient data is an inspection error, not a verdict.
+Insufficient data is an inspection error, not a verdict. A file with no observations inside the declared window is rejected with `NO_OBSERVATIONS_IN_WINDOW`. Measurements must be finite numbers and timestamps must align exactly to UTC hours, including subsecond precision. Observation windows must start at or after the Unix epoch and span no more than 744 hours; the size limit is checked before allocating the expected timestamp range. Valid fixture hashes and policy identifiers remain unchanged.
 
 ## Trust model
 
