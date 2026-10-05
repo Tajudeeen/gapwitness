@@ -10,6 +10,9 @@ on:
         required: false
         type: string
   create:
+  push:
+    branches:
+      - 'demo-chain/**'
 
 permissions:
   contents: read
@@ -19,9 +22,8 @@ jobs:
   demo:
     if: >
       (
-        github.event_name == 'create' &&
+        (github.event_name == 'create' || github.event_name == 'push') &&
         github.actor == 'Tajudeeen' &&
-        github.ref_type == 'branch' &&
         startsWith(github.ref_name, 'demo-chain/')
       ) ||
       github.event_name == 'workflow_dispatch' ||
