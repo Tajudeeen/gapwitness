@@ -13,8 +13,11 @@ export const SEPOLIA_CHAIN_HEX = "0xaa36a7";
 export const CONTRACT_ADDRESS = (
   import.meta.env.VITE_CONTRACT || ""
 ).trim();
+
+// The live deployment block is a public fallback for the current Sepolia contract.
+// VITE_CONTRACT_DEPLOYMENT_BLOCK remains the preferred override for future deployments.
 export const DEPLOYMENT_BLOCK = Number(
-  import.meta.env.VITE_CONTRACT_DEPLOYMENT_BLOCK || "0",
+  import.meta.env.VITE_CONTRACT_DEPLOYMENT_BLOCK || "11847390",
 );
 
 const EXPLORER_BASE = "https://sepolia.etherscan.io";
