@@ -37,9 +37,13 @@ contract GapWitnessTest is Test {
         bytes32 seriesB = keccak256("file-b");
         vm.expectRevert(
             abi.encodeWithSelector(
-                GapWitness.SeriesChanged.selector,
+                GapWitness.CommitmentChanged.selector,
                 seriesA,
-                seriesB
+                seriesB,
+                policy,
+                policy,
+                1,
+                1
             )
         );
         witness.commit(station, start, end, seriesB, gapA, policy, 1);
@@ -50,9 +54,13 @@ contract GapWitnessTest is Test {
         bytes32 policyB = keccak256("policy-v2");
         vm.expectRevert(
             abi.encodeWithSelector(
-                GapWitness.SeriesChanged.selector,
+                GapWitness.CommitmentChanged.selector,
                 seriesA,
-                seriesA
+                seriesA,
+                policy,
+                policyB,
+                1,
+                1
             )
         );
         witness.commit(station, start, end, seriesA, gapA, policyB, 1);
