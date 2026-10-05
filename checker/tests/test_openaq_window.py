@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -55,10 +55,11 @@ def test_finds_earliest_complete_window(tmp_path: Path) -> None:
 
 
 def test_skips_incomplete_candidate_and_selects_next_complete_window() -> None:
+    base = datetime(2026, 1, 1, tzinfo=timezone.utc)
     rows = [
         (
-            datetime(2026, 1, 1, hour, tzinfo=timezone.utc),
-            f"2026-01-01T{hour:02d}:00:00Z",
+            base + timedelta(hours=hour),
+            (base + timedelta(hours=hour)).isoformat().replace("+00:00", "Z"),
             str(hour),
         )
         for hour in range(30)
@@ -98,10 +99,11 @@ def test_rejects_duplicate_timestamps(tmp_path: Path) -> None:
 
 
 def test_rejects_missing_complete_window() -> None:
+    base = datetime(2026, 1, 1, tzinfo=timezone.utc)
     rows = [
         (
-            datetime(2026, 1, 1, hour, tzinfo=timezone.utc),
-            f"2026-01-01T{hour:02d}:00:00Z",
+            base + timedelta(hours=hour),
+            (base + timedelta(hours=hour)).isoformat().replace("+00:00", "Z"),
             str(hour),
         )
         for hour in range(3)
