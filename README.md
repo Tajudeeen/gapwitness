@@ -19,7 +19,7 @@ GapWitness inspects an environmental CSV against an independently declared hourl
 
 The production demo source is OpenAQ's public AWS archive. OpenAQ publishes daily gzipped CSV files by location, year, and month, and the archive is publicly readable without AWS credentials.
 
-The repository includes `scripts/fetch_openaq_day.py` to fetch one archive object and normalize only PM2.5 rows into the checker format. Pass a specific PM2.5 sensor ID so a demo window cannot silently mix readings from multiple sensors.
+The repository includes `scripts/fetch_openaq_day.py` to fetch one archive object and normalize only PM2.5 rows into the checker format. Pass a specific PM2.5 sensor ID when the source sensor is known so a demo window cannot silently mix readings from multiple sensors.
 
 Before a source file is promoted into the demo, record:
 
@@ -36,9 +36,16 @@ See `data/source/openaq.md` for the source record template.
 
 ### Reproducible demo fixtures
 
-Do not hand-edit the OpenAQ demo CSVs. First fetch a PM2.5 source day with `scripts/fetch_openaq_day.py`, then select a complete 24-hour window with `scripts/select_openaq_window.py`, then derive the adversarial pair with `scripts/derive_openaq_fixtures.py`.
+Do not hand-edit the OpenAQ demo CSVs.
 
-The window selector is deterministic: it rejects non-hour timestamps and duplicates, scans in chronological order, and picks the earliest complete UTC hourly window. Its manifest records the source hash, selected station/sensor identifiers, exact window, row counts, and frozen output hash.
+The preferred source-selection flow is:
+
+1. Download one OpenAQ archive day with `scripts/fetch_openaq_day.py` when the sensor is already known.
+2. Otherwise run `scripts/discover_openaq_window.py`. It scans the day's PM2.5 rows by sensor and reports the earliest complete UTC window for each usable sensor.
+3. Freeze the selected 24-hour window with `scripts/select_openaq_window.py`.
+4. Derive the adversarial File A/File B pair with `scripts/derive_openaq_fixtures.py`.
+
+The discovery and window selectors are deterministic. They reject malformed hourly timestamps and duplicate instants, preserve measurement strings, and use chronological ordering to choose the earliest complete window.
 
 The derivation requires that complete UTC hourly window. File B contains the selected source rows. File A is created only by removing the explicitly listed hours. The derivation manifest records the normalized source SHA-256, window, removed timestamps, and output hashes.
 
@@ -47,6 +54,12 @@ This distinction matters: File A is an adversarial derivative of a real source w
 Example workflow:
 
 ```bash
+python scripts/discover_openaq_window.py \
+  --location-id <LOCATION_ID> \
+  --date <YYYY-MM-DD> \
+  --window-hours 24 \
+  --manifest data/source/openaq-candidates.json
+
 python scripts/fetch_openaq_day.py \
   --location-id <LOCATION_ID> \
   --sensor-id <PM25_SENSOR_ID> \
@@ -73,7 +86,7 @@ python scripts/derive_openaq_fixtures.py \
   --manifest data/source/openaq-derived.json
 ```
 
-Real source bytes and generated hashes must be preserved in the provenance record before the demo data is frozen.
+The discovery command chooses a candidate. The fetch/select/derive steps are still the point where the actual source bytes and generated hashes are frozen into the submission record.
 
 ## On-chain commitment rule
 
