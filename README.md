@@ -50,6 +50,12 @@ The checker now uses Ethereum-compatible Keccak-256 for both proof values:
 
 The hash outputs are prefixed with `0x` so they can be passed directly into Solidity bytes32 fields. The checker tests the same Keccak implementation used by the on-chain proof format.
 
+## Evidence-to-chain boundary
+
+The checker now emits a `chainCommitment` object containing the exact values required by `GapWitness.commit`: station ID, Unix-hour window boundaries, `seriesHash`, `gapHash`, `policyHash`, and numeric verdict.
+
+The contract rejects unaligned hour boundaries and verdicts outside `INTACT=0`, `GAPPED=1`, and `IMPOSSIBLE=2`. This keeps the checker and contract using the same small proof vocabulary.
+
 ## Status
 
-Milestone 1 is complete: deterministic checker, Ethereum-compatible evidence hashes, contract core, and CI tests are in place. Next is the real evidence-to-chain integration and demo fixtures.
+Milestone 2 is on branch `feat/evidence-chain-integration`: chain-ready evidence payload, policy hashing, contract input validation, and tests. This branch will be reviewed and merged into `main` before the next milestone.

@@ -5,19 +5,66 @@ contract GapWitness {
     error GapPaperedOver(bytes32 priorGap, bytes32 nextGap);
     error WindowTooWide();
     error EmptySeries();
+    error InvalidHourBoundary();
+    error InvalidVerdict();
+
     uint256 public constant MAX_WINDOW_HOURS = 24 * 31;
-    struct Commitment { bytes32 seriesHash; bytes32 gapHash; bytes32 policyHash; uint8 verdict; uint64 committedAt; address submitter; }
+
+    struct Commitment {
+        bytes32 seriesHash;
+        bytes32 gapHash;
+        bytes32 policyHash;
+        uint8 verdict;
+        uint64 committedAt;
+        address submitter;
+    }
+
     mapping(bytes32 => Commitment) public commitments;
-    event Committed(bytes32 indexed commitmentKey, bytes32 indexed seriesHash, bytes32 gapHash, bytes32 policyHash, uint8 verdict, address indexed submitter);
-    function commit(bytes32 stationId,uint64 windowStart,uint64 windowEnd,bytes32 seriesHash,bytes32 gapHash,bytes32 policyHash,uint8 verdict) external {
+
+    event Committed(
+        bytes32 indexed commitmentKey,
+        bytes32 indexed seriesHash,
+        bytes32 gapHash,
+        bytes32 policyHash,
+        uint8 verdict,
+        address indexed submitter
+    );
+
+    function commit(
+        bytes32 stationId,
+        uint64 windowStart,
+        uint64 windowEnd,
+        bytes32 seriesHash,
+        bytes32 gapHash,
+        bytes32 policyHash,
+        uint8 verdict
+    ) external {
         if (seriesHash == bytes32(0)) revert EmptySeries();
         if (windowEnd <= windowStart) revert WindowTooWide();
-        uint256 hoursCount=(uint256(windowEnd)-uint256(windowStart))/1 hours;
-        if (hoursCount==0 || hoursCount>MAX_WINDOW_HOURS) revert WindowTooWide();
-        bytes32 key=keccak256(abi.encode(stationId,windowStart,windowEnd));
-        Commitment memory prior=commitments[key];
-        if (prior.seriesHash != bytes32(0) && prior.gapHash != gapHash) revert GapPaperedOver(prior.gapHash,gapHash);
-        commitments[key]=Commitment(seriesHash,gapHash,policyHash,verdict,uint64(block.timestamp),msg.sender);
-        emit Committed(key,seriesHash,gapHash,policyHash,verdict,msg.sender);
+        if (windowStart % 1 hours != 0 || windowEnd % 1 hours != 0) {
+            revert InvalidHourBoundary();
+        }
+        if (verdict > 2) revert InvalidVerdict();
+
+        uint256 hoursCount = (uint256(windowEnd) - uint256(windowStart)) / 1 hours;
+        if (hoursCount == 0 || hoursCount > MAX_WINDOW_HOURS) revert WindowTooWide();
+
+        bytes32 key = keccak256(abi.encode(stationId, windowStart, windowEnd));
+        Commitment memory prior = commitments[key];
+
+        if (prior.seriesHash != bytes32(0) && prior.gapHash != gapHash) {
+            revert GapPaperedOver(prior.gapHash, gapHash);
+        }
+
+        commitments[key] = Commitment(
+            seriesHash,
+            gapHash,
+            policyHash,
+            verdict,
+            uint64(block.timestamp),
+            msg.sender
+        );
+
+        emit Committed(key, seriesHash, gapHash, policyHash, verdict, msg.sender);
     }
 }
