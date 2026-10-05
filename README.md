@@ -192,15 +192,19 @@ The script commits File A first, then submits File B for the same station and ex
 
 ## Demo proof artifact
 
-`scripts/build_demo_proof.py` produces a deterministic JSON proof from the three frozen fixtures. It records the exact window, File A gap evidence, File B conflict expectation, File C impossible case, and the Sepolia target chain. It deliberately records deployment status as `pending` until a real contract address exists, so the repository never manufactures an on-chain claim.
+`scripts/build_demo_proof.py` produces a deterministic JSON proof from the three frozen fixtures. It records the exact window, File A gap evidence, File B conflict expectation, File C impossible case, and the Sepolia target chain. When a live contract is supplied, it records the real deployment metadata; without one, it deliberately records deployment status as `pending`, so the repository never manufactures an on-chain claim.
 
 Generate it locally without adding secrets:
 
 ```bash
-python scripts/build_demo_proof.py --output /tmp/gapwitness-demo-proof.json
+python scripts/build_demo_proof.py \
+  --contract 0xa7ab2d2e60a08a089f3749ac3e98b41449b23211 \
+  --deployment-tx 0xf0ab1c67eb1cdd68171268879e24b447210d53697ce65b56054dca9f55e6eb9e \
+  --deployment-block 11847390 \
+  --output /tmp/gapwitness-demo-proof.json
 ```
 
-The proof artifact is suitable for attaching to a demo review or using as the checklist for the live chain rehearsal. It contains no wallet key and no transaction hash.
+The proof artifact is suitable for attaching to a demo review or using as the checklist for the live chain rehearsal. The live submission command above records the public deployment transaction; it contains no wallet key.
 
 ## On-chain commitment rule
 
