@@ -117,21 +117,6 @@ function App() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShowIntro(false), 2600);
-  
-  const timelineStart = result ? new Date(result.windowStart).getTime() : new Date(windowStart).getTime();
-  const timelineEnd = result ? new Date(result.windowEnd).getTime() : new Date(windowEnd).getTime();
-  const timelineHours = result
-    ? Array.from({ length: result.expectedHours }, (_, index) => {
-        const timestamp = new Date(timelineStart + index * 3600000).toISOString();
-        const point = points.find(item => item.timestamp === timestamp);
-        const missing = result.missingTimestamps.includes(timestamp);
-        return { timestamp, point, missing };
-      })
-    : [];
-  const completeness = result && result.expectedHours > 0
-    ? Math.round((result.observedHours / result.expectedHours) * 1000) / 10
-    : 0;
-
   return () => window.clearTimeout(timer);
   }, []);
 
@@ -362,6 +347,21 @@ function App() {
       return { offset, label: `${String(value.getUTCHours()).padStart(2, "0")}:00` };
     });
   }, [result?.windowStart, windowStart]);
+
+  
+  const timelineStart = result ? new Date(result.windowStart).getTime() : new Date(windowStart).getTime();
+  const timelineEnd = result ? new Date(result.windowEnd).getTime() : new Date(windowEnd).getTime();
+  const timelineHours = result
+    ? Array.from({ length: result.expectedHours }, (_, index) => {
+        const timestamp = new Date(timelineStart + index * 3600000).toISOString();
+        const point = points.find(item => item.timestamp === timestamp);
+        const missing = result.missingTimestamps.includes(timestamp);
+        return { timestamp, point, missing };
+      })
+    : [];
+  const completeness = result && result.expectedHours > 0
+    ? Math.round((result.observedHours / result.expectedHours) * 1000) / 10
+    : 0;
 
   return (
     <>
