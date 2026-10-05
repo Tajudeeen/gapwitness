@@ -64,7 +64,7 @@ def find_first_complete_window(
     if window_hours <= 0:
         raise ValueError("window-hours must be positive")
 
-    indexed = {parsed: row for row in rows}
+    indexed = {row[0]: row for row in rows}
     timestamps = [row[0] for row in rows]
 
     for start in timestamps:
