@@ -88,4 +88,47 @@ contract GapWitnessTest is Test {
         vm.expectRevert(GapWitness.InvalidVerdict.selector);
         witness.commit(station, start, end, seriesA, gapA, policy, 3);
     }
+
+    function testReplayPreservesFirstWitnessAndEmitsNoEvent() public {
+        address first = address(0xA11CE);
+        address replay = address(0xB0B);
+        vm.warp(1000);
+        vm.prank(first);
+        witness.commit(station, start, end, seriesA, gapA, policy, 1);
+        bytes32 key = keccak256(abi.encode(station, start, end));
+        vm.warp(2000);
+        vm.recordLogs();
+        vm.prank(replay);
+        witness.commit(station, start, end, seriesA, gapA, policy, 1);
+        assertEq(vm.getRecordedLogs().length, 0);
+        (bytes32 storedSeries, bytes32 storedGap, bytes32 storedPolicy, uint8 verdict, uint64 committedAt, address submitter) = witness.commitments(key);
+        assertEq(storedSeries, seriesA);
+        assertEq(storedGap, gapA);
+        assertEq(storedPolicy, policy);
+        assertEq(verdict, 1);
+        assertEq(committedAt, 1000);
+        assertEq(submitter, first);
+    }
+
+    function testFuzzReplayPreservesFirstWitness(address first, address replay, uint64 delay) public {
+        vm.assume(first != address(0));
+        vm.warp(1000);
+        vm.prank(first);
+        witness.commit(station, start, end, seriesA, gapA, policy, 1);
+        vm.warp(uint256(delay) + 1000);
+        vm.prank(replay);
+        witness.commit(station, start, end, seriesA, gapA, policy, 1);
+        bytes32 key = keccak256(abi.encode(station, start, end));
+        (, , , , uint64 committedAt, address submitter) = witness.commitments(key);
+        assertEq(committedAt, 1000);
+        assertEq(submitter, first);
+    }
+
+    function testSameEvidenceButDifferentVerdictReverts() public {
+        witness.commit(station, start, end, seriesA, gapA, policy, 1);
+        vm.expectRevert(abi.encodeWithSelector(
+            GapWitness.CommitmentChanged.selector, seriesA, seriesA, policy, policy, 1, 0
+        ));
+        witness.commit(station, start, end, seriesA, gapA, policy, 0);
+    }
 }
