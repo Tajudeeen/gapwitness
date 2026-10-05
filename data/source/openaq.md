@@ -10,9 +10,13 @@ GapWitness demo data source: OpenAQ public archive.
 - License: varies by underlying data provider. Record the provider/license for the selected location before submission.
 - Acquisition date: record the date the archive object was downloaded.
 - Source file URL: record the exact object URL used.
-- Location ID: record the selected location ID.
-- Date: record the archive date used for the demo.
-- Sensor ID: record the exact PM2.5 sensor used for the frozen window.
+- Location ID: 2178
+- Location name: Del Norte
+- Date: 2026-09-19
+- Sensor ID: 3920
+- Provider: AirNow
+- License: US Public Domain
+- Location timezone: America/Denver
 
 OpenAQ states that archive files can be retroactively patched. GapWitness therefore commits the exact downloaded CSV bytes and separately records the source object URL and acquisition date. The chain proves the submitted file's temporal evidence, not that the upstream archive will never change.
 
