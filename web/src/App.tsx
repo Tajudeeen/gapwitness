@@ -271,6 +271,13 @@ function App() {
           <span className="dot" />
           {checkerState === "checking" ? "checking checker" : checkerState === "ready" ? "checker ready" : "checker offline"}
         </div>
+        <div className="steps">
+          {["01 SOURCE", "02 INSPECT", "03 COMMIT", "04 WITNESS"].map((step, index) => (
+            <div key={step} className={result || index < 2 ? "active" : ""}>
+              <span>{step}</span><i />
+            </div>
+          ))}
+        </div>
       </header>
 
       <section className="workspace">
@@ -492,9 +499,15 @@ function App() {
         </section>
       </section>
 
+      <section className="principles">
+        <div><span>WHAT THIS PROVES</span><p>submitted bytes · expected missing timestamps · later rewrite attempts</p></div>
+        <div><span>WHAT THIS DOES NOT PROVE</span><p>sensor calibration · physical truth · that the source was honest</p></div>
+        <div><span>INSUFFICIENT DATA</span><p>not a verdict · checker returns 422 until the evidence is usable</p></div>
+      </section>
+
       <footer>
-        <span>GAPWITNESS · temporal integrity</span>
-        <span>integrity is not truth.</span>
+        <span>GAPWITNESS · TEMPORAL INTEGRITY FOR ENVIRONMENTAL TIME SERIES</span>
+        <span>INTEGRITY ≠ TRUTH</span>
       </footer>
     </main>
   );
