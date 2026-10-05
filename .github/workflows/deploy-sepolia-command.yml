@@ -1,0 +1,93 @@
+name: deploy-sepolia-command
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  deploy:
+    if: >
+      github.event.issue.pull_request == null &&
+      github.event.comment.user.login == 'Tajudeeen' &&
+      github.event.comment.body == '/deploy-sepolia'
+    runs-on: ubuntu-latest
+    env:
+      PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+      SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install forge-std
+        run: forge install https://github.com/foundry-rs/forge-std --no-commit
+
+      - name: Preflight
+        shell: bash
+        run: |
+          test -n "$PRIVATE_KEY" || { echo "PRIVATE_KEY is not configured."; exit 1; }
+          if [ -z "$SEPOLIA_RPC_URL" ]; then
+            echo "SEPOLIA_RPC_URL is not configured. Using public Sepolia RPC."
+            echo "SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com" >> "$GITHUB_ENV"
+          fi
+
+      - name: Dry-run deployment
+        run: forge script script/DeployGapWitness.s.sol:DeployGapWitness --rpc-url "$SEPOLIA_RPC_URL"
+
+      - name: Broadcast deployment
+        run: forge script script/DeployGapWitness.s.sol:DeployGapWitness --rpc-url "$SEPOLIA_RPC_URL" --private-key "$PRIVATE_KEY" --broadcast
+
+      - name: Record deployment
+        run: |
+          python ../scripts/record_sepolia_deployment.py             --broadcast broadcast/DeployGapWitness.s.sol/11155111/run-latest.json             --output deployments/sepolia.json             --deployment-commit "$GITHUB_SHA"
+
+      - name: Publish deployment record branch
+        shell: bash
+        run: |
+          BRANCH="ops/sepolia-deployment-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add contracts/deployments/sepolia.json
+          git commit -m "chore: record Sepolia deployment"
+          git push origin "$BRANCH"
+
+      - name: Comment deployment result
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          ADDRESS=$(python scripts/read_sepolia_deployment.py --deployment contracts/deployments/sepolia.json)
+          TX_HASH=$(python - <<'PY'
+          import json
+          from pathlib import Path
+          print(json.loads(Path("contracts/deployments/sepolia.json").read_text())["transactionHash"])
+          PY
+          )
+          BLOCK=$(python - <<'PY'
+          import json
+          from pathlib import Path
+          print(json.loads(Path("contracts/deployments/sepolia.json").read_text())["blockNumber"])
+          PY
+          )
+          BRANCH="ops/sepolia-deployment-${GITHUB_RUN_ID}"
+          {
+            echo "Sepolia deployment succeeded."
+            echo
+            echo "Contract: `$ADDRESS`"
+            echo "Transaction: `$TX_HASH`"
+            echo "Block: `$BLOCK`"
+            echo "Record branch: `$BRANCH`"
+            echo
+            echo "Explorer: https://sepolia.etherscan.io/address/$ADDRESS"
+          } | gh issue comment "$ISSUE_NUMBER" --body-file -
