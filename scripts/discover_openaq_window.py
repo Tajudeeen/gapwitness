@@ -38,16 +38,21 @@ def parse_archive_by_sensor(payload: bytes) -> dict[int, list[tuple[datetime, st
     with gzip.GzipFile(fileobj=io.BytesIO(payload), mode="rb") as stream:
         text = io.TextIOWrapper(stream, encoding="utf-8", newline="")
         reader = csv.DictReader(text)
-        required = {"datetime", "parameter", "value", "sensor_id"}
-        missing = required - set(reader.fieldnames or [])
+        fields = set(reader.fieldnames or [])
+        missing = {"datetime", "parameter", "value"} - fields
         if missing:
             raise ValueError(f"OpenAQ archive is missing columns: {sorted(missing)}")
+        sensor_column = "sensor_id" if "sensor_id" in fields else "sensors_id"
+        if sensor_column not in fields:
+            raise ValueError(
+                "OpenAQ archive is missing sensor ID column: expected sensor_id or sensors_id"
+            )
 
         for row in reader:
             if row["parameter"].strip().lower() != "pm25":
                 continue
 
-            sensor_id = int(row["sensor_id"])
+            sensor_id = int(row[sensor_column])
             timestamp = parse_utc(row["datetime"])
             grouped.setdefault(sensor_id, []).append(
                 (timestamp, row["datetime"], row["value"])
