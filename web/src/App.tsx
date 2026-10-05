@@ -81,6 +81,12 @@ function App() {
     nextGap: string;
     priorTransactionHash: string | null;
   } | null>(null);
+  const [showIntro, setShowIntro] = useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowIntro(false), 2600);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -260,7 +266,17 @@ function App() {
   }, [result?.windowStart, windowStart]);
 
   return (
-    <main className="lab">
+    <>
+      <div className={`splash ${showIntro ? "is-visible" : "is-hidden"}`} aria-hidden={!showIntro}>
+        <div className="splash-inner">
+          <img src="/gapwitness-logo.svg" alt="" className="splash-logo" />
+          <p className="splash-name">GAPWITNESS</p>
+          <p className="splash-line">witness the hours that were missing.</p>
+          <div className="splash-progress"><span /></div>
+          <span className="splash-meta">TEMPORAL INTEGRITY / ENVIRONMENTAL TIME SERIES</span>
+        </div>
+      </div>
+      <main className={`lab ${showIntro ? "is-behind-splash" : ""}`}>
       <header className="masthead">
         <div className="brand">
           <img className="brand-mark" src="/gapwitness-logo.svg" alt="GapWitness logo" />
@@ -289,6 +305,24 @@ function App() {
               <span>{step}</span><i />
             </a>
           ))}
+        </div>
+        <div className="explain-strip" aria-label="How GapWitness works">
+          <div className="explain-intro">
+            <span className="kicker">IN ONE MINUTE</span>
+            <strong>upload → inspect → witness</strong>
+          </div>
+          <details>
+            <summary><span>01</span><b>UPLOAD</b><small>your CSV stays the source</small></summary>
+            <p>GapWitness reads the submitted bytes against the hourly window you declare.</p>
+          </details>
+          <details>
+            <summary><span>02</span><b>INSPECT</b><small>rules produce the verdict</small></summary>
+            <p>The deterministic checker finds missing hours and policy violations. No AI decides the result.</p>
+          </details>
+          <details>
+            <summary><span>03</span><b>WITNESS</b><small>the chain remembers</small></summary>
+            <p>Only compact hashes and the verdict are committed on Sepolia. The CSV itself stays off-chain.</p>
+          </details>
         </div>
       </header>
 
@@ -351,6 +385,13 @@ function App() {
           </div>
 
           <div className="chart-wrap">
+            {!points.length && (
+              <div className="chart-empty">
+                <div className="empty-mark">+</div>
+                <strong>your evidence will appear here</strong>
+                <span>Upload a CSV to see every submitted hour, missing intervals, and the checker verdict.</span>
+              </div>
+            )}
             <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label="Hourly PM2.5 observations">
               <line x1={left} y1={top + innerH} x2={chartWidth - right} y2={top + innerH} className="axis" />
               {[0, 0.5, 1].map(t => (
@@ -404,9 +445,10 @@ function App() {
           </div>
 
           <div className="strip-meta">
-            <span>red bands = missing observations</span>
-            <span>points = submitted observations</span>
-            <span>verdict = checker output</span>
+            <span><i className="legend-dot gap" /> missing hours</span>
+            <span><i className="legend-dot point" /> submitted observations</span>
+            <span><i className="legend-dot verdict-dot" /> deterministic verdict</span>
+            <button type="button" className="why-button" onClick={() => document.getElementById("witness")?.scrollIntoView({ behavior: "smooth" })}>why this matters ↓</button>
           </div>
 
           <div className={`verdict ${result?.verdict?.toLowerCase() ?? "none"}`} aria-live="polite">
@@ -522,6 +564,7 @@ function App() {
         <span>INTEGRITY ≠ TRUTH</span>
       </footer>
     </main>
+    </>
   );
 }
 
