@@ -41,7 +41,13 @@ jobs:
           PY
           )"
 
-          for LOCATION_ID in 2178 8118; do
+          LOCATION_ID=2178
+          LOCATION_NAME="Del Norte"
+          PROVIDER="AirNow"
+          LICENSE_NAME="US Public Domain"
+          TIMEZONE_NAME="America/Denver"
+
+          for _ in 1; do
             while IFS= read -r DATE; do
               [ -z "$DATE" ] && continue
               echo "trying location=$LOCATION_ID date=$DATE"
