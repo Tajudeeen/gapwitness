@@ -108,9 +108,9 @@ npm install
 npm run dev
 ```
 
-The web client now sends the uploaded CSV and independently declared window to the production checker API. Set `VITE_CHECKER_URL` in `web/.env` from `web/.env.example` before running locally. The UI renders the checker response, including missing timestamps, verdict, and chain-ready hashes. HTTP 422 validation failures, rate limits, and checker/network failures are surfaced without falling back to fake local verdicts. A checker outage explicitly disables commitment.
+The web client now sends the uploaded CSV and independently declared window to the checker API. Set `VITE_CHECKER_URL` in `web/.env` from `web/.env.example` before running locally. The UI renders the checker response, including missing timestamps, verdict, and chain-ready hashes. HTTP 422 validation failures, rate limits, and checker/network failures are surfaced without falling back to fake local verdicts. A checker outage explicitly disables commitment.
 
-Wallet connection and on-chain commitment are deliberately not mocked here. They are the next integration milestone.
+The commit flow now uses an injected EVM wallet through ethers v6. The wallet is requested only after a deterministic checker verdict exists. Commitment is restricted to Ethereum Sepolia, and the UI switches networks when the wallet exposes the standard EIP-1193 switch method. Configure `VITE_CONTRACT` with the real deployed contract address and optionally set `VITE_CONTRACT_DEPLOYMENT_BLOCK` so a `GapPaperedOver` conflict can surface the prior commitment transaction. No contract address is hardcoded or mocked.
 
 ## Sepolia deployment
 
