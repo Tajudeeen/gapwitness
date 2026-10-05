@@ -151,6 +151,18 @@ Never commit a populated `.env` or a private key. The contract address must come
 
 For a remote deployment, the repository also includes an owner-only `issue_comment` trigger. On the default branch, the repository owner can comment `/deploy-sepolia` on a normal issue. The workflow uses the existing encrypted `PRIVATE_KEY` secret, falls back to the public Sepolia RPC when `SEPOLIA_RPC_URL` is empty, writes the reviewed deployment record to a separate branch, and comments the resulting address, transaction, and block back onto the issue. The private key is never passed through the issue comment.
 
+## Live Sepolia deployment
+
+The current deployed GapWitness contract is:
+
+- chain: Sepolia (`11155111`)
+- address: `0xa7ab2d2e60a08a089f3749ac3e98b41449b23211`
+- deployment transaction: `0xf0ab1c67eb1cdd68171268879e24b447210d53697ce65b56054dca9f55e6eb9e`
+- block: `11847390`
+- deployment record: `contracts/deployments/sepolia.json`
+
+The address above is the result of the real Sepolia broadcast. It is not a placeholder. Source verification remains a separate step.
+
 ## Reproducible chain demo
 
 After the real Sepolia contract is deployed, generate the exact on-chain inputs from the frozen File A/File B fixtures:
