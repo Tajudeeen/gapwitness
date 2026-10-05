@@ -31,6 +31,41 @@ contract GapWitnessTest is Test {
         witness.commit(station, start, end, keccak256("file-b"), gapB, policy, 1);
     }
 
+
+    function testSameGapButDifferentSeriesReverts() public {
+        witness.commit(station, start, end, seriesA, gapA, policy, 1);
+        bytes32 seriesB = keccak256("file-b");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                GapWitness.CommitmentChanged.selector,
+                seriesA,
+                seriesB,
+                policy,
+                policy,
+                1,
+                1
+            )
+        );
+        witness.commit(station, start, end, seriesB, gapA, policy, 1);
+    }
+
+    function testSameSeriesAndGapButDifferentPolicyReverts() public {
+        witness.commit(station, start, end, seriesA, gapA, policy, 1);
+        bytes32 policyB = keccak256("policy-v2");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                GapWitness.CommitmentChanged.selector,
+                seriesA,
+                seriesA,
+                policy,
+                policyB,
+                1,
+                1
+            )
+        );
+        witness.commit(station, start, end, seriesA, gapA, policyB, 1);
+    }
+
     function testDifferentWindowDoesNotConflict() public {
         witness.commit(station, start, end, seriesA, gapA, policy, 1);
         witness.commit(
