@@ -21,6 +21,9 @@ def build_proof(
     file_a: bytes,
     file_b: bytes,
     file_c: bytes,
+    contract: str | None = None,
+    deployment_tx: str | None = None,
+    deployment_block: int | None = None,
 ) -> dict:
     results = {
         "fileA": inspect_csv(
@@ -67,7 +70,10 @@ def build_proof(
             "network": "sepolia",
             "chainId": 11155111,
             "contractRequired": True,
-            "deploymentStatus": "pending",
+            "deploymentStatus": "recorded" if contract else "pending",
+            "contract": contract,
+            "deploymentTransaction": deployment_tx,
+            "deploymentBlock": deployment_block,
         },
         "claim": {
             "stationId": station_id,
@@ -109,8 +115,16 @@ def main() -> None:
     parser.add_argument("--file-a", type=Path, default=REPO_ROOT / "checker/demo/file_a.csv")
     parser.add_argument("--file-b", type=Path, default=REPO_ROOT / "checker/demo/file_b.csv")
     parser.add_argument("--file-c", type=Path, default=REPO_ROOT / "checker/demo/file_c_impossible.csv")
+    parser.add_argument("--contract")
+    parser.add_argument("--deployment-tx")
+    parser.add_argument("--deployment-block", type=int)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+
+    if args.deployment_tx and not args.contract:
+        parser.error("--deployment-tx requires --contract")
+    if args.deployment_block is not None and not args.contract:
+        parser.error("--deployment-block requires --contract")
 
     proof = build_proof(
         station_id=args.station_id,
@@ -119,6 +133,9 @@ def main() -> None:
         file_a=args.file_a.read_bytes(),
         file_b=args.file_b.read_bytes(),
         file_c=args.file_c.read_bytes(),
+        contract=args.contract,
+        deployment_tx=args.deployment_tx,
+        deployment_block=args.deployment_block,
     )
     rendered = json.dumps(proof, indent=2) + "\n"
 
