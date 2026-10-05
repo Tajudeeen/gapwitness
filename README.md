@@ -96,6 +96,20 @@ python scripts/derive_openaq_fixtures.py \
 
 The discovery command chooses a candidate. The fetch/select/derive steps are still the point where the actual source bytes and generated hashes are frozen into the submission record.
 
+## Web lab
+
+The web client lives under `web/`. It is intentionally a single lab surface rather than a dashboard: station and window context on the left, one hourly observation strip, missing-hour bands, and a large deterministic verdict stamp.
+
+Run locally:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+The current UI can inspect the frozen CSV format locally and visualize missing hours. Wallet connection and on-chain commitment are deliberately not mocked here. They are the next integration milestone after the public Sepolia deployment.
+
 ## Sepolia deployment
 
 The contract deployment is intentionally separated from normal CI. `contracts/script/DeployGapWitness.s.sol` reads the deployer key from `PRIVATE_KEY`, and the deployment workflow accepts `SEPOLIA_RPC_URL`, `PRIVATE_KEY`, and `ETHERSCAN_API_KEY` only as GitHub environment secrets.
