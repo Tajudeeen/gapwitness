@@ -46,15 +46,25 @@ def test_freeze_creates_real_source_pair_from_one_archive(monkeypatch: pytest.Mo
         output_dir=tmp_path,
         remove_offset_hours=8,
         remove_hours=7,
+        location_name="Del Norte",
+        provider="AirNow",
+        license_name="US Public Domain",
+        timezone_name="America/Denver",
     )
 
     file_b = tmp_path / "file_b.csv"
     file_a = tmp_path / "file_a.csv"
 
     assert result["source"]["sensorId"] == 7001
+    assert result["source"]["locationName"] == "Del Norte"
+    assert result["source"]["provider"] == "AirNow"
+    assert result["source"]["license"] == "US Public Domain"
+    assert result["source"]["timezone"] == "America/Denver"
     assert result["window"]["start"] == "2026-01-01T00:00:00Z"
     assert result["window"]["end"] == "2026-01-02T00:00:00Z"
     assert result["adversarialGap"]["removedTimestamps"][0] == "2026-01-01T08:00:00Z"
+    assert result["outputs"]["fileB"] == "checker/demo/file_b.csv"
+    assert result["outputs"]["fileA"] == "checker/demo/file_a.csv"
     assert len(result["adversarialGap"]["removedTimestamps"]) == 7
     assert len(file_b.read_text(encoding="utf-8").splitlines()) == 25
     assert len(file_a.read_text(encoding="utf-8").splitlines()) == 18

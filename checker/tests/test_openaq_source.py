@@ -48,3 +48,15 @@ def test_parse_archive_filters_to_requested_sensor():
     assert parse_archive(payload, sensor_id=101) == [
         ("2026-01-01T01:00:00Z", "11.2"),
     ]
+
+
+def test_parse_archive_filters_to_requested_sensor_with_sensors_id():
+    payload = archive(
+        "datetime,parameter,value,sensors_id\n"
+        "2026-01-01T00:00:00Z,pm25,10.1,100\n"
+        "2026-01-01T01:00:00Z,pm25,11.2,101\n"
+    )
+
+    assert parse_archive(payload, sensor_id=101) == [
+        ("2026-01-01T01:00:00Z", "11.2"),
+    ]

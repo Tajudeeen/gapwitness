@@ -90,11 +90,24 @@ def test_discovery_picks_earliest_sensor_window(monkeypatch: pytest.MonkeyPatch,
     assert json.loads(manifest.read_text(encoding="utf-8")) == result
 
 
+def test_parse_archive_accepts_sensors_id_alias() -> None:
+    payload = archive(
+        "datetime,parameter,value,sensors_id\n"
+        "2026-01-01T00:00:00Z,pm25,10,100\n"
+        "2026-01-01T01:00:00Z,pm25,11,100\n"
+    )
+
+    grouped = parse_archive_by_sensor(payload)
+
+    assert list(grouped) == [100]
+    assert [row[2] for row in grouped[100]] == ["10", "11"]
+
+
 def test_parse_archive_rejects_missing_sensor_column() -> None:
     payload = archive(
         "datetime,parameter,value\n"
         "2026-01-01T00:00:00Z,pm25,10\n"
     )
 
-    with pytest.raises(ValueError, match="missing columns"):
+    with pytest.raises(ValueError, match="sensor ID column"):
         parse_archive_by_sensor(payload)
