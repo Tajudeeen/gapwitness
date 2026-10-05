@@ -11,7 +11,6 @@ permissions:
 jobs:
   deploy:
     if: >
-      github.event.issue.pull_request == null &&
       github.event.comment.user.login == 'Tajudeeen' &&
       github.event.comment.body == '/deploy-sepolia'
     runs-on: ubuntu-latest
