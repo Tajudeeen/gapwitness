@@ -18,17 +18,7 @@ from pathlib import Path
 ARCHIVE = "https://openaq-data-archive.s3.amazonaws.com/records/csv.gz"
 
 
-def fetch(location_id: int, date: str, output: Path) -> int:
-    year, month, day = date.split("-")
-    url = f"{ARCHIVE}/locationid={location_id}/year={year}/month={month}/location-{location_id}-{year}{month}{day}.csv.gz"
-
-    request = urllib.request.Request(
-        url,
-        headers={"User-Agent": "GapWitness/1.0"},
-    )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        payload = response.read()
-
+def parse_archive(payload: bytes) -> list[tuple[str, str]]:
     rows: list[tuple[str, str]] = []
     with gzip.GzipFile(fileobj=io.BytesIO(payload), mode="rb") as stream:
         text = io.TextIOWrapper(stream, encoding="utf-8", newline="")
@@ -43,7 +33,21 @@ def fetch(location_id: int, date: str, output: Path) -> int:
                 continue
             rows.append((row["datetime"], row["value"]))
 
-    rows.sort(key=lambda item: item[0])
+    return sorted(rows, key=lambda item: item[0])
+
+
+def fetch(location_id: int, date: str, output: Path) -> int:
+    year, month, day = date.split("-")
+    url = f"{ARCHIVE}/locationid={location_id}/year={year}/month={month}/location-{location_id}-{year}{month}{day}.csv.gz"
+
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "GapWitness/1.0"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        payload = response.read()
+
+    rows = parse_archive(payload)
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle, lineterminator="\n")
