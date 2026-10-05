@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">GapWitness</title>
+  <desc id="desc">A broken geometric witness mark representing a missing interval.</desc>
+  <defs>
+    <linearGradient id="gw" x1="90" y1="100" x2="420" y2="410" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#10d7c4"/>
+      <stop offset="1" stop-color="#8df05b"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="92" fill="#061816"/>
+  <path d="M338 102 403 167 285 285" fill="none" stroke="url(#gw)" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M285 285 205 365 122 282 203 201" fill="none" stroke="url(#gw)" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M285 285 388 285" fill="none" stroke="url(#gw)" stroke-width="58" stroke-linecap="round"/>
+  <path d="M388 285 327 346" fill="none" stroke="url(#gw)" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="211" y="296" width="48" height="48" rx="9" transform="rotate(-45 235 320)" fill="url(#gw)"/>
+</svg>
