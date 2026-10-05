@@ -6,6 +6,9 @@ on:
       - feat/freeze-real-openaq-data
     paths:
       - .github/workflows/freeze-real-openaq-data.yml
+      - scripts/discover_openaq_window.py
+      - scripts/freeze_openaq_demo.py
+      - scripts/fetch_openaq_day.py
 
 permissions:
   contents: write
