@@ -108,7 +108,9 @@ npm install
 npm run dev
 ```
 
-The current UI can inspect the frozen CSV format locally and visualize missing hours. Wallet connection and on-chain commitment are deliberately not mocked here. They are the next integration milestone after the public Sepolia deployment.
+The web client now sends the uploaded CSV and independently declared window to the production checker API. Set `VITE_CHECKER_URL` in `web/.env` from `web/.env.example` before running locally. The UI renders the checker response, including missing timestamps, verdict, and chain-ready hashes. HTTP 422 validation failures, rate limits, and checker/network failures are surfaced without falling back to fake local verdicts. A checker outage explicitly disables commitment.
+
+Wallet connection and on-chain commitment are deliberately not mocked here. They are the next integration milestone.
 
 ## Sepolia deployment
 
