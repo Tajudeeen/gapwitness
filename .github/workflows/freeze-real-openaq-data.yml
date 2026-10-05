@@ -47,24 +47,22 @@ jobs:
           LICENSE_NAME="US Public Domain"
           TIMEZONE_NAME="America/Denver"
 
-          for _ in 1; do
-            while IFS= read -r DATE; do
-              [ -z "$DATE" ] && continue
-              echo "trying location=$LOCATION_ID date=$DATE"
+          while IFS= read -r DATE; do
+            [ -z "$DATE" ] && continue
+            echo "trying location=$LOCATION_ID date=$DATE"
 
-              rm -rf /tmp/gapwitness-freeze/candidate
-              mkdir -p /tmp/gapwitness-freeze/candidate
+            rm -rf /tmp/gapwitness-freeze/candidate
+            mkdir -p /tmp/gapwitness-freeze/candidate
 
-              if PYTHONPATH=. python scripts/freeze_openaq_demo.py                 --location-id "$LOCATION_ID"                 --date "$DATE"                 --output-dir /tmp/gapwitness-freeze/candidate; then
-                cp /tmp/gapwitness-freeze/candidate/file_a.csv checker/demo/file_a.csv
-                cp /tmp/gapwitness-freeze/candidate/file_b.csv checker/demo/file_b.csv
-                cp /tmp/gapwitness-freeze/candidate/openaq-demo.json data/source/openaq-demo.json
-                echo "selected location=$LOCATION_ID date=$DATE"
-                FOUND=1
-                break 2
-              fi
-            done <<< "$DATES"
-          done
+            if PYTHONPATH=. python scripts/freeze_openaq_demo.py --location-id "$LOCATION_ID" --date "$DATE" --output-dir /tmp/gapwitness-freeze/candidate --location-name "$LOCATION_NAME" --provider "$PROVIDER" --license "$LICENSE_NAME" --timezone "$TIMEZONE_NAME"; then
+              cp /tmp/gapwitness-freeze/candidate/file_a.csv checker/demo/file_a.csv
+              cp /tmp/gapwitness-freeze/candidate/file_b.csv checker/demo/file_b.csv
+              cp /tmp/gapwitness-freeze/candidate/openaq-demo.json data/source/openaq-demo.json
+              echo "selected location=$LOCATION_ID date=$DATE"
+              FOUND=1
+              break
+            fi
+          done <<< "$DATES"
 
           if [ "$FOUND" -ne 1 ]; then
             echo "No complete 24-hour PM2.5 source window found in the search set."
