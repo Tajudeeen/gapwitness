@@ -145,6 +145,8 @@ python scripts/record_sepolia_deployment.py \
 
 Never commit a populated `.env` or a private key. The contract address must come from the real broadcast artifact, never from a placeholder.
 
+For a remote deployment, the repository also includes an owner-only `issue_comment` trigger. On the default branch, the repository owner can comment `/deploy-sepolia` on a normal issue. The workflow uses the existing encrypted `PRIVATE_KEY` secret, falls back to the public Sepolia RPC when `SEPOLIA_RPC_URL` is empty, writes the reviewed deployment record to a separate branch, and comments the resulting address, transaction, and block back onto the issue. The private key is never passed through the issue comment.
+
 ## Reproducible chain demo
 
 After the real Sepolia contract is deployed, generate the exact on-chain inputs from the frozen File A/File B fixtures:
