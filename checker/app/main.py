@@ -1,16 +1,28 @@
 from __future__ import annotations
+from hashlib import sha3_256
 from io import BytesIO
 import pandas as pd
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
-app = FastAPI(title="GapWitness Checker", version="0.1.0")
+app = FastAPI(title="GapWitness Checker", version="0.2.0")
 MAX_FILE_BYTES = 1_000_000
 MAX_WINDOW_HOURS = 24 * 31
 
+# Ethereum uses Keccak-256. Python's hashlib.sha3_256 is NIST SHA-3 and is NOT
+# interchangeable with Ethereum Keccak. The web/contract integration will use
+# a real Keccak implementation when producing on-chain hashes.
+def canonical_gap_text(gaps: list[str]) -> str:
+    return "\n".join(sorted(gaps))
+
+def canonical_gap_hash(gaps: list[str]) -> str:
+    return sha3_256(canonical_gap_text(gaps).encode()).hexdigest()
+
+def series_hash(csv_bytes: bytes) -> str:
+    return sha3_256(csv_bytes).hexdigest()
+
 def _utc(value: str) -> pd.Timestamp:
     ts = pd.to_datetime(value, utc=True, errors="raise")
-    if pd.isna(ts):
-        raise ValueError("INVALID_TIMESTAMP")
+    if pd.isna(ts): raise ValueError("INVALID_TIMESTAMP")
     return ts
 
 def inspect_csv(csv_bytes: bytes, *, station_id: str, window_start: str, window_end: str, series_type: str = "pm25") -> dict:
@@ -33,13 +45,21 @@ def inspect_csv(csv_bytes: bytes, *, station_id: str, window_start: str, window_
     in_window = (timestamps >= start) & (timestamps < end)
     observed = pd.DatetimeIndex(timestamps[in_window])
     missing = expected.difference(observed).sort_values()
-    impossible = []
+    impossible: list[str] = []
     if series_type == "pm25":
-        impossible = [ts.isoformat() for ts in timestamps[in_window][values[in_window] < 0]]
+        impossible = [ts.isoformat().replace("+00:00", "Z") for ts in timestamps[in_window][values[in_window] < 0]]
     elif series_type != "generic":
         raise ValueError("UNSUPPORTED_SERIES_TYPE")
     gaps = [ts.isoformat().replace("+00:00", "Z") for ts in missing]
-    return {"stationId": station_id, "windowStart": start.isoformat().replace("+00:00", "Z"), "windowEnd": end.isoformat().replace("+00:00", "Z"), "seriesType": series_type, "expectedHours": len(expected), "observedHours": len(observed), "missingTimestamps": gaps, "materialGap": len(gaps) > 2, "impossibleTimestamps": impossible, "verdict": "IMPOSSIBLE" if impossible else ("GAPPED" if gaps else "INTACT")}
+    return {
+        "stationId": station_id, "windowStart": start.isoformat().replace("+00:00", "Z"),
+        "windowEnd": end.isoformat().replace("+00:00", "Z"), "seriesType": series_type,
+        "expectedHours": len(expected), "observedHours": len(observed),
+        "missingTimestamps": gaps, "materialGap": len(gaps) > 2,
+        "impossibleTimestamps": impossible,
+        "verdict": "IMPOSSIBLE" if impossible else ("GAPPED" if gaps else "INTACT"),
+        "seriesHashSha3": series_hash(csv_bytes), "gapHashSha3": canonical_gap_hash(gaps),
+    }
 
 @app.get("/health")
 def health(): return {"ok": True}
