@@ -4,9 +4,10 @@ import pandas as pd
 from Crypto.Hash import keccak
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
-app = FastAPI(title="GapWitness Checker", version="0.3.0")
+app = FastAPI(title="GapWitness Checker", version="0.4.0")
 MAX_FILE_BYTES = 1_000_000
 MAX_WINDOW_HOURS = 24 * 31
+POLICY_VERSION = "gapwitness/pm25/hourly/v1"
 
 def keccak256(data: bytes) -> str:
     h = keccak.new(digest_bits=256)
@@ -22,6 +23,16 @@ def canonical_gap_hash(gaps: list[str]) -> str:
 def series_hash(csv_bytes: bytes) -> str:
     return keccak256(csv_bytes)
 
+def policy_hash(series_type: str) -> str:
+    if series_type == "pm25":
+        return keccak256(POLICY_VERSION.encode())
+    if series_type == "generic":
+        return keccak256(b"gapwitness/generic/hourly/v1")
+    raise ValueError("UNSUPPORTED_SERIES_TYPE")
+
+def verdict_code(verdict: str) -> int:
+    return {"INTACT": 0, "GAPPED": 1, "IMPOSSIBLE": 2}[verdict]
+
 def _utc(value: str) -> pd.Timestamp:
     ts = pd.to_datetime(value, utc=True, errors="raise")
     if pd.isna(ts):
@@ -34,6 +45,8 @@ def inspect_csv(csv_bytes: bytes, *, station_id: str, window_start: str, window_
     if len(csv_bytes) > MAX_FILE_BYTES:
         raise ValueError("FILE_TOO_LARGE")
     start, end = _utc(window_start), _utc(window_end)
+    if start.minute or start.second or start.microsecond or end.minute or end.second or end.microsecond:
+        raise ValueError("WINDOW_MUST_ALIGN_TO_HOUR")
     if end <= start:
         raise ValueError("INVALID_WINDOW")
     expected = pd.date_range(start=start, end=end, freq="1h", inclusive="left", tz="UTC")
@@ -68,6 +81,7 @@ def inspect_csv(csv_bytes: bytes, *, station_id: str, window_start: str, window_
     elif series_type != "generic":
         raise ValueError("UNSUPPORTED_SERIES_TYPE")
     gaps = [ts.isoformat().replace("+00:00", "Z") for ts in missing]
+    verdict = "IMPOSSIBLE" if impossible else ("GAPPED" if gaps else "INTACT")
     return {
         "stationId": station_id,
         "windowStart": start.isoformat().replace("+00:00", "Z"),
@@ -78,9 +92,20 @@ def inspect_csv(csv_bytes: bytes, *, station_id: str, window_start: str, window_
         "missingTimestamps": gaps,
         "materialGap": len(gaps) > 2,
         "impossibleTimestamps": impossible,
-        "verdict": "IMPOSSIBLE" if impossible else ("GAPPED" if gaps else "INTACT"),
+        "verdict": verdict,
+        "verdictCode": verdict_code(verdict),
         "seriesHash": "0x" + series_hash(csv_bytes),
         "gapHash": "0x" + canonical_gap_hash(gaps),
+        "policyHash": "0x" + policy_hash(series_type),
+        "chainCommitment": {
+            "stationId": station_id,
+            "windowStart": int(start.timestamp()),
+            "windowEnd": int(end.timestamp()),
+            "seriesHash": "0x" + series_hash(csv_bytes),
+            "gapHash": "0x" + canonical_gap_hash(gaps),
+            "policyHash": "0x" + policy_hash(series_type),
+            "verdict": verdict_code(verdict),
+        },
     }
 
 @app.get("/health")
