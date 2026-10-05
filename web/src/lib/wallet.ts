@@ -61,7 +61,12 @@ export class CommitmentError extends Error {
 }
 
 type EthereumWindow = Window & {
-  ethereum?: Eip1193Provider;
+  ethereum?: Eip1193EventsProvider;
+};
+
+type Eip1193EventsProvider = Eip1193Provider & {
+  on?: (event: string, listener: (...args: unknown[]) => void) => void;
+  removeListener?: (event: string, listener: (...args: unknown[]) => void) => void;
 };
 
 function getInjectedProvider(): BrowserProvider {
@@ -174,6 +179,37 @@ async function findPriorTransaction(
   });
 
   return logs.at(-1)?.transactionHash ?? null;
+}
+
+export function watchWalletEvents(
+  handler: (state: { address: string | null; chainId: bigint | null }) => void,
+): () => void {
+  const ethereum = (window as EthereumWindow).ethereum;
+  if (!ethereum?.on || !ethereum.removeListener) return () => undefined;
+
+  const accountsChanged = (...args: unknown[]) => {
+    const accounts = Array.isArray(args[0]) ? args[0] as string[] : [];
+    handler({
+      address: accounts[0] ?? null,
+      chainId: null,
+    });
+  };
+
+  const chainChanged = (...args: unknown[]) => {
+    const raw = typeof args[0] === "string" ? args[0] : "0x0";
+    handler({
+      address: null,
+      chainId: BigInt(raw),
+    });
+  };
+
+  ethereum.on("accountsChanged", accountsChanged);
+  ethereum.on("chainChanged", chainChanged);
+
+  return () => {
+    ethereum.removeListener?.("accountsChanged", accountsChanged);
+    ethereum.removeListener?.("chainChanged", chainChanged);
+  };
 }
 
 export async function connectWallet(): Promise<{
