@@ -12,6 +12,8 @@ on:
   push:
     branches:
       - 'demo-run/**'
+  pull_request:
+    types: [opened]
 
 permissions:
   contents: read
@@ -20,6 +22,11 @@ permissions:
 jobs:
   demo:
     if: >-
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.user.login == 'Tajudeeen' &&
+        startsWith(github.event.pull_request.head.ref, 'demo-run/')
+      ) ||
       (
         github.event_name == 'push' &&
         github.actor == 'Tajudeeen' &&
