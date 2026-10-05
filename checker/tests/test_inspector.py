@@ -76,3 +76,42 @@ def test_window_must_align_to_hour():
         inspect_csv(csv("2026-01-01T00:30:00Z,1\n"),station_id="demo",window_start="2026-01-01T00:30:00Z",window_end="2026-01-01T02:00:00Z")
     except ValueError as exc: assert str(exc)=="WINDOW_MUST_ALIGN_TO_HOUR"
     else: raise AssertionError("unaligned windows must fail")
+
+
+import pytest
+
+@pytest.mark.parametrize("value", ["inf", "-inf", "Infinity", "NaN"])
+def test_nonfinite_measurements_rejected(value):
+    with pytest.raises(ValueError, match="INVALID_VALUE"):
+        inspect_csv(csv(f"2026-01-01T00:00:00Z,{value}\n"),
+                    station_id="demo", window_start=START, window_end=END)
+
+@pytest.mark.parametrize("timestamp", ["2026-01-01T00:30:00Z", "2026-01-01T00:00:00.000000001Z"])
+def test_off_hour_observations_rejected(timestamp):
+    with pytest.raises(ValueError, match="TIMESTAMP_MUST_ALIGN_TO_HOUR"):
+        inspect_csv(csv(f"{timestamp},1\n"), station_id="demo",
+                    window_start=START, window_end=END)
+
+def test_nanosecond_window_rejected():
+    with pytest.raises(ValueError, match="WINDOW_MUST_ALIGN_TO_HOUR"):
+        inspect_csv(csv("2026-01-01T00:00:00Z,1\n"), station_id="demo",
+                    window_start="2026-01-01T00:00:00.000000001Z", window_end=END)
+
+def test_empty_observation_window_is_error():
+    with pytest.raises(ValueError, match="NO_OBSERVATIONS_IN_WINDOW"):
+        inspect_csv(csv("2025-12-31T00:00:00Z,1\n"), station_id="demo",
+                    window_start=START, window_end=END)
+
+def test_wide_window_rejected_before_range_allocation(monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError("wide windows must be rejected before allocation")
+    monkeypatch.setattr("app.main.pd.date_range", forbidden)
+    with pytest.raises(ValueError, match="WINDOW_TOO_WIDE"):
+        inspect_csv(csv("2026-01-01T00:00:00Z,1\n"), station_id="demo",
+                    window_start=START, window_end="2200-01-01T00:00:00Z")
+
+def test_maximum_window_accepted():
+    result = inspect_csv(csv("2026-01-01T00:00:00Z,1\n"), station_id="demo",
+                         window_start=START, window_end="2026-02-01T00:00:00Z")
+    assert result["expectedHours"] == 744
+    assert result["observedHours"] == 1
