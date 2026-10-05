@@ -1,0 +1,44 @@
+{
+  "schema": "gapwitness/openaq-demo/v1",
+  "source": {
+    "sourceUrl": "https://openaq-data-archive.s3.amazonaws.com/records/csv.gz/locationid=2178/year=2026/month=09/location-2178-20260919.csv.gz",
+    "locationId": 2178,
+    "sensorId": 3920,
+    "date": "2026-09-19",
+    "archiveSha256": "01a5fcb88575e348712846687ec067ad31e725a365e8d39a066fefcb1507b76f",
+    "acquisitionDateUtc": "2026-10-05"
+  },
+  "parameter": "pm25",
+  "window": {
+    "start": "2026-09-19T07:00:00Z",
+    "end": "2026-09-20T07:00:00Z",
+    "hours": 24,
+    "timestampConvention": "exclusive-time-ending"
+  },
+  "selection": {
+    "algorithm": "earliest-complete-sensor-window",
+    "candidateCount": 1,
+    "sensorId": 3920
+  },
+  "adversarialGap": {
+    "operation": "remove_hourly_rows",
+    "gapStart": "2026-09-19T15:00:00Z",
+    "removeHours": 7,
+    "removedTimestamps": [
+      "2026-09-19T15:00:00Z",
+      "2026-09-19T16:00:00Z",
+      "2026-09-19T17:00:00Z",
+      "2026-09-19T18:00:00Z",
+      "2026-09-19T19:00:00Z",
+      "2026-09-19T20:00:00Z",
+      "2026-09-19T21:00:00Z"
+    ]
+  },
+  "outputs": {
+    "fileB": "/tmp/gapwitness-freeze/candidate/file_b.csv",
+    "fileBSha256": "72e6d8a3d929443aa027fa51b7e5608221a25c43ba1dc305b7149bd96c100d6d",
+    "fileA": "/tmp/gapwitness-freeze/candidate/file_a.csv",
+    "fileASha256": "9da85a79b24b034501bcfe57b148e7993cbc793d8ca90f7221fedeac2778509a"
+  },
+  "integrityNote": "File B contains the selected source-window rows without measurement changes. File A is derived only by removing the listed hourly rows."
+}
