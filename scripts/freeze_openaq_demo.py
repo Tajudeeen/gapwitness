@@ -44,6 +44,10 @@ def freeze(
     output_dir: Path,
     remove_offset_hours: int = 8,
     remove_hours: int = 7,
+    location_name: str | None = None,
+    provider: str | None = None,
+    license_name: str | None = None,
+    timezone_name: str | None = None,
 ) -> dict:
     if remove_offset_hours < 0 or remove_hours <= 0:
         raise ValueError("gap offset must be non-negative and remove-hours positive")
@@ -87,8 +91,12 @@ def freeze(
         "source": {
             "sourceUrl": url,
             "locationId": location_id,
+            "locationName": location_name,
             "sensorId": sensor_id,
             "date": date,
+            "provider": provider,
+            "license": license_name,
+            "timezone": timezone_name,
             "archiveSha256": hashlib.sha256(payload).hexdigest(),
             "acquisitionDateUtc": __import__("datetime").datetime.now(
                 __import__("datetime").timezone.utc
@@ -139,6 +147,10 @@ def main() -> None:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--remove-offset-hours", type=int, default=8)
     parser.add_argument("--remove-hours", type=int, default=7)
+    parser.add_argument("--location-name")
+    parser.add_argument("--provider")
+    parser.add_argument("--license", dest="license_name")
+    parser.add_argument("--timezone", dest="timezone_name")
     args = parser.parse_args()
 
     result = freeze(
@@ -147,6 +159,10 @@ def main() -> None:
         output_dir=args.output_dir,
         remove_offset_hours=args.remove_offset_hours,
         remove_hours=args.remove_hours,
+        location_name=args.location_name,
+        provider=args.provider,
+        license_name=args.license_name,
+        timezone_name=args.timezone_name,
     )
     print(json.dumps(result, indent=2))
 
