@@ -1,0 +1,92 @@
+name: freeze-real-openaq-data
+
+on:
+  push:
+    branches:
+      - feat/freeze-real-openaq-data
+    paths:
+      - .github/workflows/freeze-real-openaq-data.yml
+
+permissions:
+  contents: write
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/freeze-real-openaq-data
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Search real OpenAQ archive days
+        shell: bash
+        run: |
+          set -u
+
+          FOUND=0
+          mkdir -p /tmp/gapwitness-freeze
+          DATES="$(python - <<'PY'
+          from datetime import date, timedelta
+          start = date(2026, 9, 30)
+          for offset in range(30):
+              print((start - timedelta(days=offset)).isoformat())
+          PY
+          )"
+
+          for LOCATION_ID in 2178 8118; do
+            while IFS= read -r DATE; do
+              [ -z "$DATE" ] && continue
+              echo "trying location=$LOCATION_ID date=$DATE"
+
+              rm -rf /tmp/gapwitness-freeze/candidate
+              mkdir -p /tmp/gapwitness-freeze/candidate
+
+              if PYTHONPATH=. python scripts/freeze_openaq_demo.py                 --location-id "$LOCATION_ID"                 --date "$DATE"                 --output-dir /tmp/gapwitness-freeze/candidate; then
+                cp /tmp/gapwitness-freeze/candidate/file_a.csv checker/demo/file_a.csv
+                cp /tmp/gapwitness-freeze/candidate/file_b.csv checker/demo/file_b.csv
+                cp /tmp/gapwitness-freeze/candidate/openaq-demo.json data/source/openaq-demo.json
+                echo "selected location=$LOCATION_ID date=$DATE"
+                FOUND=1
+                break 2
+              fi
+            done <<< "$DATES"
+          done
+
+          if [ "$FOUND" -ne 1 ]; then
+            echo "No complete 24-hour PM2.5 source window found in the search set."
+            exit 1
+          fi
+
+      - name: Derive impossible fixture
+        shell: bash
+        run: |
+          TARGET_TIMESTAMP="$(python - <<'PY'
+          import csv
+          with open("checker/demo/file_b.csv", newline="", encoding="utf-8") as handle:
+              rows = list(csv.DictReader(handle))
+          print(rows[len(rows) // 2]["timestamp"])
+          PY
+          )"
+
+          PYTHONPATH=. python scripts/derive_impossible_fixture.py             --source checker/demo/file_b.csv             --output checker/demo/file_c_impossible.csv             --timestamp "$TARGET_TIMESTAMP"             --value "-1"             --manifest data/source/openaq-impossible.json
+
+      - name: Commit frozen fixtures
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add             checker/demo/file_a.csv             checker/demo/file_b.csv             checker/demo/file_c_impossible.csv             data/source/openaq-demo.json             data/source/openaq-impossible.json
+
+          git diff --cached --quiet && {
+            echo "No fixture changes to commit."
+            exit 0
+          }
+
+          git commit -m "data: freeze real OpenAQ demo fixtures"
+          git push origin HEAD:feat/freeze-real-openaq-data
