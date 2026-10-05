@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 contract GapWitness {
     error GapPaperedOver(bytes32 priorGap, bytes32 nextGap);
+    error SeriesChanged(bytes32 priorSeries, bytes32 nextSeries);
     error WindowTooWide();
     error EmptySeries();
     error InvalidHourBoundary();
@@ -52,8 +53,13 @@ contract GapWitness {
         bytes32 key = keccak256(abi.encode(stationId, windowStart, windowEnd));
         Commitment memory prior = commitments[key];
 
-        if (prior.seriesHash != bytes32(0) && prior.gapHash != gapHash) {
-            revert GapPaperedOver(prior.gapHash, gapHash);
+        if (prior.seriesHash != bytes32(0)) {
+            if (prior.gapHash != gapHash) {
+                revert GapPaperedOver(prior.gapHash, gapHash);
+            }
+            if (prior.seriesHash != seriesHash || prior.policyHash != policyHash || prior.verdict != verdict) {
+                revert SeriesChanged(prior.seriesHash, seriesHash);
+            }
         }
 
         commitments[key] = Commitment(
