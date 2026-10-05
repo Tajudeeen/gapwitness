@@ -25,8 +25,9 @@ def test_finds_earliest_complete_window(tmp_path: Path) -> None:
     source = tmp_path / "source.csv"
     output = tmp_path / "window.csv"
     manifest = tmp_path / "manifest.json"
+    base = datetime(2026, 1, 1, tzinfo=timezone.utc)
     rows = [
-        f"2026-01-01T{hour:02d}:00:00Z,{hour + 1}\n"
+        f"{(base + timedelta(hours=hour)).isoformat().replace('+00:00', 'Z')},{hour + 1}\n"
         for hour in range(30)
         if hour != 6
     ]
@@ -68,7 +69,8 @@ def test_skips_incomplete_candidate_and_selects_next_complete_window() -> None:
     start, selected = find_first_complete_window(rows, 4)
 
     assert start.isoformat() == "2026-01-01T03:00:00+00:00"
-    assert [row[1] for row in selected] == [
+    assert [row[1] for row in selected] == ["3", "4", "5", "6"]
+    assert [row[2] for row in selected] == [
         "2026-01-01T03:00:00Z",
         "2026-01-01T04:00:00Z",
         "2026-01-01T05:00:00Z",
