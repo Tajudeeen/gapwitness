@@ -96,6 +96,30 @@ python scripts/derive_openaq_fixtures.py \
 
 The discovery command chooses a candidate. The fetch/select/derive steps are still the point where the actual source bytes and generated hashes are frozen into the submission record.
 
+## Sepolia deployment
+
+The contract deployment is intentionally separated from normal CI. `contracts/script/DeployGapWitness.s.sol` reads the deployer key from `PRIVATE_KEY`, and the deployment workflow accepts `SEPOLIA_RPC_URL`, `PRIVATE_KEY`, and `ETHERSCAN_API_KEY` only as GitHub environment secrets.
+
+Dry-run first:
+
+```bash
+cd contracts
+forge script script/DeployGapWitness.s.sol:DeployGapWitness --rpc-url "$SEPOLIA_RPC_URL"
+```
+
+Broadcast and verify only after the dry-run is clean:
+
+```bash
+forge script script/DeployGapWitness.s.sol:DeployGapWitness \
+  --rpc-url "$SEPOLIA_RPC_URL" \
+  --private-key "$PRIVATE_KEY" \
+  --broadcast \
+  --verify \
+  --etherscan-api-key "$ETHERSCAN_API_KEY"
+```
+
+Foundry documents the same dry-run/broadcast separation for deployments. Never commit a populated `.env` or a private key. After a successful deployment, record the contract address, deployment transaction, block number, deployer, verification state, and deployment commit under `contracts/deployments/`.
+
 ## On-chain commitment rule
 
 A commitment is immutable for an exact station and UTC observation window. Re-submitting the identical series hash, gap hash, policy hash, and verdict is allowed. Changing any of those fields for an already committed window is rejected. A different gap specifically reverts with `GapPaperedOver` so the demo can expose a later attempt to paper over missing hours.
