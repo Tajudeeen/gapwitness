@@ -123,18 +123,27 @@ cd contracts
 forge script script/DeployGapWitness.s.sol:DeployGapWitness --rpc-url "$SEPOLIA_RPC_URL"
 ```
 
-Broadcast and verify only after the dry-run is clean:
+The recommended live path is the `deploy-sepolia` GitHub Actions workflow. It uses the `sepolia` environment secrets, runs the dry-run first, broadcasts without verification, records the exact deployed address/transaction/block, and then optionally verifies the source on Etherscan. The final deployment JSON is uploaded as a workflow artifact so it can be reviewed before the address is wired into the web app.
+
+For a local broadcast, run:
 
 ```bash
 forge script script/DeployGapWitness.s.sol:DeployGapWitness \
   --rpc-url "$SEPOLIA_RPC_URL" \
   --private-key "$PRIVATE_KEY" \
-  --broadcast \
-  --verify \
-  --etherscan-api-key "$ETHERSCAN_API_KEY"
+  --broadcast
 ```
 
-Foundry documents the same dry-run/broadcast separation for deployments. Never commit a populated `.env` or a private key. After a successful deployment, record the contract address, deployment transaction, block number, deployer, verification state, and deployment commit under `contracts/deployments/`.
+Then create the reviewed deployment record from Foundry's broadcast artifact:
+
+```bash
+python scripts/record_sepolia_deployment.py \
+  --broadcast contracts/broadcast/DeployGapWitness.s.sol/11155111/run-latest.json \
+  --output contracts/deployments/sepolia.json \
+  --deployment-commit <GIT_COMMIT>
+```
+
+Never commit a populated `.env` or a private key. The contract address must come from the real broadcast artifact, never from a placeholder.
 
 ## On-chain commitment rule
 
