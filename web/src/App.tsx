@@ -1,57 +1,157 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
+import {
+  CHECKER_URL,
+  checkHealth,
+  inspectCsv,
+  type CheckResult,
+  type Verdict,
+} from "./lib/checker";
 
-type Verdict = "INTACT" | "GAPPED" | "IMPOSSIBLE" | null;
 type Point = { timestamp: string; value: number };
 
-const DEMO_POINTS: Point[] = Array.from({ length: 24 }, (_, i) => ({
-  timestamp: new Date(Date.UTC(2026, 8, 19, 7 + i)).toISOString(),
-  value: 8 + Math.sin(i / 2.7) * 3 + i * 0.08,
-}));
+const DEFAULT_STATION = "2178";
+const DEFAULT_WINDOW_START = "2026-09-19T07:00:00Z";
+const DEFAULT_WINDOW_END = "2026-09-20T07:00:00Z";
 
-const DEMO_GAPS = [15, 16, 17, 18, 19, 20, 21];
+function parseChartPoints(csv: string): Point[] {
+  const rows = csv.trim().split(/\r?\n/);
+  if (rows.length < 2) return [];
+
+  const header = rows[0].split(",").map(value => value.trim().toLowerCase());
+  const timestampIndex = header.indexOf("timestamp");
+  const valueIndex = header.indexOf("value");
+  if (timestampIndex < 0 || valueIndex < 0) return [];
+
+  return rows.slice(1).flatMap(line => {
+    const fields = line.split(",");
+    const timestamp = fields[timestampIndex]?.trim();
+    const value = Number(fields[valueIndex]?.trim());
+    if (!timestamp || !Number.isFinite(value)) return [];
+    const parsed = new Date(timestamp);
+    if (Number.isNaN(parsed.getTime())) return [];
+    return [{ timestamp: parsed.toISOString(), value }];
+  });
+}
+
+function errorMessage(status: number, code: string): string {
+  if (status === 429) {
+    return "Inspect is rate-limited. Try again after the checker window resets.";
+  }
+  if (status === 422) {
+    return `Inspection rejected: ${code}`;
+  }
+  return `Inspection failed: ${code}`;
+}
+
+function formatWindowLabel(start: string, end: string): string {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return "invalid window";
+  }
+  const hours = Math.round((endDate.getTime() - startDate.getTime()) / 3600000);
+  return `${hours} hours / UTC`;
+}
 
 function App() {
   const [file, setFile] = useState<File | null>(null);
-  const [points, setPoints] = useState<Point[]>(DEMO_POINTS);
-  const [gaps, setGaps] = useState<number[]>(DEMO_GAPS);
-  const [verdict, setVerdict] = useState<Verdict>("GAPPED");
+  const [points, setPoints] = useState<Point[]>([]);
+  const [result, setResult] = useState<CheckResult | null>(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("Demo fixture loaded. Seven hours are missing.");
-  const [station, setStation] = useState("2178 / Del Norte");
-  const [startHour, setStartHour] = useState(7);
+  const [checkerState, setCheckerState] = useState<"checking" | "ready" | "offline">("checking");
+  const [message, setMessage] = useState("Connect to the checker, then inspect a CSV.");
+  const [station, setStation] = useState(DEFAULT_STATION);
+  const [windowStart, setWindowStart] = useState(DEFAULT_WINDOW_START);
+  const [windowEnd, setWindowEnd] = useState(DEFAULT_WINDOW_END);
 
-  const max = useMemo(() => Math.max(...points.map(p => p.value), 1), [points]);
+  useEffect(() => {
+    const controller = new AbortController();
+    checkHealth(controller.signal)
+      .then(ok => {
+        setCheckerState(ok ? "ready" : "offline");
+        setMessage(ok ? "Checker is online. Upload a CSV to inspect it." : "Inspect is offline. Commitment is disabled.");
+      })
+      .catch(() => {
+        setCheckerState("offline");
+        setMessage("Inspect is offline. Commitment is disabled.");
+      });
+    return () => controller.abort();
+  }, []);
+
+  const max = useMemo(
+    () => Math.max(...points.map(point => point.value), 1),
+    [points],
+  );
+
+  const chartWindowStart = useMemo(() => new Date(
+    result?.windowStart ?? windowStart,
+  ).getTime(), [result?.windowStart, windowStart]);
+
+  const chartWindowEnd = useMemo(() => new Date(
+    result?.windowEnd ?? windowEnd,
+  ).getTime(), [result?.windowEnd, windowEnd]);
+
+  const segments = useMemo(() => {
+    const sorted = [...points].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+    const grouped: Point[][] = [];
+    for (const point of sorted) {
+      const last = grouped[grouped.length - 1];
+      const previous = last?.[last.length - 1];
+      if (!last || !previous ||
+        new Date(point.timestamp).getTime() - new Date(previous.timestamp).getTime() > 3600000) {
+        grouped.push([point]);
+      } else {
+        last.push(point);
+      }
+    }
+    return grouped;
+  }, [points]);
 
   async function inspect(upload: File) {
     setBusy(true);
+    setResult(null);
+    setPoints([]);
     setMessage("Inspecting bytes against the declared hourly window…");
+
     try {
-      const text = await upload.text();
-      const lines = text.trim().split(/\r?\n/).slice(1);
-      const parsed = lines.map(line => {
-        const [timestamp, value] = line.split(",");
-        return { timestamp, value: Number(value) };
-      }).filter(p => p.timestamp && Number.isFinite(p.value));
-      if (!parsed.length) throw new Error("No valid timestamp,value rows found.");
-      const start = new Date(parsed[0].timestamp);
-      const end = new Date(start.getTime() + 24 * 3600_000);
-      const expected = new Set(Array.from({ length: 24 }, (_, i) =>
-        new Date(start.getTime() + i * 3600_000).toISOString()
-      ));
-      const observed = new Set(parsed.map(p => new Date(p.timestamp).toISOString()));
-      const missing = [...expected].filter(ts => !observed.has(ts));
-      const impossible = parsed.some(p => p.value < 0);
-      setPoints(parsed);
-      setGaps(missing.map(ts => Math.round((new Date(ts).getTime() - start.getTime()) / 3600_000)));
-      setStartHour(start.getUTCHours());
-      setStation(station);
-      setVerdict(impossible ? "IMPOSSIBLE" : missing.length ? "GAPPED" : "INTACT");
-      setMessage(`${parsed.length} observations inspected against 24 expected UTC hours.`);
-      void end;
+      const csvText = await upload.text();
+      const next = await inspectCsv({
+        stationId: station.trim(),
+        windowStart,
+        windowEnd,
+        seriesType: "pm25",
+        csv: upload,
+      });
+
+      setResult(next);
+      setPoints(parseChartPoints(csvText));
+      setCheckerState("ready");
+      setMessage(
+        next.verdict === "GAPPED"
+          ? `${next.observedHours}/${next.expectedHours} observations verified. ${next.missingTimestamps.length} hours are missing.`
+          : next.verdict === "IMPOSSIBLE"
+            ? "The checker found a policy violation in the submitted series."
+            : "All expected observations are present in the declared window.",
+      );
     } catch (error) {
-      setVerdict(null);
-      setMessage(error instanceof Error ? error.message : "Inspection failed.");
+      setResult(null);
+      setPoints([]);
+
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "status" in error &&
+        "code" in error
+      ) {
+        const checkerError = error as { status: number; code: string };
+        setMessage(errorMessage(checkerError.status, checkerError.code));
+      } else {
+        setCheckerState("offline");
+        setMessage("Inspect is offline. Commitment is disabled.");
+      }
     } finally {
       setBusy(false);
     }
@@ -59,10 +159,9 @@ function App() {
 
   function onFileChange(event: ChangeEvent<HTMLInputElement>) {
     const next = event.target.files?.[0];
-    if (next) {
-      setFile(next);
-      void inspect(next);
-    }
+    if (!next) return;
+    setFile(next);
+    void inspect(next);
   }
 
   const chartWidth = 920;
@@ -73,6 +172,24 @@ function App() {
   const bottom = 44;
   const innerW = chartWidth - left - right;
   const innerH = chartHeight - top - bottom;
+  const span = Math.max(chartWindowEnd - chartWindowStart, 1);
+
+  function xFor(timestamp: string): number {
+    const time = new Date(timestamp).getTime();
+    return left + ((time - chartWindowStart) / span) * innerW;
+  }
+
+  function yFor(value: number): number {
+    return top + innerH - (value / max) * innerH * 0.88;
+  }
+
+  const ticks = useMemo(() => {
+    const start = new Date(result?.windowStart ?? windowStart);
+    return [0, 6, 12, 18].map(offset => {
+      const value = new Date(start.getTime() + offset * 3600000);
+      return { offset, label: `${String(value.getUTCHours()).padStart(2, "0")}:00` };
+    });
+  }, [result?.windowStart, windowStart]);
 
   return (
     <main className="lab">
@@ -82,32 +199,58 @@ function App() {
           <h1>witness the hours that were missing.</h1>
           <p className="dek">Temporal integrity for environmental time series. The checker decides. The chain remembers.</p>
         </div>
-        <div className="status"><span className="dot" /> checker ready</div>
+        <div className={`status ${checkerState}`}>
+          <span className="dot" />
+          {checkerState === "checking" ? "checking checker" : checkerState === "ready" ? "checker ready" : "checker offline"}
+        </div>
       </header>
 
       <section className="workspace">
         <aside className="rail">
           <div className="field">
             <label>station</label>
-            <input value={station} onChange={e => setStation(e.target.value)} />
+            <input value={station} onChange={event => setStation(event.target.value)} />
           </div>
+
           <div className="field">
             <label>series</label>
             <div className="readout">PM2.5 / µg/m³</div>
           </div>
+
+          <div className="field">
+            <label>window start</label>
+            <input
+              value={windowStart}
+              onChange={event => setWindowStart(event.target.value)}
+              aria-label="Observation window start"
+            />
+          </div>
+
+          <div className="field">
+            <label>window end</label>
+            <input
+              value={windowEnd}
+              onChange={event => setWindowEnd(event.target.value)}
+              aria-label="Observation window end"
+            />
+          </div>
+
           <div className="field">
             <label>window</label>
-            <div className="readout">24 hours / UTC</div>
+            <div className="readout">{formatWindowLabel(windowStart, windowEnd)}</div>
           </div>
+
           <div className="field">
             <label>source</label>
             <div className="readout">OpenAQ archive</div>
           </div>
+
           <label className="upload">
             <input type="file" accept=".csv,text/csv" onChange={onFileChange} />
             <strong>{file ? file.name : "inspect a CSV"}</strong>
             <span>1 MB max · timestamp,value</span>
           </label>
+
           <p className="message">{busy ? "● " : ""}{message}</p>
         </aside>
 
@@ -115,66 +258,131 @@ function App() {
           <div className="panel-head">
             <div>
               <span className="kicker">HOURLY OBSERVATION STRIP</span>
-              <h2>PM2.5 · {station}</h2>
+              <h2>PM2.5 · {result?.stationId ?? station}</h2>
             </div>
             <span className="timezone">UTC</span>
           </div>
 
           <div className="chart-wrap">
             <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label="Hourly PM2.5 observations">
-              <line x1={left} y1={top + innerH} x2={chartWidth-right} y2={top+innerH} className="axis" />
-              {[0, .5, 1].map(t => <line key={t} x1={left} y1={top + innerH*t} x2={chartWidth-right} y2={top + innerH*t} className="grid" />)}
-              {gaps.map(hour => {
-                const x = left + (hour / 24) * innerW;
-                const w = innerW / 24;
-                return <rect key={hour} x={x} y={top} width={w} height={innerH} className="gap-band" />;
+              <line x1={left} y1={top + innerH} x2={chartWidth - right} y2={top + innerH} className="axis" />
+              {[0, 0.5, 1].map(t => (
+                <line
+                  key={t}
+                  x1={left}
+                  y1={top + innerH * t}
+                  x2={chartWidth - right}
+                  y2={top + innerH * t}
+                  className="grid"
+                />
+              ))}
+
+              {(result?.missingTimestamps ?? []).map(timestamp => {
+                const x = xFor(timestamp);
+                const width = innerW / Math.max(result?.expectedHours ?? 24, 1);
+                return <rect key={timestamp} x={x} y={top} width={width} height={innerH} className="gap-band" />;
               })}
-              <polyline
-                fill="none"
-                className="line"
-                points={points.map((p, i) => {
-                  const x = left + (i / 23) * innerW;
-                  const y = top + innerH - (p.value / max) * innerH * .88;
-                  return `${x},${y}`;
-                }).join(" ")}
-              />
-              {points.map((p, i) => {
-                const x = left + (i / Math.max(points.length - 1, 1)) * innerW;
-                const y = top + innerH - (p.value / max) * innerH * .88;
-                return <circle key={p.timestamp} cx={x} cy={y} r="3" className="point"><title>{new Date(p.timestamp).toISOString()} · {p.value.toFixed(2)} µg/m³</title></circle>;
+
+              {segments.map(segment => (
+                <polyline
+                  key={segment[0].timestamp}
+                  fill="none"
+                  className="line"
+                  points={segment.map(point => `${xFor(point.timestamp)},${yFor(point.value)}`).join(" ")}
+                />
+              ))}
+
+              {points.map(point => {
+                const x = xFor(point.timestamp);
+                const y = yFor(point.value);
+                return (
+                  <circle key={point.timestamp} cx={x} cy={y} r="3" className="point">
+                    <title>{point.timestamp} · {point.value.toFixed(2)} µg/m³</title>
+                  </circle>
+                );
               })}
-              {[0, 6, 12, 18, 23].map(i => <text key={i} x={left + (i/23)*innerW} y={chartHeight-15} textAnchor="middle" className="tick">{String((startHour+i)%24).padStart(2,"0")}:00</text>)}
+
+              {ticks.map(tick => (
+                <text
+                  key={tick.offset}
+                  x={left + (tick.offset / Math.max((result?.expectedHours ?? 24) - 1, 1)) * innerW}
+                  y={chartHeight - 15}
+                  textAnchor="middle"
+                  className="tick"
+                >
+                  {tick.label}
+                </text>
+              ))}
             </svg>
           </div>
 
           <div className="strip-meta">
             <span>red bands = missing observations</span>
             <span>points = submitted observations</span>
-            <span>window = independently declared</span>
+            <span>verdict = checker output</span>
           </div>
 
-          <div className={`verdict ${verdict?.toLowerCase() ?? "none"}`}>
+          <div className={`verdict ${result?.verdict?.toLowerCase() ?? "none"}`}>
             <div>
               <span className="kicker">CHECKER VERDICT</span>
-              <strong>{verdict ?? "—"}</strong>
+              <strong>{result?.verdict ?? "—"}</strong>
             </div>
             <div className="verdict-copy">
-              {verdict === "GAPPED" && <><b>{gaps.length} missing hours.</b> The later window cannot erase this evidence.</>}
-              {verdict === "INTACT" && <><b>All expected hours present.</b> No temporal gap detected in this window.</>}
-              {verdict === "IMPOSSIBLE" && <><b>Impossible measurement.</b> The PM2.5 policy rejects a negative value.</>}
-              {!verdict && <>Run an inspection to produce evidence.</>}
+              {result?.verdict === "GAPPED" && (
+                <><b>{result.missingTimestamps.length} missing hours.</b> {result.materialGap ? "This is a material gap." : "The declared window contains a gap."}</>
+              )}
+              {result?.verdict === "INTACT" && (
+                <><b>All expected hours present.</b> No temporal gap detected in this window.</>
+              )}
+              {result?.verdict === "IMPOSSIBLE" && (
+                <><b>{result.impossibleTimestamps.length} impossible observation{result.impossibleTimestamps.length === 1 ? "" : "s"}.</b> The PM2.5 policy rejects negative values.</>
+              )}
+              {!result && <>Run the checker to produce deterministic evidence.</>}
             </div>
           </div>
+
+          {result && (
+            <section className="evidence">
+              <div>
+                <span className="kicker">EVIDENCE HASHES</span>
+                <h3>the bytes become proof material.</h3>
+              </div>
+              <div className="hash-list">
+                {[
+                  ["seriesHash", result.seriesHash],
+                  ["gapHash", result.gapHash],
+                  ["policyHash", result.policyHash],
+                ].map(([label, value]) => (
+                  <div className="hash-row" key={label}>
+                    <span>{label}</span>
+                    <code title={value}>{value}</code>
+                    <button
+                      type="button"
+                      onClick={() => void navigator.clipboard?.writeText(value)}
+                      aria-label={`Copy ${label}`}
+                    >
+                      copy
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <div className="commit-row">
             <div>
               <span className="kicker">NEXT</span>
-              <p>Inspect first. Commit only after the deterministic verdict is visible.</p>
+              <p>{result ? "Evidence is ready. Wallet commitment is the next milestone." : "Inspect first. Commit only after the deterministic verdict is visible."}</p>
             </div>
-            <button disabled={!verdict || busy} onClick={() => setMessage("Wallet connection and Sepolia commitment arrive in the next milestone.")}>
+            <button
+              disabled={!result || checkerState !== "ready" || busy}
+              onClick={() => setMessage("Wallet connection and Sepolia commitment arrive in the next milestone.")}
+            >
               commit evidence →
             </button>
           </div>
+
+          <p className="endpoint-note">checker: {CHECKER_URL}</p>
         </section>
       </section>
 
