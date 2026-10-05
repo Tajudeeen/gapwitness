@@ -34,6 +34,14 @@ Before a source file is promoted into the demo, record:
 
 See `data/source/openaq.md` for the source record template.
 
+### Frozen demo source
+
+The current demo is frozen from the OpenAQ archive object for location **2178 (Del Norte)** on **September 19, 2026**, using PM2.5 sensor **3920**. The checker window is **2026-09-19T07:00:00Z through 2026-09-20T07:00:00Z**.
+
+The source provider is **AirNow** and the location license is **US Public Domain**. The archive object SHA-256, exact source URL, acquisition date, sensor ID, and fixture hashes are recorded in `data/source/openaq-demo.json`.
+
+File A removes exactly seven UTC hours, **15:00Z through 21:00Z**, from the frozen source window. It is intentionally adversarial. It is not a claim that OpenAQ originally published a naturally gapped record.
+
 ### Reproducible demo fixtures
 
 Do not hand-edit the OpenAQ demo CSVs.
