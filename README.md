@@ -42,6 +42,10 @@ The derivation requires a complete UTC hourly window. File B contains the select
 
 This distinction matters: File A is an adversarial derivative of a real source window. It must not be described as a naturally gapped OpenAQ record unless the upstream archive itself actually contains that gap.
 
+## On-chain commitment rule
+
+A commitment is immutable for an exact station and UTC observation window. Re-submitting the identical series hash, gap hash, policy hash, and verdict is allowed. Changing any of those fields for an already committed window is rejected. A different gap specifically reverts with `GapPaperedOver` so the demo can expose a later attempt to paper over missing hours.
+
 ## Verdicts
 
 - `INTACT` - every expected hourly timestamp is present and no hard physical rule is violated.
