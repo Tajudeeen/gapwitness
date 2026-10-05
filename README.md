@@ -34,6 +34,14 @@ Before a source file is promoted into the demo, record:
 
 See `data/source/openaq.md` for the source record template.
 
+### Reproducible demo fixtures
+
+Do not hand-edit the OpenAQ demo CSVs. First fetch a complete PM2.5 source day with `scripts/fetch_openaq_day.py`, then derive the adversarial pair with `scripts/derive_openaq_fixtures.py`.
+
+The derivation requires a complete UTC hourly window. File B contains the selected source rows. File A is created only by removing the explicitly listed hours. The manifest records the normalized source SHA-256, window, removed timestamps, and output hashes.
+
+This distinction matters: File A is an adversarial derivative of a real source window. It must not be described as a naturally gapped OpenAQ record unless the upstream archive itself actually contains that gap.
+
 ## Verdicts
 
 - `INTACT` - every expected hourly timestamp is present and no hard physical rule is violated.
