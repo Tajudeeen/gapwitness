@@ -549,3 +549,244 @@ a:focus-visible,button:focus-visible,input:focus-visible{
   .splash-logo,.splash-progress span{animation:none}
   .splash-progress span{width:100%}
 }
+
+/* evidence experience */
+.hero-actions{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-top:24px;
+}
+.hero-actions span{font:9px "DM Mono";color:#81786d}
+.demo-button,.rail-demo{
+  border:1px solid #201d19;
+  background:#201d19;
+  color:#f5efe5;
+  padding:11px 14px;
+  font:600 9px "DM Mono";
+  letter-spacing:.06em;
+  cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.demo-button:hover:not(:disabled),.rail-demo:hover:not(:disabled){
+  transform:translateY(-1px);
+  box-shadow:0 7px 18px rgba(32,29,25,.14);
+  background:#332e28;
+}
+.demo-button:disabled,.rail-demo:disabled{opacity:.4;cursor:not-allowed}
+.rail-demo{
+  width:100%;
+  margin-top:4px;
+  background:transparent;
+  color:#201d19;
+}
+.rail-demo:hover:not(:disabled){color:#f5efe5}
+.evidence-timeline{
+  margin-top:20px;
+  border:1px solid #c1b8a9;
+  background:#f2ede3;
+  padding:17px;
+}
+.timeline-head{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:end;
+  margin-bottom:15px;
+}
+.timeline-head h3,.comparison-title h3,.summary-head h3,.receipt h3{
+  margin:6px 0 0;
+  font:600 18px "Libre Baskerville",Georgia,serif;
+}
+.timeline-head>span{font:9px "DM Mono";color:#776f64}
+.timeline-grid{
+  display:grid;
+  grid-template-columns:repeat(24,minmax(8px,1fr));
+  gap:4px;
+}
+.timeline-hour{
+  appearance:none;
+  border:0;
+  padding:0;
+  background:transparent;
+  cursor:pointer;
+  display:grid;
+  gap:5px;
+  justify-items:center;
+}
+.timeline-hour span{font:8px "DM Mono";color:#7d756a}
+.timeline-hour i{
+  display:block;
+  width:100%;
+  height:26px;
+  border:1px solid #b8afa1;
+  background:#e3ddd2;
+  transition:transform .15s ease,background .15s ease,border-color .15s ease;
+}
+.timeline-hour.observed i{background:#302b25;border-color:#302b25}
+.timeline-hour.missing i{background:#963c36;border-color:#963c36;box-shadow:inset 0 -8px 0 rgba(255,255,255,.08)}
+.timeline-hour:hover i,.timeline-hour.selected i{transform:translateY(-2px);outline:2px solid #201d19;outline-offset:2px}
+.hour-detail{
+  margin-top:13px;
+  display:flex;
+  gap:16px;
+  align-items:baseline;
+  padding-top:11px;
+  border-top:1px solid #d0c7b9;
+  font-family:"DM Mono",monospace;
+}
+.hour-detail span{font-size:9px;color:#776f64}
+.hour-detail strong{font-size:13px}
+.hour-detail small{font-size:9px;color:#776f64}
+.comparison{
+  margin-top:34px;
+  padding-top:20px;
+  border-top:2px solid #201d19;
+}
+.comparison-title{margin-bottom:14px}
+.comparison-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr);
+  gap:12px;
+  align-items:center;
+}
+.comparison-card{
+  border:1px solid #c0b6a7;
+  padding:20px;
+  background:#f2ede3;
+  display:grid;
+  gap:8px;
+}
+.comparison-card.original{border-top:4px solid #963c36;background:#f6ebe6}
+.comparison-card.later{border-top:4px solid #2f6842;background:#edf2e9}
+.comparison-label{font:9px "DM Mono";color:#776f64;letter-spacing:.1em}
+.comparison-card strong{font:700 30px "DM Mono";letter-spacing:-.05em}
+.comparison-card.original strong{color:#963c36}
+.comparison-card.later strong{color:#2f6842}
+.comparison-card b{font:13px "Libre Baskerville",Georgia,serif}
+.comparison-card code{font:10px "DM Mono";overflow-wrap:anywhere}
+.comparison-arrow{text-align:center;font:24px "DM Mono";color:#776f64}
+.comparison-conflict{
+  margin-top:10px;
+  border:1px solid #963c36;
+  background:#f6ebe6;
+  padding:14px;
+  display:flex;
+  gap:12px;
+  align-items:center;
+}
+.comparison-conflict>span{font-size:20px;color:#963c36}
+.comparison-conflict strong{display:block;font:600 12px "DM Mono";color:#963c36;letter-spacing:.08em}
+.comparison-conflict p{margin:5px 0 0;font:11px "DM Sans";color:#655d53}
+.evidence-summary{
+  margin-top:26px;
+  border:1px solid #bdb3a4;
+  background:#efe9de;
+  padding:18px;
+}
+.summary-head{display:flex;justify-content:space-between;gap:15px;align-items:end}
+.summary-head>strong{font:700 20px "DM Mono"}
+.summary-metrics{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  margin-top:15px;
+  border-top:1px solid #c8bfb1;
+}
+.summary-metrics>div{padding:14px 12px 4px;border-right:1px solid #c8bfb1}
+.summary-metrics>div:last-child{border-right:0}
+.summary-metrics span,.receipt-grid span{display:block;font:9px "DM Mono";color:#776f64;letter-spacing:.08em}
+.summary-metrics b{display:block;margin-top:5px;font:700 25px "DM Mono"}
+.summary-metrics small{display:block;margin-top:4px;font:9px "DM Sans";color:#776f64}
+.summary-metrics .negative b{color:#963c36}
+.receipt{
+  margin-top:28px;
+  padding:20px;
+  border:2px solid #2f6842;
+  background:#edf2e9;
+}
+.receipt-top{display:flex;justify-content:space-between;gap:20px;align-items:start;border-bottom:1px solid #c0cbbd;padding-bottom:15px}
+.receipt-status{font:9px "DM Mono";color:#2f6842;letter-spacing:.08em}
+.receipt-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  margin-top:15px;
+  border:1px solid #c6d0c2;
+}
+.receipt-grid>div{padding:12px;border-right:1px solid #c6d0c2;border-bottom:1px solid #c6d0c2}
+.receipt-grid>div:nth-child(2n){border-right:0}
+.receipt-grid>div:nth-last-child(-n+2){border-bottom:0}
+.receipt-grid b,.receipt-grid code{display:block;margin-top:5px;font:11px "DM Mono";overflow-wrap:anywhere}
+.receipt-actions{display:flex;gap:16px;flex-wrap:wrap;margin-top:15px}
+.receipt-actions a,.receipt-actions button{
+  color:#2f6842;
+  background:transparent;
+  border:0;
+  padding:0;
+  font:9px "DM Mono";
+  text-decoration:underline;
+  text-underline-offset:3px;
+  cursor:pointer;
+}
+.receipt-print{
+  margin-top:15px;
+  padding:16px;
+  border:1px dashed #8ca28b;
+  background:#f5f7f2;
+  display:grid;
+  gap:7px;
+  font:10px "DM Mono";
+}
+.proof-drawer{
+  max-width:1480px;
+  margin:58px auto 0;
+  display:grid;
+  grid-template-columns:.8fr 1.2fr;
+  gap:38px;
+  border-block:1px solid #9d9486;
+  padding:26px 0;
+}
+.proof-title h2{font:600 clamp(25px,4vw,42px) "Libre Baskerville",Georgia,serif;margin:8px 0}
+.proof-title p{font:12px/1.6 "Libre Baskerville",Georgia,serif;color:#625b52;max-width:430px}
+.proof-cards{border-left:1px solid #b6ac9e}
+.proof-cards details{border-bottom:1px solid #c4bbad}
+.proof-cards details:last-child{border-bottom:0}
+.proof-cards summary{
+  list-style:none;
+  cursor:pointer;
+  padding:17px 18px;
+  display:grid;
+  grid-template-columns:32px 1fr 20px;
+  align-items:center;
+  gap:8px;
+}
+.proof-cards summary::-webkit-details-marker{display:none}
+.proof-cards summary span{font:16px "DM Mono"}
+.proof-cards details:first-child summary span{color:#2f6842}
+.proof-cards details:nth-child(2) summary span{color:#963c36}
+.proof-cards details:nth-child(3) summary span{color:#86652f}
+.proof-cards summary b{font:500 10px "DM Mono";letter-spacing:.08em}
+.proof-cards summary i{font:18px "DM Mono";font-style:normal;text-align:right}
+.proof-cards details[open] summary i{transform:rotate(45deg)}
+.proof-cards details p{margin:0;padding:0 18px 18px 58px;font:12px/1.55 "DM Sans";color:#625b52}
+@media(max-width:800px){
+  .hero-actions{align-items:flex-start;flex-direction:column}
+  .timeline-head{align-items:start;flex-direction:column;gap:6px}
+  .proof-drawer{grid-template-columns:1fr;gap:15px}
+  .proof-cards{border-left:0;border-top:1px solid #b6ac9e}
+  .summary-metrics{grid-template-columns:repeat(2,1fr)}
+  .summary-metrics>div:nth-child(2){border-right:0}
+  .summary-metrics>div:nth-child(3),.summary-metrics>div:nth-child(4){border-top:1px solid #c8bfb1}
+  .receipt-grid{grid-template-columns:1fr}
+  .receipt-grid>div{border-right:0!important}
+  .receipt-grid>div:last-child{border-bottom:0}
+}
+@media(max-width:560px){
+  .hero-actions span{line-height:1.5}
+  .timeline-grid{grid-template-columns:repeat(12,minmax(12px,1fr));row-gap:8px}
+  .comparison-grid{grid-template-columns:1fr}
+  .comparison-arrow{transform:rotate(90deg)}
+  .comparison-card{padding:16px}
+  .summary-metrics{grid-template-columns:1fr 1fr}
+  .summary-metrics>div{padding-inline:8px}
+  .proof-title h2{font-size:28px}
+}

@@ -12,6 +12,7 @@ import {
   explorerAddressUrl,
   explorerTransactionUrl,
   isContractConfigured,
+  CONTRACT_ADDRESS,
   watchWalletEvents,
   CommitmentError,
   WalletError,
@@ -63,6 +64,32 @@ function formatWindowLabel(start: string, end: string): string {
   return `${hours} hours / UTC`;
 }
 
+
+function makeDemoCsv(fillGap: boolean): File {
+  const start = Date.parse(DEFAULT_WINDOW_START);
+  const rows = ["timestamp,value"];
+  for (let hour = 0; hour < 24; hour += 1) {
+    if (!fillGap && hour >= 8 && hour < 15) continue;
+    const timestamp = new Date(start + hour * 3600000).toISOString();
+    rows.push(`${timestamp},${(12.5 + hour * 0.42).toFixed(2)}`);
+  }
+  return new File([rows.join("\n") + "\n"], fillGap ? "gapwitness-demo-intact.csv" : "gapwitness-demo-gapped.csv", {
+    type: "text/csv",
+  });
+}
+
+function shortHash(value: string): string {
+  return value.length > 18 ? `${value.slice(0, 10)}…${value.slice(-8)}` : value;
+}
+
+function shortAddress(value: string): string {
+  return value.length > 14 ? `${value.slice(0, 8)}…${value.slice(-6)}` : value;
+}
+
+function prettyTime(timestamp: string): string {
+  return new Date(timestamp).toISOString().slice(11, 16) + " UTC";
+}
+
 function App() {
   const [file, setFile] = useState<File | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
@@ -82,10 +109,15 @@ function App() {
     priorTransactionHash: string | null;
   } | null>(null);
   const [showIntro, setShowIntro] = useState(true);
+  const [primaryResult, setPrimaryResult] = useState<CheckResult | null>(null);
+  const [comparisonResult, setComparisonResult] = useState<CheckResult | null>(null);
+  const [demoBusy, setDemoBusy] = useState(false);
+  const [activePoint, setActivePoint] = useState<Point | null>(null);
+  const [showReceipt, setShowReceipt] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShowIntro(false), 2600);
-    return () => window.clearTimeout(timer);
+  return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -161,6 +193,8 @@ function App() {
       });
 
       setResult(next);
+      setPrimaryResult(next);
+      setComparisonResult(null);
       setPoints(parseChartPoints(csvText));
       setCheckerState("ready");
       setTxHash(null);
@@ -190,6 +224,55 @@ function App() {
       }
     } finally {
       setBusy(false);
+    }
+  }
+
+
+  async function runDemo() {
+    if (demoBusy) return;
+    setDemoBusy(true);
+    setMessage("Running the two-state demo: finding the original gap…");
+    setResult(null);
+    setPrimaryResult(null);
+    setComparisonResult(null);
+    setPoints([]);
+    setFile(null);
+    setTxHash(null);
+    setConflict(null);
+
+    try {
+      const original = makeDemoCsv(false);
+      const later = makeDemoCsv(true);
+      const originalText = await original.text();
+      const first = await inspectCsv({
+        stationId: DEFAULT_STATION,
+        windowStart: DEFAULT_WINDOW_START,
+        windowEnd: DEFAULT_WINDOW_END,
+        seriesType: "pm25",
+        csv: original,
+      });
+      setPrimaryResult(first);
+      setResult(first);
+      setPoints(parseChartPoints(originalText));
+      setFile(original);
+      setMessage("Original state recorded locally. Now testing the later filled-in version…");
+
+      const second = await inspectCsv({
+        stationId: DEFAULT_STATION,
+        windowStart: DEFAULT_WINDOW_START,
+        windowEnd: DEFAULT_WINDOW_END,
+        seriesType: "pm25",
+        csv: later,
+      });
+      setComparisonResult(second);
+      setResult(first);
+      setMessage("Demo complete: the same exact window moved from GAPPED to INTACT. No commitment was sent.");
+      setCheckerState("ready");
+    } catch {
+      setMessage("Demo could not complete. The checker must be online.");
+      setCheckerState("offline");
+    } finally {
+      setDemoBusy(false);
     }
   }
 
@@ -265,6 +348,21 @@ function App() {
     });
   }, [result?.windowStart, windowStart]);
 
+  
+  const timelineStart = result ? new Date(result.windowStart).getTime() : new Date(windowStart).getTime();
+  const timelineEnd = result ? new Date(result.windowEnd).getTime() : new Date(windowEnd).getTime();
+  const timelineHours = result
+    ? Array.from({ length: result.expectedHours }, (_, index) => {
+        const timestamp = new Date(timelineStart + index * 3600000).toISOString();
+        const point = points.find(item => item.timestamp === timestamp);
+        const missing = result.missingTimestamps.includes(timestamp);
+        return { timestamp, point, missing };
+      })
+    : [];
+  const completeness = result && result.expectedHours > 0
+    ? Math.round((result.observedHours / result.expectedHours) * 1000) / 10
+    : 0;
+
   return (
     <>
       <div className={`splash ${showIntro ? "is-visible" : "is-hidden"}`} aria-hidden={!showIntro}>
@@ -284,6 +382,12 @@ function App() {
             <p className="eyebrow">GAPWITNESS / ENVIRONMENTAL INTEGRITY LAB</p>
           <h1>witness the hours that were missing.</h1>
             <p className="dek">Temporal integrity for environmental time series. The checker decides. The chain remembers.</p>
+            <div className="hero-actions">
+              <button type="button" className="demo-button" onClick={() => void runDemo()} disabled={demoBusy || checkerState !== "ready"}>
+                {demoBusy ? "running demo…" : "run the 2-state demo →"}
+              </button>
+              <span>gapped → intact → same window → conflict</span>
+            </div>
           </div>
         </div>
         <div className={`status ${checkerState}`}>
@@ -372,6 +476,10 @@ function App() {
             <span>1 MB max · timestamp,value</span>
           </label>
 
+          <button type="button" className="rail-demo" onClick={() => void runDemo()} disabled={demoBusy || checkerState !== "ready"}>
+            {demoBusy ? "running evidence demo…" : "try the built-in demo"}
+          </button>
+
           <p className="message" aria-live="polite">{busy ? "● " : ""}{message}</p>
         </aside>
 
@@ -444,6 +552,39 @@ function App() {
             </svg>
           </div>
 
+          {result && (
+            <section className="evidence-timeline" aria-label="Evidence timeline">
+              <div className="timeline-head">
+                <div>
+                  <span className="kicker">EVIDENCE TIMELINE</span>
+                  <h3>the hole in the hour-by-hour record.</h3>
+                </div>
+                <span>{result.expectedHours} expected · {result.observedHours} observed</span>
+              </div>
+              <div className="timeline-grid">
+                {timelineHours.map(hour => (
+                  <button
+                    type="button"
+                    key={hour.timestamp}
+                    className={`timeline-hour ${hour.missing ? "missing" : "observed"} ${activePoint?.timestamp === hour.timestamp ? "selected" : ""}`}
+                    onClick={() => setActivePoint(hour.point ?? { timestamp: hour.timestamp, value: NaN })}
+                    aria-label={`${prettyTime(hour.timestamp)}: ${hour.missing ? "missing" : `observed ${hour.point?.value.toFixed(2)} micrograms per cubic meter`}`}
+                  >
+                    <span>{hour.timestamp.slice(11, 13)}</span>
+                    <i />
+                  </button>
+                ))}
+              </div>
+              {activePoint && (
+                <div className="hour-detail">
+                  <span>{prettyTime(activePoint.timestamp)}</span>
+                  <strong>{Number.isFinite(activePoint.value) ? `${activePoint.value.toFixed(2)} µg/m³` : "MISSING"}</strong>
+                  <small>{Number.isFinite(activePoint.value) ? "submitted observation" : "expected observation not present"}</small>
+                </div>
+              )}
+            </section>
+          )}
+
           <div className="strip-meta">
             <span><i className="legend-dot gap" /> missing hours</span>
             <span><i className="legend-dot point" /> submitted observations</span>
@@ -469,6 +610,55 @@ function App() {
               {!result && <>Run the checker to produce deterministic evidence.</>}
             </div>
           </div>
+
+          {result && (
+            <section className="evidence-summary">
+              <div className="summary-head">
+                <div>
+                  <span className="kicker">EVIDENCE SUMMARY</span>
+                  <h3>what the checker actually found.</h3>
+                </div>
+                <strong>{completeness}% complete</strong>
+              </div>
+              <div className="summary-metrics">
+                <div><span>EXPECTED</span><b>{result.expectedHours}</b><small>hourly observations</small></div>
+                <div><span>OBSERVED</span><b>{result.observedHours}</b><small>submitted observations</small></div>
+                <div className={result.missingTimestamps.length ? "negative" : ""}><span>MISSING</span><b>{result.missingTimestamps.length}</b><small>hours in the window</small></div>
+                <div className={result.impossibleTimestamps.length ? "negative" : ""}><span>INVALID</span><b>{result.impossibleTimestamps.length}</b><small>policy violations</small></div>
+              </div>
+            </section>
+          )}
+
+          {primaryResult && comparisonResult && (
+            <section className="comparison" aria-label="Before and after comparison">
+              <div className="comparison-title">
+                <span className="kicker">BEFORE / AFTER</span>
+                <h3>the same window, two different temporal states.</h3>
+              </div>
+              <div className="comparison-grid">
+                <article className="comparison-card original">
+                  <span className="comparison-label">ORIGINAL SUBMISSION</span>
+                  <strong>{primaryResult.verdict}</strong>
+                  <b>{primaryResult.missingTimestamps.length} missing hours</b>
+                  <code>gap {shortHash(primaryResult.gapHash)}</code>
+                </article>
+                <div className="comparison-arrow">→</div>
+                <article className="comparison-card later">
+                  <span className="comparison-label">LATER SUBMISSION</span>
+                  <strong>{comparisonResult.verdict}</strong>
+                  <b>{comparisonResult.missingTimestamps.length} missing hours</b>
+                  <code>gap {shortHash(comparisonResult.gapHash)}</code>
+                </article>
+              </div>
+              <div className="comparison-conflict">
+                <span>⚠</span>
+                <div>
+                  <strong>GAP PAPERED OVER</strong>
+                  <p>same station · same exact window · different temporal state</p>
+                </div>
+              </div>
+            </section>
+          )}
 
           {result && (
             <section className="evidence">
@@ -530,6 +720,32 @@ function App() {
             </section>
           )}
 
+          {txHash && result && (
+            <section className="receipt" aria-label="Evidence receipt">
+              <div className="receipt-top">
+                <div>
+                  <span className="kicker">EVIDENCE RECEIPT</span>
+                  <h3>temporal integrity witness</h3>
+                </div>
+                <span className="receipt-status">COMMITTED · SEPOLIA</span>
+              </div>
+              <div className="receipt-grid">
+                <div><span>STATION</span><b>{result.stationId}</b></div>
+                <div><span>WINDOW</span><b>{new Date(result.windowStart).toISOString().slice(0,16).replace("T"," ")} → {new Date(result.windowEnd).toISOString().slice(11,16)} UTC</b></div>
+                <div><span>VERDICT</span><b>{result.verdict}</b></div>
+                <div><span>MISSING</span><b>{result.missingTimestamps.length} HOURS</b></div>
+                <div><span>TX</span><code>{shortHash(txHash)}</code></div>
+                <div><span>CONTRACT</span><code>{shortAddress(CONTRACT_ADDRESS || "not configured")}</code></div>
+              </div>
+              <div className="receipt-actions">
+                <a href={explorerTransactionUrl(txHash)} target="_blank" rel="noreferrer">view transaction →</a>
+                {CONTRACT_ADDRESS && <a href={explorerAddressUrl(CONTRACT_ADDRESS)} target="_blank" rel="noreferrer">view contract →</a>}
+                <button type="button" onClick={() => setShowReceipt(!showReceipt)}>{showReceipt ? "hide printable view" : "show printable view"}</button>
+              </div>
+              {showReceipt && <div className="receipt-print"><strong>GAPWITNESS / {result.verdict}</strong><span>{result.stationId} · {result.missingTimestamps.length} missing hours</span><code>{txHash}</code></div>}
+            </section>
+          )}
+
           <div className="commit-row" id="commit">
             <div>
               <span className="kicker">COMMIT</span>
@@ -553,10 +769,17 @@ function App() {
         </section>
       </section>
 
-      <section className="principles" id="witness">
-        <div><span>WHAT THIS PROVES</span><p>submitted bytes · expected missing timestamps · later rewrite attempts</p></div>
-        <div><span>WHAT THIS DOES NOT PROVE</span><p>sensor calibration · physical truth · that the source was honest</p></div>
-        <div><span>INSUFFICIENT DATA</span><p>not a verdict · checker returns 422 until the evidence is usable</p></div>
+      <section className="proof-drawer" id="witness">
+        <div className="proof-title">
+          <span className="kicker">READ THE EVIDENCE CORRECTLY</span>
+          <h2>strong claims. narrow claims.</h2>
+          <p>GapWitness is deliberately precise about what its proof can and cannot establish.</p>
+        </div>
+        <div className="proof-cards">
+          <details open><summary><span>✓</span><b>WHAT THIS PROVES</b><i>+</i></summary><p>the submitted bytes, the expected missing timestamps, the deterministic policy result, and whether a later submission conflicts with the same exact window.</p></details>
+          <details><summary><span>×</span><b>WHAT THIS DOES NOT PROVE</b><i>+</i></summary><p>sensor calibration, physical truth, source honesty, or that a measurement was scientifically correct. Integrity is not truth.</p></details>
+          <details><summary><span>!</span><b>INSUFFICIENT DATA</b><i>+</i></summary><p>not a verdict. If the checker cannot establish a usable evidence window, it returns 422 and no verdict is committed.</p></details>
+        </div>
       </section>
 
       <footer>
