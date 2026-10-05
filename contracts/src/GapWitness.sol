@@ -60,6 +60,8 @@ contract GapWitness {
             if (prior.seriesHash != seriesHash || prior.policyHash != policyHash || prior.verdict != verdict) {
                 revert CommitmentChanged(prior.seriesHash, seriesHash, prior.policyHash, policyHash, prior.verdict, verdict);
             }
+            // An exact replay is a no-op. Preserve the first witness and emit no new evidence.
+            return;
         }
 
         commitments[key] = Commitment(
