@@ -69,7 +69,12 @@ def test_skips_incomplete_candidate_and_selects_next_complete_window() -> None:
     start, selected = find_first_complete_window(rows, 4)
 
     assert start.isoformat() == "2026-01-01T03:00:00+00:00"
-    assert [row[1] for row in selected] == ["3", "4", "5", "6"]
+    assert [row[1] for row in selected] == [
+        "2026-01-01T03:00:00Z",
+        "2026-01-01T04:00:00Z",
+        "2026-01-01T05:00:00Z",
+        "2026-01-01T06:00:00Z",
+    ]
     assert [row[2] for row in selected] == [
         "2026-01-01T03:00:00Z",
         "2026-01-01T04:00:00Z",
