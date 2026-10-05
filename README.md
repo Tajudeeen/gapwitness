@@ -145,6 +145,30 @@ python scripts/record_sepolia_deployment.py \
 
 Never commit a populated `.env` or a private key. The contract address must come from the real broadcast artifact, never from a placeholder.
 
+## Reproducible chain demo
+
+After the real Sepolia contract is deployed, generate the exact on-chain inputs from the frozen File A/File B fixtures:
+
+```bash
+python scripts/prepare_chain_demo.py \
+  --contract <DEPLOYED_SEPOLIA_ADDRESS> \
+  > contracts/.env.demo
+```
+
+The generated values contain no private key. They bind the committed bytes, gap hashes, policy hash, exact UTC window, and station ID to the same values used by the web wallet client.
+
+Load those values together with `PRIVATE_KEY` and `SEPOLIA_RPC_URL`, then rehearse the adversarial chain flow:
+
+```bash
+cd contracts
+forge script script/DemoGapPaperOver.s.sol:DemoGapPaperOver \
+  --rpc-url "$SEPOLIA_RPC_URL" \
+  --private-key "$PRIVATE_KEY" \
+  --broadcast
+```
+
+The script commits File A first, then submits File B for the same station and exact window. The second submission is expected to revert with `GapPaperedOver`. A successful run therefore produces the concrete demo story on-chain rather than relying on a mocked revert.
+
 ## On-chain commitment rule
 
 A commitment is immutable for an exact station and UTC observation window. Re-submitting the identical series hash, gap hash, policy hash, and verdict is allowed. Changing any of those fields for an already committed window is rejected. A different gap specifically reverts with `GapPaperedOver` so the demo can expose a later attempt to paper over missing hours.
