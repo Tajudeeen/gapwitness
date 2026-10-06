@@ -6,7 +6,7 @@ GapWitness checks the temporal integrity of an hourly environmental CSV. It comp
 
 A report can look complete after the inconvenient hours have been removed. A hash taken afterward preserves that edited file, but cannot show which expected hours disappeared. GapWitness makes the declared window and its missing observations part of the evidence.
 
-[Open the lab](https://gapwitness-web.vercel.app) · [Checker health](https://gapwitness-checker.vercel.app/health) · [Contract explorer](https://sepolia.etherscan.io/address/0x81433d6bedf33b72defe0b90534dc16cc2b0bc57) · [Report an issue](https://github.com/Tajudeeen/gapwitness/issues/new)
+[Explore GapWitness](https://gapwitness-web.vercel.app) · [Open the lab](https://gapwitness-web.vercel.app/?view=lab) · [Checker health](https://gapwitness-checker.vercel.app/health) · [Contract explorer](https://sepolia.etherscan.io/address/0x81433d6bedf33b72defe0b90534dc16cc2b0bc57) · [Report an issue](https://github.com/Tajudeeen/gapwitness/issues/new)
 
 ## Contents
 
@@ -38,6 +38,7 @@ The current lab focuses on hourly PM2.5 values in µg/m³. The selected track is
 
 ## What the lab includes
 
+- A responsive landing page explaining missing-hour evidence, the inspection workflow, verdicts, and trust boundaries. Its record illustration is explicitly synthetic.
 - A responsive inspection lab with a 2.6-second launch splash and navigation between source, inspection, commitment, and proof.
 - CSV upload with a declared station and UTC observation window.
 - A segmented observation chart that leaves missing intervals visible instead of connecting across them.
@@ -45,6 +46,8 @@ The current lab focuses on hourly PM2.5 values in µg/m³. The selected track is
 - A two-state browser demonstration comparing a gapped file with a complete file for the same window.
 - An injected EVM wallet flow for Ethereum Sepolia, transaction explorer links, and an evidence receipt view.
 - A resource footer with source attribution, documentation, independent verification links, last-known checker connectivity, and proof limits.
+
+The default URL opens the landing page. `?view=lab` opens the inspection lab directly; `?view=lab#source`, `#inspect`, `#commit`, and `#witness` link to its sections. In-app navigation preserves the selected file and inspection results, supports browser back and forward, and does not replay the launch splash. These query routes work with static hosting without server rewrite rules.
 
 Inspection does not require a wallet. Commitment requests a wallet and requires test ETH for gas. The browser demo performs two checker requests and sends no transaction.
 
