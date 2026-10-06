@@ -1,12 +1,14 @@
+import { navigateLink, type Navigate } from "../lib/navigation";
 import { CONTRACT_ADDRESS, explorerAddressUrl } from "../lib/wallet";
 
 const REPOSITORY = "https://github.com/Tajudeeen/gapwitness";
 
 type FooterProps = {
+  navigate: Navigate;
   checkerState: "checking" | "ready" | "offline";
 };
 
-export function Footer({ checkerState }: FooterProps) {
+export function Footer({ checkerState, navigate }: FooterProps) {
   const checkerLabel = checkerState === "ready"
     ? "Checker reachable"
     : checkerState === "checking" ? "Checking connection" : "Checker unavailable";
@@ -30,10 +32,10 @@ export function Footer({ checkerState }: FooterProps) {
 
         <nav className="footer-nav" aria-label="Lab navigation">
           <h3>Explore the lab</h3>
-          <a href="#source">Source &amp; observation window</a>
-          <a href="#inspect">Inspect the series</a>
-          <a href="#commit">Commit the evidence</a>
-          <a href="#witness">Understand the proof</a>
+          <a href="?view=lab#source" onClick={event => navigateLink(event, navigate, "lab", "source")}>Source &amp; observation window</a>
+          <a href="?view=lab#inspect" onClick={event => navigateLink(event, navigate, "lab", "inspect")}>Inspect the series</a>
+          <a href="?view=lab#commit" onClick={event => navigateLink(event, navigate, "lab", "commit")}>Commit the evidence</a>
+          <a href="?view=lab#witness" onClick={event => navigateLink(event, navigate, "lab", "witness")}>Understand the proof</a>
         </nav>
 
         <nav className="footer-nav" aria-label="Verification resources">

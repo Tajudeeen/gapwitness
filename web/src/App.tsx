@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
+import { Landing } from "./components/Landing";
+import { navigateLink } from "./lib/navigation";
 import { Footer } from "./components/Footer";
 import {
   CHECKER_URL,
@@ -92,6 +94,30 @@ function prettyTime(timestamp: string): string {
 }
 
 function App() {
+  const [view, setView] = useState<"home" | "lab">(() => new URLSearchParams(window.location.search).get("view") === "lab" ? "lab" : "home");
+  function navigate(next: "home" | "lab", section = "top") {
+    const url = new URL(window.location.href);
+    if (next === "lab") url.searchParams.set("view", "lab");
+    else url.searchParams.delete("view");
+    url.hash = section === "top" ? "" : section;
+    window.history.pushState(null, "", url);
+    setView(next);
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById(section);
+      target?.scrollIntoView({ behavior: "instant" });
+      if (section === "top") {
+        document.querySelector<HTMLElement>("main h1")?.focus({ preventScroll: true });
+      }
+    });
+  }
+  useEffect(() => {
+    const onPopState = () => setView(new URLSearchParams(window.location.search).get("view") === "lab" ? "lab" : "home");
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+  useEffect(() => {
+    document.title = view === "lab" ? "Inspection lab | GapWitness" : "GapWitness | Keep the missing hours visible";
+  }, [view]);
   const [file, setFile] = useState<File | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
   const [result, setResult] = useState<CheckResult | null>(null);
@@ -109,7 +135,7 @@ function App() {
     nextGap: string;
     priorTransactionHash: string | null;
   } | null>(null);
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(() => new URLSearchParams(window.location.search).get("view") === "lab");
   const [primaryResult, setPrimaryResult] = useState<CheckResult | null>(null);
   const [comparisonResult, setComparisonResult] = useState<CheckResult | null>(null);
   const [demoBusy, setDemoBusy] = useState(false);
@@ -375,13 +401,14 @@ function App() {
           <span className="splash-meta">TEMPORAL INTEGRITY / ENVIRONMENTAL TIME SERIES</span>
         </div>
       </div>
-      <main id="top" className={`lab ${showIntro ? "is-behind-splash" : ""}`}>
+      {view === "home" ? <Landing navigate={navigate} checkerState={checkerState} /> : <main id="top" className={`lab ${showIntro ? "is-behind-splash" : ""}`}>
+      <a className="lab-home-link" href="?" onClick={event => navigateLink(event, navigate, "home")}>← GapWitness home</a>
       <header className="masthead">
         <div className="brand">
           <img className="brand-mark" src="/gapwitness-logo.svg" alt="GapWitness logo" />
           <div>
             <p className="eyebrow">GAPWITNESS / ENVIRONMENTAL INTEGRITY LAB</p>
-          <h1>witness the hours that were missing.</h1>
+          <h1 tabIndex={-1}>witness the hours that were missing.</h1>
             <p className="dek">Temporal integrity for environmental time series. The checker decides. The chain remembers.</p>
             <div className="hero-actions">
               <button type="button" className="demo-button" onClick={() => void runDemo()} disabled={demoBusy || checkerState !== "ready"}>
@@ -783,8 +810,8 @@ function App() {
         </div>
       </section>
 
-      <Footer checkerState={checkerState} />
-    </main>
+      <Footer checkerState={checkerState} navigate={navigate} />
+    </main>}
     </>
   );
 }
