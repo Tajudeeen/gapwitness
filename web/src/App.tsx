@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { Landing } from "./components/Landing";
 import { navigateLink } from "./lib/navigation";
@@ -118,6 +118,15 @@ function App() {
   useEffect(() => {
     document.title = view === "lab" ? "Inspection lab | GapWitness" : "GapWitness | Keep the missing hours visible";
   }, [view]);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(920);
+  useEffect(() => {
+    const element = chartRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => setChartWidth(Math.max(260, entry.contentRect.width)));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [view]);
   const [file, setFile] = useState<File | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
   const [result, setResult] = useState<CheckResult | null>(null);
@@ -171,37 +180,6 @@ function App() {
       }
     });
   }, []);
-
-  const max = useMemo(
-    () => Math.max(...points.map(point => point.value), 1),
-    [points],
-  );
-
-  const chartWindowStart = useMemo(() => new Date(
-    result?.windowStart ?? windowStart,
-  ).getTime(), [result?.windowStart, windowStart]);
-
-  const chartWindowEnd = useMemo(() => new Date(
-    result?.windowEnd ?? windowEnd,
-  ).getTime(), [result?.windowEnd, windowEnd]);
-
-  const segments = useMemo(() => {
-    const sorted = [...points].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-    );
-    const grouped: Point[][] = [];
-    for (const point of sorted) {
-      const last = grouped[grouped.length - 1];
-      const previous = last?.[last.length - 1];
-      if (!last || !previous ||
-        new Date(point.timestamp).getTime() - new Date(previous.timestamp).getTime() > 3600000) {
-        grouped.push([point]);
-      } else {
-        last.push(point);
-      }
-    }
-    return grouped;
-  }, [points]);
 
   async function inspect(upload: File) {
     setBusy(true);
@@ -348,36 +326,7 @@ function App() {
     void inspect(next);
   }
 
-  const chartWidth = 920;
-  const chartHeight = 290;
-  const left = 54;
-  const right = 24;
-  const top = 28;
-  const bottom = 44;
-  const innerW = chartWidth - left - right;
-  const innerH = chartHeight - top - bottom;
-  const span = Math.max(chartWindowEnd - chartWindowStart, 1);
-
-  function xFor(timestamp: string): number {
-    const time = new Date(timestamp).getTime();
-    return left + ((time - chartWindowStart) / span) * innerW;
-  }
-
-  function yFor(value: number): number {
-    return top + innerH - (value / max) * innerH * 0.88;
-  }
-
-  const ticks = useMemo(() => {
-    const start = new Date(result?.windowStart ?? windowStart);
-    return [0, 6, 12, 18].map(offset => {
-      const value = new Date(start.getTime() + offset * 3600000);
-      return { offset, label: `${String(value.getUTCHours()).padStart(2, "0")}:00` };
-    });
-  }, [result?.windowStart, windowStart]);
-
-  
   const timelineStart = result ? new Date(result.windowStart).getTime() : new Date(windowStart).getTime();
-  const timelineEnd = result ? new Date(result.windowEnd).getTime() : new Date(windowEnd).getTime();
   const pointsByHour = new Map(points.map(point => [Date.parse(point.timestamp), point]));
   const missingHours = new Set(result?.missingTimestamps.map(timestamp => Date.parse(timestamp)) ?? []);
   const timelineHours = result
@@ -389,6 +338,21 @@ function App() {
         return { timestamp, point, missing };
       })
     : [];
+  const chartHeight = 290;
+  const left = 54;
+  const right = 24;
+  const top = 30;
+  const innerW = chartWidth - left - right;
+  const innerH = chartHeight - top - 44;
+  const chartValues = timelineHours.flatMap(hour => hour.point ? [hour.point.value] : []);
+  const minimum = Math.min(0, ...chartValues);
+  const maximum = Math.max(1, ...chartValues);
+  const yFor = (value: number) => top + innerH * (maximum - value) / (maximum - minimum);
+  const zeroY = yFor(0);
+  const slotWidth = innerW / Math.max(timelineHours.length, 1);
+  const barInset = Math.min(4, slotWidth * 0.16);
+  const tickOffsets = chartWidth < 500 ? [0, Math.floor(timelineHours.length / 2), timelineHours.length - 1] : [0, Math.floor(timelineHours.length / 4), Math.floor(timelineHours.length / 2), Math.floor(timelineHours.length * 3 / 4), timelineHours.length - 1];
+  const ticks = [...new Set(tickOffsets)].filter(index => index >= 0 && index < timelineHours.length);
   const completeness = result && result.expectedHours > 0
     ? Math.round((result.observedHours / result.expectedHours) * 1000) / 10
     : 0;
@@ -523,7 +487,7 @@ function App() {
             <span className="timezone">UTC</span>
           </div>
 
-          <div className="chart-wrap">
+          <div className="chart-wrap" ref={chartRef}>
             {!points.length && (
               <div className="chart-empty">
                 <div className="empty-mark">+</div>
@@ -531,53 +495,40 @@ function App() {
                 <span>Upload a CSV to see every submitted hour, missing intervals, and the checker verdict.</span>
               </div>
             )}
-            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label="Hourly PM2.5 observations">
-              <line x1={left} y1={top + innerH} x2={chartWidth - right} y2={top + innerH} className="axis" />
-              {[0, 0.5, 1].map(t => (
-                <line
-                  key={t}
-                  x1={left}
-                  y1={top + innerH * t}
-                  x2={chartWidth - right}
-                  y2={top + innerH * t}
-                  className="grid"
-                />
+            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img" aria-label={result ? `Hourly PM2.5 bar chart: ${result.expectedHours} expected hours, ${result.observedHours} observed, ${result.missingTimestamps.length} missing. Values in micrograms per cubic meter.` : "Hourly PM2.5 bar chart. Upload a CSV to inspect a declared window."}>
+              <defs>
+                <pattern id="hour-gap-hatch" width="8" height="8" patternUnits="userSpaceOnUse">
+                  <rect width="8" height="8" fill="#f0dfb8" />
+                  <path d="M-2 2 L2 -2 M0 8 L8 0 M6 10 L10 6" stroke="#c5a767" strokeWidth="0.8" />
+                </pattern>
+              </defs>
+              <text x={left} y="16" className="tick">µg/m³</text>
+              {[maximum, ...(minimum < 0 ? [0, minimum] : [maximum / 2, 0])].map(value => (
+                <g key={value}>
+                  <line x1={left} y1={yFor(value)} x2={chartWidth - right} y2={yFor(value)} className={value === 0 ? "axis" : "grid"} />
+                  <text x={left - 8} y={yFor(value) + 3} textAnchor="end" className="tick">{Number(value.toPrecision(3))}</text>
+                </g>
               ))}
-
-              {(result?.missingTimestamps ?? []).map(timestamp => {
-                const x = xFor(timestamp);
-                const width = innerW / Math.max(result?.expectedHours ?? 24, 1);
-                return <rect key={timestamp} x={x} y={top} width={width} height={innerH} className="gap-band" />;
-              })}
-
-              {segments.map(segment => (
-                <polyline
-                  key={segment[0].timestamp}
-                  fill="none"
-                  className="line"
-                  points={segment.map(point => `${xFor(point.timestamp)},${yFor(point.value)}`).join(" ")}
-                />
-              ))}
-
-              {points.map(point => {
-                const x = xFor(point.timestamp);
-                const y = yFor(point.value);
+              {timelineHours.map((hour, index) => {
+                const x = left + index * slotWidth + barInset;
+                const width = slotWidth - barInset * 2;
+                const value = hour.point?.value;
                 return (
-                  <circle key={point.timestamp} cx={x} cy={y} r="3" className="point">
-                    <title>{point.timestamp} · {point.value.toFixed(2)} µg/m³</title>
-                  </circle>
+                  <g key={hour.timestamp} className="hour-column">
+                    <title>{hour.timestamp} · {hour.missing ? "missing observation" : `${value?.toFixed(2)} µg/m³`}</title>
+                    {hour.missing ? (
+                      <rect x={x} y={top} width={width} height={innerH} className="gap-band" />
+                    ) : value !== undefined && value === 0 ? (
+                      <line x1={x} y1={zeroY} x2={x + width} y2={zeroY} className="zero-observation" />
+                    ) : value !== undefined ? (
+                      <rect x={x} y={Math.min(yFor(value), zeroY)} width={width} height={Math.abs(yFor(value) - zeroY)} className={`hour-bar ${value < 0 ? "invalid" : ""}`} />
+                    ) : null}
+                  </g>
                 );
               })}
-
-              {ticks.map(tick => (
-                <text
-                  key={tick.offset}
-                  x={left + (tick.offset / Math.max((result?.expectedHours ?? 24) - 1, 1)) * innerW}
-                  y={chartHeight - 15}
-                  textAnchor="middle"
-                  className="tick"
-                >
-                  {tick.label}
+              {ticks.map(index => (
+                <text key={index} x={left + (index + 0.5) * slotWidth} y={chartHeight - 15} textAnchor={index === 0 ? "start" : index === timelineHours.length - 1 ? "end" : "middle"} className="tick">
+                  {timelineHours.length > 24 ? `${timelineHours[index].timestamp.slice(5, 10)} ` : ""}{timelineHours[index].timestamp.slice(11, 16)}
                 </text>
               ))}
             </svg>
@@ -619,6 +570,7 @@ function App() {
           <div className="strip-meta">
             <span><i className="legend-dot gap" /> missing hours</span>
             <span><i className="legend-dot point" /> submitted observations</span>
+            {result && result.impossibleTimestamps.length > 0 && <span><i className="legend-dot invalid" /> negative measurement</span>}
             <span><i className="legend-dot verdict-dot" /> deterministic verdict</span>
             <button type="button" className="why-button" onClick={() => document.getElementById("witness")?.scrollIntoView({ behavior: "smooth" })}>why this matters ↓</button>
           </div>
