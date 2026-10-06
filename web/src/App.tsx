@@ -378,11 +378,14 @@ function App() {
   
   const timelineStart = result ? new Date(result.windowStart).getTime() : new Date(windowStart).getTime();
   const timelineEnd = result ? new Date(result.windowEnd).getTime() : new Date(windowEnd).getTime();
+  const pointsByHour = new Map(points.map(point => [Date.parse(point.timestamp), point]));
+  const missingHours = new Set(result?.missingTimestamps.map(timestamp => Date.parse(timestamp)) ?? []);
   const timelineHours = result
     ? Array.from({ length: result.expectedHours }, (_, index) => {
-        const timestamp = new Date(timelineStart + index * 3600000).toISOString();
-        const point = points.find(item => item.timestamp === timestamp);
-        const missing = result.missingTimestamps.includes(timestamp);
+        const time = timelineStart + index * 3600000;
+        const timestamp = new Date(time).toISOString();
+        const point = pointsByHour.get(time);
+        const missing = missingHours.has(time);
         return { timestamp, point, missing };
       })
     : [];
