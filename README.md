@@ -41,7 +41,7 @@ The current lab focuses on hourly PM2.5 values in µg/m³. The selected track is
 - A responsive landing page explaining missing-hour evidence, the inspection workflow, verdicts, and trust boundaries. Its record illustration is explicitly synthetic.
 - A responsive inspection lab with a 2.6-second launch splash and navigation between source, inspection, commitment, and proof.
 - CSV upload with a declared station and UTC observation window.
-- A segmented observation chart that leaves missing intervals visible instead of connecting across them.
+- An hourly bar chart using the landing page’s green bars and amber hatched gaps, driven by actual in-window CSV values. Zero readings stay visible at the baseline; negative values extend below zero in red. Missing hours remain distinct from measurements.
 - An hourly timeline, missing-hour evidence, completeness, deterministic verdicts, and evidence hashes.
 - A two-state browser demonstration comparing a gapped file with a complete file for the same window.
 - An injected EVM wallet flow for Ethereum Sepolia, transaction explorer links, and an evidence receipt view.

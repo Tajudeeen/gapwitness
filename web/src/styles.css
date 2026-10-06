@@ -224,10 +224,12 @@ button,a,input{touch-action:manipulation}
 .chart-wrap svg{display:block;width:100%;height:auto;min-height:250px}
 .axis,.grid{stroke:#80766a;stroke-width:1}
 .grid{opacity:.24}
-.gap-band{fill:#a93d36;opacity:.18}
-.line{stroke:#27231f;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
-.point{fill:#27231f;transition:r .15s ease}
-.point:hover{r:5}
+.gap-band{fill:url(#hour-gap-hatch);stroke:#c5a767;stroke-width:.6;stroke-dasharray:2 3}
+.hour-bar{fill:#596f5d}
+.hour-bar.invalid{fill:#963c36}
+.hour-column:hover .hour-bar{fill:#364e3d}
+.hour-column:hover .hour-bar.invalid{fill:#722922}
+.zero-observation{stroke:#596f5d;stroke-width:2}
 .tick{font:9px "DM Mono",monospace;fill:#776f64}
 .strip-meta{
   display:flex;
@@ -559,8 +561,9 @@ a:focus-visible,button:focus-visible,input:focus-visible{
   margin-right:5px;
   vertical-align:1px;
 }
-.legend-dot.gap{background:#963c36}
-.legend-dot.point{background:#27231f}
+.legend-dot.gap{background:#d9bd7b;border:1px dashed #987f4d}
+.legend-dot.point{background:#596f5d}
+.legend-dot.invalid{background:#963c36}
 .legend-dot.verdict-dot{background:#2f6842}
 .why-button{
   margin-left:auto;
