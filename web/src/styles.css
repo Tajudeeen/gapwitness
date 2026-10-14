@@ -1011,3 +1011,74 @@ a:focus-visible,button:focus-visible,input:focus-visible{
 }
 .fixture-actions button:disabled { opacity: .5; cursor: wait; }
 .receipt-grid code { overflow-wrap: anywhere; }
+
+
+/* Quiet interaction layer: decorative surfaces move, evidence and verdicts do not. */
+html { scroll-padding-top: 88px; }
+[id] { scroll-margin-top: 88px; }
+.page-frame, .landing, .lab { isolation: isolate; }
+.page-frame { position: relative; }
+.page-frame::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  inset: 0 0 auto;
+  height: min(520px, 70vh);
+  background: radial-gradient(ellipse at 84% 7%, rgba(116, 154, 111, .11), transparent 62%);
+}
+.page-card, .landing-verdicts article, .landing-steps article {
+  transition: border-color .28s ease, box-shadow .28s ease, background-color .28s ease, transform .28s ease;
+}
+@media (hover:hover) and (pointer:fine) {
+  .page-card:hover, .landing-verdicts article:hover {
+    border-color: #8d9d82;
+    box-shadow: 0 12px 30px rgba(32, 45, 30, .075), inset 0 0 0 1px rgba(117, 149, 102, .12);
+    transform: translateY(-2px);
+  }
+  .landing-steps article:hover { border-top-color: #577b5e; }
+}
+.page-frame button, .next-steps button, .fixture-actions button, .evidence > button,
+.landing a[class*="cta"], .landing a[class*="button"], .workspace-nav nav a,
+.footer-top-link, .landing-nav a {
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease,
+    box-shadow .24s ease, transform .2s ease;
+}
+@media (hover:hover) and (pointer:fine) {
+  .page-frame button:hover:not(:disabled), .next-steps button:hover:not(:disabled),
+  .fixture-actions button:hover:not(:disabled), .evidence > button:hover:not(:disabled) {
+    background-color: #28513a;
+    border-color: #527b58;
+    box-shadow: 0 6px 16px rgba(27, 62, 39, .14);
+    transform: translateY(-2px);
+  }
+  .landing a[class*="cta"]:hover, .landing a[class*="button"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(32, 45, 30, .13);
+  }
+  .workspace-nav nav a:hover:not([aria-current="page"]) {
+    background: rgba(41, 88, 57, .08);
+    color: #173323;
+  }
+}
+.page-frame button:active:not(:disabled), .next-steps button:active:not(:disabled),
+.fixture-actions button:active:not(:disabled), .landing a[class*="cta"]:active {
+  transform: translateY(0) scale(.985);
+  box-shadow: none;
+}
+.page-frame button:focus-visible, .next-steps button:focus-visible,
+.workspace-nav a:focus-visible, .landing a:focus-visible {
+  outline: 3px solid #547c58;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html, :root { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .page-card:hover, .landing-verdicts article:hover, .landing-steps article:hover,
+  .page-frame button:hover:not(:disabled), .next-steps button:hover:not(:disabled),
+  .landing a[class*="cta"]:hover { transform: none; }
+}
