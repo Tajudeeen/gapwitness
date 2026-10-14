@@ -9,15 +9,21 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     rpc = os.environ.get('SEPOLIA_RPC_URL') or 'https://ethereum-sepolia-rpc.publicnode.com'
-    private_key = os.environ['PRIVATE_KEY']
+    private_key = os.environ.get('PRIVATE_KEY')
     record_path = ROOT / 'contracts/deployments/sepolia-v2.json'
     deployment = json.loads(record_path.read_text())
     address, publisher = deployment['address'], deployment['deployer']
     if int(str(rpc_call(rpc, 'eth_chainId', [])), 16) != 11155111:
         raise RuntimeError('Wrong chain')
-    code = str(rpc_call(rpc, 'eth_getCode', [address, hex(deployment['blockNumber'])]))
+    # Pin one recent mined snapshot so non-archive RPC nodes can reproduce the proof.
+    snapshot = int(str(rpc_call(rpc, 'eth_blockNumber', [])), 16)
+    code = str(rpc_call(rpc, 'eth_getCode', [address, hex(snapshot)]))
     if code == '0x': raise RuntimeError('No deployed V2 code')
-    version = rpc_call(rpc, 'eth_call', [{'to': address, 'data': '0x' + keccak256(b'version()')[:8]}, hex(deployment['blockNumber'])])
+    artifact=json.loads((ROOT/'contracts/out/GapWitnessV2.sol/GapWitnessV2.json').read_text())
+    expected_runtime=artifact['deployedBytecode']['object']
+    if not expected_runtime.startswith('0x'):expected_runtime='0x'+expected_runtime
+    if code.lower()!=expected_runtime.lower():raise RuntimeError('Deployed runtime does not match the compiled V2 source')
+    version = rpc_call(rpc, 'eth_call', [{'to': address, 'data': '0x' + keccak256(b'version()')[:8]}, hex(snapshot)])
     if int(str(version), 16) != 2: raise RuntimeError('Not a V2 contract')
     station, start, end = '2178', '2026-09-19T07:00:00Z', '2026-09-20T07:00:00Z'
     a = (ROOT / 'checker/demo/file_a.csv').read_bytes()
@@ -31,16 +37,17 @@ def main():
     for owner, expected in [(publisher, key), (outsider, outsider_key)]:
         calldata = cast('calldata', 'commitmentKey(address,bytes32,uint64,uint64)', owner,
             values['STATION_ID'], values['WINDOW_START'], values['WINDOW_END'])
-        actual = rpc_call(rpc, 'eth_call', [{'to': address, 'data': calldata}, hex(deployment['blockNumber'])])
+        actual = rpc_call(rpc, 'eth_call', [{'to': address, 'data': calldata}, hex(snapshot)])
         if actual != expected: raise RuntimeError('Contract and independent publisher key differ')
     args_a = [values['STATION_ID'], values['WINDOW_START'], values['WINDOW_END'], values['FILE_A_SERIES_HASH'],
               values['FILE_A_GAP_HASH'], values['FILE_A_POLICY_HASH'], values['FILE_A_VERDICT']]
     receipt = None
-    existing = read_commitment(rpc, address, key)
+    existing = read_commitment(rpc, address, key, hex(snapshot))
     if not existing['exists']:
+        if not private_key: raise RuntimeError('PRIVATE_KEY is required only for a new publisher commitment')
         receipt = json.loads(cast('send', address, SIGNATURE, *args_a, '--rpc-url', rpc, '--private-key', private_key, '--confirmations', '2', '--json'))
     evidence = inspect_csv(a, station_id=station, window_start=start, window_end=end)
-    stored = read_commitment(rpc, address, key, receipt['blockNumber'] if receipt else 'latest')
+    stored = read_commitment(rpc, address, key, receipt['blockNumber'] if receipt else hex(snapshot))
     comparison = {field: stored[field] == evidence[field] for field in ['seriesHash', 'gapHash', 'policyHash', 'verdictCode']}
     if not all(comparison.values()) or stored['submitter'].lower() != publisher.lower():
         raise RuntimeError('V2 fixture record did not match')
@@ -61,17 +68,17 @@ def main():
     args_b = [values['STATION_ID'], values['WINDOW_START'], values['WINDOW_END'], values['FILE_B_SERIES_HASH'],
               values['FILE_B_GAP_HASH'], values['FILE_B_POLICY_HASH'], values['FILE_B_VERDICT']]
     calldata_b = cast('calldata', SIGNATURE, *args_b)
-    block = int(str(receipt['blockNumber']), 0)
+    block = int(str(receipt['blockNumber']), 0) if not existing['exists'] else snapshot
     rejection = check_rejection(raw_call(rpc, [{'to': address, 'from': publisher, 'data': calldata_b}, hex(block)]), values['FILE_A_GAP_HASH'], values['FILE_B_GAP_HASH'])
     outsider_call = raw_call(rpc, [{'to': address, 'from': outsider, 'data': calldata_b}, hex(block)])
     if outsider_call.get('result') != '0x': raise RuntimeError('Independent publisher could not use its own namespace')
-    outsider_record = read_commitment(rpc, address, outsider_key)
+    outsider_record = read_commitment(rpc, address, outsider_key, hex(block))
     if outsider_record['exists']: raise RuntimeError('Read-only simulation unexpectedly persisted evidence')
     runtime_hash = '0x' + keccak256(bytes.fromhex(code[2:]))
     proof = {'chainId':11155111, 'contract':address, 'contractVersion':2, 'publisher':publisher,
         'stationId':station, 'windowStart':start, 'windowEnd':end, 'commitmentKey':key,
         'localEvidence':evidence, 'onChainCommitment':stored, 'comparison':comparison, 'matched':True,
-        'firstReceipt':receipt, 'sourceManifest':'data/source/openaq-demo.json',
+        'firstReceipt':receipt, 'sourceManifest':'data/source/openaq-demo.json','compiledRuntimeMatch':True,
         'fileBRejection':{'method':'eth_call','blockNumber':block,'error':'GapPaperedOver','data':rejection},
         'publisherIsolation':{'publisherKey':key,'outsiderKey':outsider_key,'keysMatchContract':True,
             'outsiderSubmissionSimulation':'succeeded in its separate namespace', 'method':'eth_call',

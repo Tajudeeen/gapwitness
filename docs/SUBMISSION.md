@@ -13,7 +13,7 @@ Scaling and measured results are documented in ADOPTION.md and benchmark-results
 ## Ready and remaining
 
 - Public code, documentation, deployed lab, frozen fixtures, and independent verification are provided through README.
-- The V2 publisher-scoped deployment and its proof must be integrated before claiming publisher isolation is live.
+- The V2 publisher-scoped deployment and its source-backed proof are integrated. Its own namespace prevents another wallet from occupying the publisher’s station/window.
 - Use DEMO_SCRIPT.md to record the required 3–5 minute video.
 - Describe environmental impact as improved reviewability and transparency. No environmental outcome or adoption metric has been measured.
 - Organizer eligibility wording conflicts between the students-only overview and the rules allowing independent developers. Obtain confirmation before assuming eligibility as a graduate.

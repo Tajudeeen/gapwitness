@@ -6,7 +6,7 @@ GapWitness checks the temporal integrity of an hourly environmental CSV. It comp
 
 A report can look complete after the inconvenient hours have been removed. A hash taken afterward preserves that edited file, but cannot show which expected hours disappeared. GapWitness makes the declared window and its missing observations part of the evidence.
 
-[Explore GapWitness](https://gapwitness-web.vercel.app) · [Open the lab](https://gapwitness-web.vercel.app/?view=lab) · [Checker health](https://gapwitness-checker.vercel.app/health) · [Contract explorer](https://sepolia.etherscan.io/address/0x81433d6bedf33b72defe0b90534dc16cc2b0bc57) · [Report an issue](https://github.com/Tajudeeen/gapwitness/issues/new)
+[Explore GapWitness](https://gapwitness-web.vercel.app) · [Open the lab](https://gapwitness-web.vercel.app/?view=lab) · [Checker health](https://gapwitness-checker.vercel.app/health) · [Contract explorer](https://sepolia.etherscan.io/address/0x9988b2aa76e532b9093624ea8672543f368aca82) · [Report an issue](https://github.com/Tajudeeen/gapwitness/issues/new)
 
 ## Contents
 
@@ -30,7 +30,7 @@ A report can look complete after the inconvenient hours have been removed. A has
 - Browser evidence is independently checked before wallet submission, including the exact CSV hash and every chain input.
 - Duplicate CSV headers, inconsistent row widths, invalid station encodings, oversized request bodies, and unbounded rate-limit storage are rejected or bounded.
 - Source-backed fixture buttons and evidence JSON export make the review reproducible without a wallet.
-- V2 adds publisher-scoped station/window commitments. Its deployment is gated by contract tests and a live source-backed proof. The existing V1 deployment is retained as historical evidence rather than represented as upgraded.
+- V2 adds publisher-scoped station/window commitments and is the app’s default deployment. Contract tests and the live source-backed proof confirm its isolation. The existing V1 deployment remains historical evidence and was not upgraded.
 - [Security model](docs/SECURITY.md), [adoption and scaling plan](docs/ADOPTION.md), [measured local benchmarks](docs/benchmark-results.json), [submission brief](docs/SUBMISSION.md), and [3–4 minute demo script](docs/DEMO_SCRIPT.md).
 
 Local review without uploading files:
@@ -57,7 +57,7 @@ The current lab focuses on hourly PM2.5 values in µg/m³. The selected track is
 - A responsive landing page explaining missing-hour evidence, the inspection workflow, verdicts, and trust boundaries. Its record illustration is explicitly synthetic.
 - A responsive inspection lab with a 2.6-second launch splash and navigation between source, inspection, commitment, and proof.
 - CSV upload with a declared station and UTC observation window. Editing inputs cancels pending inspection and clears stale evidence; the selected CSV can be inspected again. Inputs and uploads are locked while a commitment is pending.
-- An hourly bar chart using the landing page’s green bars and amber hatched gaps, driven by checker-normalized in-window observations. Quoted CSV fields and timezone-free timestamps are parsed once by the checker, so the chart and verdict use the same observations. Zero readings stay visible at the baseline; negative values extend below zero in red. Missing hours remain distinct from measurements.
+- An hourly bar chart using the landing page’s green bars and amber hatched gaps, driven by checker-normalized in-window observations. The browser independently parses quoted CSV fields and UTC timestamps and checks the server evidence before rendering a committable result. Zero readings stay visible at the baseline; negative values extend below zero in red. Missing hours remain distinct from measurements.
 - An hourly timeline, missing-hour evidence, completeness, deterministic verdicts, and evidence hashes.
 - A two-state browser demonstration comparing a gapped file with a complete file for the same window.
 - An injected EVM wallet flow for Ethereum Sepolia, transaction explorer links, and an evidence receipt view.
@@ -102,7 +102,7 @@ Timestamps without an explicit timezone are currently interpreted as UTC. Includ
 | `seriesHash` | Ethereum Keccak-256 of the exact submitted CSV bytes |
 | `gapHash` | Keccak-256 of the sorted missing UTC timestamps joined by newline characters, with no trailing newline |
 | `policyHash` | Keccak-256 of the versioned checker policy identifier |
-| Commitment key | Keccak-256 of ABI-encoded `stationId`, `uint64 windowStart`, and `uint64 windowEnd` |
+| Commitment key | V2: Keccak-256 of ABI-encoded `address publisher`, `bytes32 stationId`, `uint64 windowStart`, and `uint64 windowEnd`. Historical V1 omits publisher. |
 
 The PM2.5 policy identifier is `gapwitness/pm25/hourly/v1`. The API also supports `generic` temporal inspection with its own policy hash; the web lab uses PM2.5.
 
@@ -110,7 +110,7 @@ Wallet and verifier station IDs use UTF-8 text padded with zero bytes to 32 byte
 
 ### Commitment rules
 
-For the same station and exact window:
+For the same publisher, station, and exact window in V2. Historical V1 uses only station and window:
 
 - The first commitment stores the evidence, submitter, and block timestamp.
 - An identical replay succeeds as a no-op, preserving the first submitter and timestamp and emitting no new `Committed` event.
@@ -124,7 +124,7 @@ Temporal integrity does not establish sensor calibration, source honesty, scient
 
 The Python checker computes the verdict, and the browser independently recomputes evidence before enabling commitment. The Solidity contract stores the submitted hashes and verdict and enforces consistency for an occupied station/window key. It does not parse the CSV, recompute the hashes, or authenticate a checker response.
 
-The historical V1 contract is permissionless and uses a global station/window key. The first writer can occupy that key with arbitrary claims. V2 source includes the signing publisher in the key, preventing another wallet from occupying its namespace; it becomes live only after its separate deployment and proof are integrated. A station label does not establish ownership or source authority. A commitment is a timestamped submission to verify against the retained CSV, rather than a certified environmental record. There is no oracle signature or station-authorization registry.
+The historical V1 contract is permissionless and uses a global station/window key. The first writer can occupy that key with arbitrary claims. V2 source includes the signing publisher in the key, preventing another wallet from occupying its namespace; the deployed V2 proof records its source-backed witness and publisher isolation. A station label does not establish ownership or source authority. A commitment is a timestamped submission to verify against the retained CSV, rather than a certified environmental record. There is no oracle signature or station-authorization registry.
 
 No AI decides the verdict. Uploaded CSV bytes are transmitted to the configured checker. Only compact hashes, the verdict, and commitment metadata are stored on-chain. Retain the original file and declared window for independent verification.
 
@@ -220,8 +220,8 @@ For PowerShell, use `Copy-Item .env.example .env`. Set the local checker URL in 
 
 ```dotenv
 VITE_CHECKER_URL=http://127.0.0.1:8000
-VITE_CONTRACT=0x81433d6bedf33b72defe0b90534dc16cc2b0bc57
-VITE_CONTRACT_DEPLOYMENT_BLOCK=11850947
+VITE_CONTRACT_V2=0x9988b2aa76e532b9093624ea8672543f368aca82
+VITE_CONTRACT_DEPLOYMENT_BLOCK_V2=11911878
 ```
 
 ```bash
@@ -235,8 +235,8 @@ Open `http://localhost:5173`. The checker defaults to allowing that browser orig
 | Variable | Service | Purpose |
 | --- | --- | --- |
 | `VITE_CHECKER_URL` | Web | Checker base URL, defaults to `http://localhost:8000` |
-| `VITE_CONTRACT` | Web | Actual Sepolia deployment address; empty disables commitment |
-| `VITE_CONTRACT_DEPLOYMENT_BLOCK` | Web | Start block for locating prior commitment events |
+| `VITE_CONTRACT_V2` | Web | Optional V2 address override; normally use the proved deployment manifest |
+| `VITE_CONTRACT_DEPLOYMENT_BLOCK_V2` | Web | Optional V2 start block override for locating prior events |
 | `WEB_ORIGIN` | Checker | Single allowed browser origin, default `http://localhost:5173` |
 | `INSPECT_RATE_LIMIT` | Checker | Per-client inspection allowance, default 30 |
 | `INSPECT_RATE_WINDOW_SECONDS` | Checker | In-memory rate-limit window, default 60 seconds |
@@ -319,7 +319,32 @@ This report recomputes fixture evidence and records supplied deployment metadata
 
 ## Sepolia deployment and live proof
 
-### Corrected deployment
+### Current publisher-scoped V2 deployment
+
+| Field | Value |
+| --- | --- |
+| Contract | [`0x9988b2aa76e532b9093624ea8672543f368aca82`](https://sepolia.etherscan.io/address/0x9988b2aa76e532b9093624ea8672543f368aca82) |
+| Deployment transaction | [`0x8cbd2951e5fe7b3640c6f1e81021d2953c347ddd10338a30446e9d0688b5c4b0`](https://sepolia.etherscan.io/tx/0x8cbd2951e5fe7b3640c6f1e81021d2953c347ddd10338a30446e9d0688b5c4b0) |
+| Deployment block | `11911878` |
+| Publisher-scoped File A transaction | [`0xbca8fc950d106c7952ec78787bd8b57181d4ec4febb3882653318ea6dea7ad08`](https://sepolia.etherscan.io/tx/0xbca8fc950d106c7952ec78787bd8b57181d4ec4febb3882653318ea6dea7ad08) |
+| Fixture publisher | `0x541291139b59570d1cd5d0e64df217b3f6efd7c8` |
+| Deployment and proof | [sepolia-v2.json](contracts/deployments/sepolia-v2.json), [fixture-proof-v2.json](contracts/deployments/fixture-proof-v2.json) |
+| Explorer source verification | Still requires `ETHERSCAN_API_KEY` |
+
+The web uses `web/src/lib/deployment.ts` and checks its recorded runtime hash before commitment. Legacy `VITE_CONTRACT` values cannot silently override the V2 default. Optional V2 overrides use the explicitly named V2 variables.
+
+The live proof verifies File A's stored hashes and verdict, File B rejection for its original publisher at a mined block, and distinct publisher keys agreeing between Python and Solidity. An outsider's submission is simulated in its own namespace. The Foundry fuzz test additionally proves that an attacker's actual state mutation in the local EVM cannot occupy another publisher's record. The outsider simulation is not a mined attacker transaction.
+
+Verify the V2 fixture independently:
+
+```bash
+python scripts/verify_onchain.py checker/demo/file_a.csv --station-id 2178 \
+  --window-start 2026-09-19T07:00:00Z --window-end 2026-09-20T07:00:00Z \
+  --contract 0x9988b2aa76e532b9093624ea8672543f368aca82 \
+  --publisher 0x541291139b59570d1cd5d0e64df217b3f6efd7c8
+```
+
+### Historical corrected V1 deployment
 
 | Field | Value |
 | --- | --- |
