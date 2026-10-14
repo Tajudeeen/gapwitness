@@ -953,3 +953,9 @@ a:focus-visible,button:focus-visible,input:focus-visible{
   .landing-trust-resources article:last-child { border-bottom: 0; padding-bottom: 0; }
 }
 @media (prefers-reduced-motion: reduce) { :root { scroll-behavior: auto; } }
+
+.fixture-actions { display: grid; gap: 8px; margin: 16px 0; }
+.fixture-actions p { font-size: 12px; color: var(--muted, #a8b3aa); }
+.fixture-actions button, .evidence > button { padding: 10px 12px; background: #14271c; border: 1px solid #34533e; border-radius: 8px; color: #d0e4d3; text-align: left; cursor: pointer; }
+.fixture-actions button:disabled { opacity: .5; cursor: wait; }
+.receipt-grid code { overflow-wrap: anywhere; }

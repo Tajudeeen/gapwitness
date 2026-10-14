@@ -48,7 +48,7 @@ jobs:
       - run: npm run test:browser
         working-directory: web
         env:
-          VITE_CONTRACT: '0x81433d6bedf33b72defe0b90534dc16cc2b0bc57'
+          VITE_CONTRACT_V2: '0x2222222222222222222222222222222222222222'
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

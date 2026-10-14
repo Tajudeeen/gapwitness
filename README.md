@@ -25,6 +25,22 @@ A report can look complete after the inconvenient hours have been removed. A has
 - [Known limits and scope](#known-limits-and-scope)
 - [Contributing and attribution](#contributing-and-attribution)
 
+## Security and reviewer workflow
+
+- Browser evidence is independently checked before wallet submission, including the exact CSV hash and every chain input.
+- Duplicate CSV headers, inconsistent row widths, invalid station encodings, oversized request bodies, and unbounded rate-limit storage are rejected or bounded.
+- Source-backed fixture buttons and evidence JSON export make the review reproducible without a wallet.
+- V2 adds publisher-scoped station/window commitments. Its deployment is gated by contract tests and a live source-backed proof. The existing V1 deployment is retained as historical evidence rather than represented as upgraded.
+- [Security model](docs/SECURITY.md), [adoption and scaling plan](docs/ADOPTION.md), [measured local benchmarks](docs/benchmark-results.json), [submission brief](docs/SUBMISSION.md), and [3–4 minute demo script](docs/DEMO_SCRIPT.md).
+
+Local review without uploading files:
+
+```bash
+python scripts/inspect_batch.py checker/demo/review-manifest.json --output batch-evidence.json
+```
+
+Measured benchmark medians were 2.643 ms for 24 observations, 3.515 ms for 168, and 6.521 ms for 744 in this recorded local environment. These are synthetic computation measurements, not production capacity, adoption, or environmental impact claims.
+
 ## Who it serves
 
 | User | Task | Useful output |
@@ -75,7 +91,7 @@ The observation window is start-inclusive and end-exclusive: `[windowStart, wind
 | Observations | At least one valid observation inside the declared window |
 | Station | Non-empty identifier; use at most 31 UTF-8 bytes for web and independent on-chain verification |
 
-The API accepts station strings up to 128 characters, while the wallet/verifier encoding supports only 31 UTF-8 bytes. Use the stricter limit for anything you plan to commit.
+The API and browser enforce the same 1–31 UTF-8 byte station limit and reject NUL characters, preventing ambiguous zero-padded encodings.
 
 Timestamps without an explicit timezone are currently interpreted as UTC. Include `Z` or a timezone offset to avoid ambiguity. Out-of-window rows are validated and included in the exact-byte series hash, but do not count toward completeness or in-window physical-rule violations.
 
@@ -106,9 +122,9 @@ For the same station and exact window:
 
 Temporal integrity does not establish sensor calibration, source honesty, scientific accuracy, or physical truth.
 
-The Python checker computes the verdict. The Solidity contract stores the submitted hashes and verdict and enforces consistency for an occupied station/window key. It does not parse the CSV, recompute the hashes, or authenticate a checker response.
+The Python checker computes the verdict, and the browser independently recomputes evidence before enabling commitment. The Solidity contract stores the submitted hashes and verdict and enforces consistency for an occupied station/window key. It does not parse the CSV, recompute the hashes, or authenticate a checker response.
 
-The contract is permissionless. The first writer can occupy a station/window key with arbitrary claims, and a station label does not establish ownership or source authority. A commitment is a timestamped submission to verify against the retained CSV, rather than a certified environmental record. There is no oracle signature or station-authorization registry.
+The historical V1 contract is permissionless and uses a global station/window key. The first writer can occupy that key with arbitrary claims. V2 source includes the signing publisher in the key, preventing another wallet from occupying its namespace; it becomes live only after its separate deployment and proof are integrated. A station label does not establish ownership or source authority. A commitment is a timestamped submission to verify against the retained CSV, rather than a certified environmental record. There is no oracle signature or station-authorization registry.
 
 No AI decides the verdict. Uploaded CSV bytes are transmitted to the configured checker. Only compact hashes, the verdict, and commitment metadata are stored on-chain. Retain the original file and declared window for independent verification.
 
@@ -426,9 +442,9 @@ Browser regressions exercise real checker responses, quoted CSV observations, ch
 - One hourly environmental series per inspection, with a PM2.5-focused web experience.
 - No authenticated station ownership or signed checker attestation on-chain.
 - No sensor hardware, calibration checks, live ingestion, token, marketplace, or multi-chain support.
-- The in-memory rate limiter is per process and resets when a process restarts; it is not a distributed abuse-control system.
+- The request body is bounded before multipart parsing, and in-memory rate-limit storage is capped at 10,000 clients. The limiter remains per process and resets on restart; it is not a distributed abuse-control system.
 - Footer connectivity reflects the last application health/inspection result, not continuous monitoring.
-- The chart uses the checker’s normalized `observations`, not a separate browser CSV parser. Web and checker must be deployed together; the web rejects older responses without observations.
+- The browser independently recomputes the exact-byte hash, timestamps, missing hours, policy hash, observations, verdict, and chain inputs before accepting the checker response. Parser disagreement fails closed. Web and checker should be deployed together.
 - The printable receipt view is an on-screen representation, not an automatic PDF export.
 - Explorer source verification remains separate from deployment and replay proof.
 - A completed demo video is not included in the repository.

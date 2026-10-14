@@ -34,12 +34,17 @@ def unix_seconds(value: str) -> int:
     return int(timestamp.astimezone(timezone.utc).timestamp())
 
 
-def commitment_key(station_id: str, window_start: str, window_end: str) -> str:
+def commitment_key(station_id: str, window_start: str, window_end: str, publisher: str | None = None) -> str:
     encoded = (
         bytes32_text(station_id)
         + unix_seconds(window_start).to_bytes(32, "big")
         + unix_seconds(window_end).to_bytes(32, "big")
     )
+    if publisher is not None:
+        import re
+        if not re.fullmatch(r"0x[0-9a-fA-F]{40}", publisher):
+            raise ValueError("Invalid publisher address")
+        encoded = bytes.fromhex(publisher[2:]).rjust(32, b"\x00") + encoded
     return "0x" + keccak256(encoded)
 
 
@@ -101,6 +106,7 @@ def main() -> int:
     parser.add_argument("--window-start", required=True)
     parser.add_argument("--window-end", required=True)
     parser.add_argument("--contract", required=True)
+    parser.add_argument("--publisher", help="Required for a publisher-scoped V2 contract. Omit only for historical V1 records.")
     parser.add_argument(
         "--rpc-url",
         default="https://ethereum-sepolia-rpc.publicnode.com",
@@ -122,7 +128,19 @@ def main() -> int:
         window_end=args.window_end,
         series_type=args.series_type,
     )
-    key = commitment_key(args.station_id, args.window_start, args.window_end)
+    version_result = rpc_call(args.rpc_url, "eth_getCode", [args.contract, "latest"])
+    if version_result == "0x":
+        raise RuntimeError("No deployed contract at this address")
+    try:
+        version = int(str(rpc_call(args.rpc_url, "eth_call", [{"to": args.contract,
+            "data": "0x" + keccak256(b"version()")[:8]}, "latest"])), 16)
+    except RuntimeError:
+        version = 1
+    if version == 2 and not args.publisher:
+        raise RuntimeError("V2 verification requires --publisher")
+    if version != 2 and args.publisher:
+        raise RuntimeError("Publisher-scoped verification requires a V2 contract")
+    key = commitment_key(args.station_id, args.window_start, args.window_end, args.publisher)
     onchain = read_commitment(args.rpc_url, args.contract, key)
 
     comparison = {
@@ -131,11 +149,15 @@ def main() -> int:
         "policyHash": onchain["policyHash"] == evidence["policyHash"],
         "verdictCode": onchain["verdictCode"] == evidence["verdictCode"],
     }
+    if args.publisher:
+        comparison["publisher"] = str(onchain["submitter"]).lower() == args.publisher.lower()
     matched = bool(onchain["exists"]) and all(comparison.values())
 
     output = {
         "chainId": chain_id,
         "contract": args.contract,
+        "contractVersion": version,
+        "publisher": args.publisher,
         "commitmentKey": key,
         "localEvidence": {
             "stationId": evidence["stationId"],

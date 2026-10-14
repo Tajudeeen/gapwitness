@@ -134,3 +134,42 @@ def test_normalized_observations_handle_quoted_csv_and_utc_naive_timestamps():
         {"timestamp": "2026-01-01T01:00:00Z", "value": -2.0},
     ]
     assert body["missingTimestamps"] == ["2026-01-01T02:00:00Z"]
+
+
+def test_request_body_is_bounded_before_multipart_parsing():
+    from app.main import MAX_REQUEST_BYTES
+    response = client.post('/inspect', content=b'x' * (MAX_REQUEST_BYTES + 1),
+                           headers={'Content-Type': 'multipart/form-data; boundary=bad'})
+    assert response.status_code == 413
+    assert response.json()['detail'] == 'REQUEST_TOO_LARGE'
+
+
+def test_chunked_body_is_also_bounded():
+    from app.main import MAX_REQUEST_BYTES
+    def chunks():
+        yield b'x' * (MAX_REQUEST_BYTES // 2)
+        yield b'x' * (MAX_REQUEST_BYTES // 2 + 1)
+    response = client.post('/inspect', content=chunks(), headers={'Content-Type':'application/octet-stream'})
+    assert response.status_code == 413
+
+
+def test_station_encoding_and_ambiguous_csv_are_rejected():
+    for station in ['a\0b', 'é' * 16]:
+        data = form_data(); data['stationId'] = station
+        response = client.post('/inspect', data=data, files={'csv':('a.csv',csv_payload('2026-01-01T00:00:00Z,1\n'),'text/csv')})
+        assert response.status_code == 422
+    for payload in [b'timestamp,value,value\n2026-01-01T00:00:00Z,1,2\n', b'timestamp,value\n2026-01-01T00:00:00Z,1,extra\n']:
+        response = client.post('/inspect',data=form_data(),files={'csv':('a.csv',payload,'text/csv')})
+        assert response.status_code == 422
+
+
+def test_rate_limiter_does_not_allocate_unbounded_client_keys(monkeypatch):
+    from app import main
+    monkeypatch.setattr(main, 'MAX_RATE_CLIENTS', 2)
+    limiter = main.RateLimiter(30,60)
+    assert limiter.allow('one', now=0)
+    assert limiter.allow('two', now=0)
+    assert not limiter.allow('third',now=1)
+    assert len(limiter._hits) == 2
+    assert limiter.allow('third',now=61)
+    assert len(limiter._hits) <= 2

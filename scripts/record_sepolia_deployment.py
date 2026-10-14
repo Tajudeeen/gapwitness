@@ -10,6 +10,7 @@ def build_record(
     *,
     deployment_commit: str,
     verified: bool,
+    contract_name: str = "GapWitness",
 ) -> dict:
     transactions = broadcast.get("transactions", [])
     receipts = {
@@ -21,7 +22,7 @@ def build_record(
     candidates = [
         item
         for item in transactions
-        if item.get("contractName") == "GapWitness"
+        if item.get("contractName") == contract_name
         and item.get("transactionType") == "CREATE"
         and item.get("contractAddress")
         and item.get("hash")
@@ -35,7 +36,7 @@ def build_record(
     transaction_hash = tx["hash"]
     receipt = receipts.get(transaction_hash, {})
 
-    if receipt.get("status") not in (None, "0x1", 1):
+    if receipt.get("status") not in ("0x1", 1):
         raise ValueError("GapWitness deployment transaction did not succeed.")
 
     block_number = receipt.get("blockNumber")
@@ -51,9 +52,9 @@ def build_record(
     if not deployer:
         raise ValueError("Deployment artifact is missing the deployer address.")
 
-    return {
+    record = {
         "chainId": 11155111,
-        "contract": "GapWitness",
+        "contract": contract_name,
         "address": tx["contractAddress"],
         "deployer": deployer,
         "transactionHash": transaction_hash,
@@ -61,6 +62,9 @@ def build_record(
         "verified": verified,
         "deploymentCommit": deployment_commit,
     }
+    if contract_name == "GapWitnessV2":
+        record["contractVersion"] = 2
+    return record
 
 
 def main() -> None:
@@ -69,6 +73,7 @@ def main() -> None:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--deployment-commit", required=True)
     parser.add_argument("--verified", action="store_true")
+    parser.add_argument("--contract-name", choices=["GapWitness", "GapWitnessV2"], default="GapWitness")
     args = parser.parse_args()
 
     broadcast = json.loads(args.broadcast.read_text(encoding="utf-8"))
@@ -76,6 +81,7 @@ def main() -> None:
         broadcast,
         deployment_commit=args.deployment_commit,
         verified=args.verified,
+        contract_name=args.contract_name,
     )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)

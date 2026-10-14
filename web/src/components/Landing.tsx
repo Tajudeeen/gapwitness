@@ -72,10 +72,19 @@ export function Landing({ navigate, checkerState }: {
 
       <section className="landing-section landing-trust" aria-labelledby="trust-title">
         <div><p className="landing-eyebrow">04 / OPEN TO VERIFICATION</p><h2 id="trust-title">Evidence with<br /><em>honest boundaries.</em></h2><p>Temporal integrity is a specific claim. It does not prove sensor calibration, source honesty, or physical truth.</p></div>
-        <div className="landing-trust-resources"><article><h3>Reproduce the result</h3><p>Explore the checker, frozen OpenAQ fixtures, data provenance, and independent verification scripts.</p><a href={`${REPOSITORY}#readme`} target="_blank" rel="noreferrer">Read the documentation ↗</a></article><article><h3>Inspect the commitment</h3><p>The permissionless contract stores submitted claims; it does not execute the checker. The first submission establishes the record for an exact station and window.</p><a href={`${REPOSITORY}/blob/main/contracts/deployments/replay-proof.json`} target="_blank" rel="noreferrer">View the recorded replay proof ↗</a></article></div>
+        <div className="landing-trust-resources"><article><h3>Reproduce the result</h3><p>Explore the checker, frozen OpenAQ fixtures, data provenance, and independent verification scripts.</p><a href={`${REPOSITORY}#readme`} target="_blank" rel="noreferrer">Read the documentation ↗</a></article><article><h3>Inspect the commitment</h3><p>The permissionless contract stores submitted claims; it does not execute the checker. In V2, the signing wallet owns its record namespace for a station and window. Wallet identity does not certify station authority.</p><a href={`${REPOSITORY}/blob/main/contracts/deployments/fixture-proof-v2.json`} target="_blank" rel="noreferrer">View the publisher-scoped proof ↗</a></article></div>
       </section>
 
-      <section className="landing-closing" aria-labelledby="start-title"><p className="landing-eyebrow">START WITH THE RECORD YOU HAVE</p><h2 id="start-title">Make the missing hours visible.</h2><p>Upload a CSV or run the lab’s synthetic two-state demo.</p><a className="landing-button" href="?view=lab" onClick={openLab}>Open the inspection lab <span aria-hidden="true">↗</span></a></section>
+      <section className="landing-section" aria-labelledby="adoption-title">
+        <div className="landing-section-heading"><div><p className="landing-eyebrow">05 / FIT INTO A REAL REVIEW</p><h2 id="adoption-title">Start with an existing station export.</h2></div></div>
+        <div className="landing-steps">
+          <article><h3>Review before accepting.</h3><p>Researchers and environmental reviewers can inspect an hourly PM2.5 export against its independently obtained reporting schedule.</p></article>
+          <article><h3>Keep reproducible evidence.</h3><p>Export the evidence JSON and retain the exact CSV. Local batch inspection is available when uploading data is unsuitable.</p></article>
+          <article><h3>Measure the actual benefit.</h3><p>Correctness fixtures and local benchmarks are available. Real-world adoption, review time savings, and environmental outcomes have not yet been measured.</p><a href={`${REPOSITORY}/blob/main/docs/ADOPTION.md`} target="_blank" rel="noreferrer">Read the pilot and scaling plan ↗</a></article>
+        </div>
+      </section>
+
+      <section className="landing-closing" aria-labelledby="start-title"><p className="landing-eyebrow">START WITH THE RECORD YOU HAVE</p><h2 id="start-title">Make the missing hours visible.</h2><p>Load frozen source examples, inspect a CSV, or try the clearly labeled synthetic comparison.</p><a className="landing-button" href="?view=lab" onClick={openLab}>Open the inspection lab <span aria-hidden="true">↗</span></a></section>
       <Footer checkerState={checkerState} navigate={navigate} />
     </main>
   );

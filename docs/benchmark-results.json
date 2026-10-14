@@ -1,0 +1,42 @@
+{
+  "scope": "local deterministic checker only, no HTTP, wallet, or production load",
+  "environment": {
+    "python": "3.12.14",
+    "platform": "Linux",
+    "machine": "x86_64",
+    "pandas": "3.0.6",
+    "fastapi": "0.143.0"
+  },
+  "cases": [
+    {
+      "source": "synthetic performance fixture",
+      "hours": 24,
+      "bytes": 712,
+      "runs": 50,
+      "medianMs": 2.643,
+      "p95Ms": 3.198
+    },
+    {
+      "source": "synthetic performance fixture",
+      "hours": 168,
+      "bytes": 4888,
+      "runs": 50,
+      "medianMs": 3.515,
+      "p95Ms": 4.133
+    },
+    {
+      "source": "synthetic performance fixture",
+      "hours": 744,
+      "bytes": 21592,
+      "runs": 50,
+      "medianMs": 6.521,
+      "p95Ms": 8.022
+    }
+  ],
+  "notMeasured": [
+    "Environmental outcomes",
+    "User adoption",
+    "Manual review time savings",
+    "Distributed service capacity"
+  ]
+}

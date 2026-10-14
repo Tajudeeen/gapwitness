@@ -1,0 +1,5 @@
+[
+ {"csv":"file_a.csv","stationId":"2178","windowStart":"2026-09-19T07:00:00Z","windowEnd":"2026-09-20T07:00:00Z","seriesType":"pm25"},
+ {"csv":"file_b.csv","stationId":"2178","windowStart":"2026-09-19T07:00:00Z","windowEnd":"2026-09-20T07:00:00Z","seriesType":"pm25"},
+ {"csv":"file_c_impossible.csv","stationId":"2178","windowStart":"2026-09-19T07:00:00Z","windowEnd":"2026-09-20T07:00:00Z","seriesType":"pm25"}
+]

@@ -1,5 +1,5 @@
 import { navigateLink, type Navigate } from "../lib/navigation";
-import { CONTRACT_ADDRESS, explorerAddressUrl } from "../lib/wallet";
+import { CONTRACT_ADDRESS, CONTRACT_VERSION, explorerAddressUrl } from "../lib/wallet";
 
 const REPOSITORY = "https://github.com/Tajudeeen/gapwitness";
 
@@ -41,8 +41,9 @@ export function Footer({ checkerState, navigate }: FooterProps) {
         <nav className="footer-nav" aria-label="Verification resources">
           <h3>Verify independently</h3>
           <a href={`${REPOSITORY}#readme`} target="_blank" rel="noopener noreferrer">Project documentation ↗</a>
+          <a href={`${REPOSITORY}/blob/main/docs/SECURITY.md`} target="_blank" rel="noopener noreferrer">Security and trust model ↗</a>
           <a href={`${REPOSITORY}/blob/main/scripts/verify_onchain.py`} target="_blank" rel="noopener noreferrer">Independent verifier ↗</a>
-          <a href={`${REPOSITORY}/blob/main/contracts/src/GapWitness.sol`} target="_blank" rel="noopener noreferrer">Contract source ↗</a>
+          <a href={`${REPOSITORY}/blob/main/contracts/src/${CONTRACT_VERSION === 2 ? "GapWitnessV2" : "GapWitness"}.sol`} target="_blank" rel="noopener noreferrer">Contract source ↗</a>
           {CONTRACT_ADDRESS ? (
             <a href={explorerAddressUrl(CONTRACT_ADDRESS)} target="_blank" rel="noopener noreferrer">Configured Sepolia contract ↗</a>
           ) : <span className="footer-unavailable">Contract not configured</span>}

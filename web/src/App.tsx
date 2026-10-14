@@ -1,3 +1,6 @@
+import sourceA from "../../checker/demo/file_a.csv?raw";
+import sourceB from "../../checker/demo/file_b.csv?raw";
+import sourceC from "../../checker/demo/file_c_impossible.csv?raw";
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { Landing } from "./components/Landing";
@@ -16,6 +19,8 @@ import {
   explorerTransactionUrl,
   isContractConfigured,
   CONTRACT_ADDRESS,
+  CONTRACT_VERSION,
+  getCommitmentKey,
   watchWalletEvents,
   CommitmentError,
   WalletError,
@@ -109,7 +114,7 @@ function App() {
   }, [view]);
   const inspectionRequest = useRef<{ id: number; controller: AbortController | null }>({ id: 0, controller: null });
   const commitInFlight = useRef(false);
-  const [sourceKind, setSourceKind] = useState<"upload" | "synthetic">("upload");
+  const [sourceKind, setSourceKind] = useState<"upload" | "synthetic" | "openaq">("upload");
   const [file, setFile] = useState<File | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
   const [result, setResult] = useState<CheckResult | null>(null);
@@ -121,6 +126,8 @@ function App() {
   const [windowEnd, setWindowEnd] = useState(DEFAULT_WINDOW_END);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [commitBusy, setCommitBusy] = useState(false);
+  const [txPublisher, setTxPublisher] = useState<string | null>(null);
+  const [commitCreated, setCommitCreated] = useState(true);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [conflict, setConflict] = useState<{
     priorGap: string;
@@ -169,6 +176,7 @@ function App() {
     setPoints([]);
     setActivePoint(null);
     setTxHash(null);
+    setTxPublisher(null);
     setConflict(null);
     setShowReceipt(false);
   }
@@ -203,16 +211,16 @@ function App() {
     setMessage("Inputs changed. Inspect the selected CSV again before committing.");
   }
 
-  async function inspect(upload: File) {
+  async function inspect(upload: File, context = { stationId: station.trim(), windowStart, windowEnd }, source: "upload" | "openaq" = "upload") {
     if (commitInFlight.current) return;
     const request = beginInspection();
     setBusy(true);
-    setSourceKind("upload");
+    setSourceKind(source);
     setMessage("Inspecting bytes against the declared hourly window…");
 
     try {
       const next = await inspectCsv({
-        stationId: station.trim(), windowStart, windowEnd,
+        ...context,
         seriesType: "pm25", csv: upload, signal: request.signal,
       });
       if (!request.current()) return;
@@ -238,6 +246,29 @@ function App() {
     } finally {
       if (request.current()) setBusy(false);
     }
+  }
+
+  function loadSourceFixture(name: "a" | "b" | "c") {
+    if (commitInFlight.current) return;
+    const text = {a: sourceA, b: sourceB, c: sourceC}[name];
+    const fixture = new File([text], `file_${name}${name === "c" ? "_impossible" : ""}.csv`, {type: "text/csv"});
+    setStation(DEFAULT_STATION); setWindowStart(DEFAULT_WINDOW_START); setWindowEnd(DEFAULT_WINDOW_END); setFile(fixture);
+    void inspect(fixture, {stationId: DEFAULT_STATION, windowStart: DEFAULT_WINDOW_START, windowEnd: DEFAULT_WINDOW_END}, "openaq");
+  }
+
+  function downloadEvidence() {
+    if (!result) return;
+    const publisher = txPublisher;
+    const proof = {format: "gapwitness/evidence/v1", source: sourceKind,
+      csvFilename: file?.name, originalCsvRequired: true, browserEvidenceCheck: "matched",
+      evidence: result, chain: txHash ? {chainId: 11155111, contract: CONTRACT_ADDRESS,
+        contractVersion: CONTRACT_VERSION, publisher, transactionHash: txHash,
+        commitmentKey: getCommitmentKey(result.chainCommitment, publisher ?? undefined),
+        operation: commitCreated ? "first-witness" : "exact-replay"} : null,
+      limits: ["Wallet identity does not certify station authority.", "Temporal completeness does not prove measurement accuracy."]};
+    const url = URL.createObjectURL(new Blob([JSON.stringify(proof, null, 2) + "\n"], {type: "application/json"}));
+    const link = document.createElement("a"); link.href = url; link.download = "gapwitness-evidence.json"; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   async function runDemo() {
@@ -294,7 +325,8 @@ function App() {
 
       const receipt = await commitEvidence(result.chainCommitment);
       setTxHash(receipt.transactionHash);
-      setMessage(`Evidence committed on Sepolia in block ${receipt.blockNumber}.`);
+      setTxPublisher(receipt.publisher); setCommitCreated(receipt.created);
+      setMessage(receipt.created ? `Evidence witnessed on Sepolia in block ${receipt.blockNumber}.` : "Exact replay confirmed. The first witness and its timestamp were preserved.");
     } catch (error) {
       if (error instanceof CommitmentError) {
         if (error.conflict) {
@@ -303,7 +335,7 @@ function App() {
             nextGap: error.conflict.nextGap,
             priorTransactionHash: error.conflict.priorTransactionHash,
           });
-          setMessage("GapPaperedOver: the later submission conflicts with the prior commitment.");
+          setMessage("GapPaperedOver: the later evidence differs from this publisher’s first witness. This alone does not establish tampering.");
         } else {
           setMessage(error.message);
         }
@@ -347,7 +379,8 @@ function App() {
   const chartValues = timelineHours.flatMap(hour => hour.point ? [hour.point.value] : []);
   const minimum = Math.min(0, ...chartValues);
   const maximum = Math.max(1, ...chartValues);
-  const yFor = (value: number) => top + innerH * (maximum - value) / (maximum - minimum);
+  const scaleMagnitude = Math.max(Math.abs(minimum), Math.abs(maximum));
+  const yFor = (value: number) => top + innerH * (maximum / scaleMagnitude - value / scaleMagnitude) / (maximum / scaleMagnitude - minimum / scaleMagnitude);
   const zeroY = yFor(0);
   const slotWidth = innerW / Math.max(timelineHours.length, 1);
   const barInset = Math.min(4, slotWidth * 0.16);
@@ -459,12 +492,13 @@ function App() {
 
           <div className="field">
             <label>window</label>
+            <small>Use the reporting schedule, not the first and last CSV rows.</small>
             <div className="readout">{formatWindowLabel(windowStart, windowEnd)}</div>
           </div>
 
           <div className="field">
             <label>source</label>
-            <div className="readout">{sourceKind === "synthetic" ? "Synthetic browser demo" : "Uploaded CSV · source unverified"}</div>
+            <div className="readout">{sourceKind === "synthetic" ? "Synthetic browser demo" : sourceKind === "openaq" ? "Frozen OpenAQ fixture · recorded provenance" : "Uploaded CSV · source unverified"}</div>
           </div>
 
           <label className={`upload${busy ? " is-busy" : ""}`}>
@@ -477,6 +511,12 @@ function App() {
             {demoBusy ? "running evidence demo…" : "try the built-in demo"}
           </button>
 
+          <div className="fixture-actions" aria-label="Frozen source fixtures">
+            <p>Source-backed examples, station 2178</p>
+            <button type="button" disabled={commitBusy} onClick={() => loadSourceFixture("a")}>load File A · 7 deliberate gaps</button>
+            <button type="button" disabled={commitBusy} onClick={() => loadSourceFixture("b")}>load File B · complete source window</button>
+            <button type="button" disabled={commitBusy} onClick={() => loadSourceFixture("c")}>load File C · policy test</button>
+          </div>
           {file && <button type="button" className="rail-demo" disabled={busy || demoBusy || commitBusy} onClick={() => void inspect(file)}>inspect selected CSV again</button>}
 
           <p className="message" aria-live="polite">{busy ? "● " : ""}{message}</p>
@@ -653,6 +693,8 @@ function App() {
                 <span className="kicker">EVIDENCE HASHES</span>
                 <h3>the bytes become proof material.</h3>
               </div>
+              <p>CSV bytes, missing hours, and verdict independently checked in this browser.</p>
+              <button type="button" onClick={downloadEvidence}>download evidence JSON</button>
               <div className="hash-list">
                 {[
                   ["seriesHash", result.seriesHash],
@@ -680,6 +722,7 @@ function App() {
               <div>
                 <span className="kicker">CHAIN</span>
                 <h3>sepolia commitment</h3>
+                <p>{CONTRACT_VERSION === 2 ? "Publisher-scoped records. Another wallet cannot occupy your namespace." : "Historical global namespace. Station ownership is not authenticated."}</p>
               </div>
               <div className="chain-lines">
                 <div><span>contract</span><code>{isContractConfigured() ? "configured" : "not configured"}</code></div>
@@ -714,13 +757,14 @@ function App() {
                   <span className="kicker">EVIDENCE RECEIPT</span>
                   <h3>temporal integrity witness</h3>
                 </div>
-                <span className="receipt-status">COMMITTED · SEPOLIA</span>
+                <span className="receipt-status">{commitCreated ? "WITNESSED" : "REPLAY CONFIRMED"} · SEPOLIA</span>
               </div>
               <div className="receipt-grid">
                 <div><span>STATION</span><b>{result.stationId}</b></div>
                 <div><span>WINDOW</span><b>{new Date(result.windowStart).toISOString().slice(0,16).replace("T"," ")} → {new Date(result.windowEnd).toISOString().slice(11,16)} UTC</b></div>
                 <div><span>VERDICT</span><b>{result.verdict}</b></div>
                 <div><span>MISSING</span><b>{result.missingTimestamps.length} HOURS</b></div>
+                <div><span>PUBLISHER</span><code>{txPublisher}</code></div>
                 <div><span>TX</span><code>{shortHash(txHash)}</code></div>
                 <div><span>CONTRACT</span><code>{shortAddress(CONTRACT_ADDRESS || "not configured")}</code></div>
               </div>
@@ -763,7 +807,7 @@ function App() {
           <p>GapWitness is deliberately precise about what its proof can and cannot establish.</p>
         </div>
         <div className="proof-cards">
-          <details open><summary><span>✓</span><b>WHAT THIS PROVES</b><i>+</i></summary><p>the submitted bytes, the expected missing timestamps, the deterministic policy result, and whether a later submission conflicts with the same exact window.</p></details>
+          <details open><summary><span>✓</span><b>WHAT THIS PROVES</b><i>+</i></summary><p>the submitted bytes, expected missing timestamps, deterministic policy result, and whether later evidence conflicts with the same publisher, station, and exact window.</p></details>
           <details><summary><span>×</span><b>WHAT THIS DOES NOT PROVE</b><i>+</i></summary><p>sensor calibration, physical truth, source honesty, or that a measurement was scientifically correct. Integrity is not truth.</p></details>
           <details><summary><span>!</span><b>INSUFFICIENT DATA</b><i>+</i></summary><p>not a verdict. If the checker cannot establish a usable evidence window, it returns 422 and no verdict is committed.</p></details>
         </div>

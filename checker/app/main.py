@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections import deque
 from io import BytesIO
+import csv as csv_module
+from io import StringIO
 import os
 import math
 import time
@@ -10,11 +12,15 @@ import pandas as pd
 from Crypto.Hash import keccak
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
+from starlette.concurrency import run_in_threadpool
 
-app = FastAPI(title="GapWitness Checker", version="0.6.0")
+app = FastAPI(title="GapWitness Checker", version="0.7.0")
 
 MAX_FILE_BYTES = 1_000_000
 MAX_WINDOW_HOURS = 24 * 31
+MAX_REQUEST_BYTES = 1_100_000
+MAX_RATE_CLIENTS = 10_000
 POLICY_VERSION = "gapwitness/pm25/hourly/v1"
 
 
@@ -44,6 +50,13 @@ class RateLimiter:
         current = time.monotonic() if now is None else now
         cutoff = current - self.window_seconds
 
+        if key not in self._hits and len(self._hits) >= MAX_RATE_CLIENTS:
+            stale = [stored_key for stored_key, stored_hits in self._hits.items()
+                     if not stored_hits or stored_hits[-1] <= cutoff]
+            for stored_key in stale:
+                self._hits.pop(stored_key, None)
+            if len(self._hits) >= MAX_RATE_CLIENTS:
+                return False
         hits = self._hits.setdefault(key, deque())
         while hits and hits[0] <= cutoff:
             hits.popleft()
@@ -66,6 +79,41 @@ class RateLimiter:
 rate_limiter = RateLimiter(INSPECT_RATE_LIMIT, INSPECT_RATE_WINDOW_SECONDS)
 
 
+class InspectionBodyLimit:
+    """Bound and rate-limit the request before multipart parsing or spooling."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or scope["method"] != "POST" or scope["path"] != "/inspect":
+            return await self.app(scope, receive, send)
+        client = scope.get("client")
+        if not rate_limiter.allow(client[0] if client else "unknown"):
+            return await JSONResponse({"detail": "RATE_LIMITED"}, status_code=429,
+                headers={"Retry-After": str(INSPECT_RATE_WINDOW_SECONDS)})(scope, receive, send)
+        messages, total = [], 0
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                return
+            total += len(message.get("body", b""))
+            if total > MAX_REQUEST_BYTES:
+                return await JSONResponse({"detail": "REQUEST_TOO_LARGE"}, status_code=413)(scope, receive, send)
+            messages.append(message)
+            if not message.get("more_body", False):
+                break
+        index = 0
+        async def bounded_receive():
+            nonlocal index
+            if index < len(messages):
+                message = messages[index]
+                index += 1
+                return message
+            return await receive()
+        await self.app(scope, bounded_receive, send)
+
+
+app.add_middleware(InspectionBodyLimit)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[WEB_ORIGIN],
@@ -120,7 +168,7 @@ def inspect_csv(
     window_end: str,
     series_type: str = "pm25",
 ) -> dict:
-    if not station_id or len(station_id) > 128:
+    if not station_id or len(station_id.encode("utf-8")) > 31 or "\x00" in station_id:
         raise ValueError("INVALID_STATION_ID")
     if not csv_bytes:
         raise ValueError("EMPTY_FILE")
@@ -158,9 +206,22 @@ def inspect_csv(
         raise ValueError("WINDOW_TOO_WIDE")
 
     try:
+        rows = [row for row in csv_module.reader(StringIO(csv_bytes.decode("utf-8-sig")), strict=True)
+                if any(field.strip() for field in row)]
+        if not rows:
+            raise ValueError("EMPTY_SERIES")
+        header = rows[0]
+        if len(set(header)) != len(header):
+            raise ValueError("DUPLICATE_COLUMNS")
+        if any(len(row) != len(header) for row in rows[1:]):
+            raise ValueError("INCONSISTENT_CSV_COLUMNS")
         df = pd.read_csv(BytesIO(csv_bytes))
+    except ValueError as exc:
+        if str(exc) in ("EMPTY_SERIES", "DUPLICATE_COLUMNS", "INCONSISTENT_CSV_COLUMNS"):
+            raise
+        raise ValueError("INVALID_CSV") from exc
     except Exception as exc:
-        raise ValueError(f"INVALID_CSV: {exc}") from exc
+        raise ValueError("INVALID_CSV") from exc
 
     missing_columns = sorted({"timestamp", "value"} - set(df.columns))
     if missing_columns:
@@ -215,7 +276,7 @@ def inspect_csv(
         ),
         "missingTimestamps": gaps,
         "materialGap": len(gaps) > 2,
-        "impossibleTimestamps": impossible,
+        "impossibleTimestamps": sorted(impossible),
         "verdict": verdict,
         "verdictCode": verdict_code(verdict),
         "seriesHash": "0x" + series_hash(csv_bytes),
@@ -269,19 +330,12 @@ async def inspect(
     seriesType: str = Form("pm25"),
     csv: UploadFile = File(...),
 ) -> dict:
-    if not rate_limiter.allow(request.client.host if request.client else "unknown"):
-        raise HTTPException(
-            status_code=429,
-            detail="RATE_LIMITED",
-            headers={"Retry-After": str(INSPECT_RATE_WINDOW_SECONDS)},
-        )
-
     if not csv.filename or not csv.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=422, detail="INVALID_FILE_TYPE")
 
     try:
         payload = await _read_limited(csv)
-        return inspect_csv(
+        return await run_in_threadpool(inspect_csv,
             payload,
             station_id=stationId.strip(),
             window_start=windowStart,

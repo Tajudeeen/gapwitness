@@ -80,3 +80,11 @@ def test_read_commitment_recognizes_missing_commitment(monkeypatch):
 
     assert result["exists"] is False
     assert result["seriesHash"] == "0x" + "00" * 32
+
+
+def test_v2_publisher_namespaces_are_distinct():
+    args=('2178','2026-09-19T07:00:00Z','2026-09-20T07:00:00Z')
+    first=verify_onchain.commitment_key(*args,'0x'+'11'*20)
+    second=verify_onchain.commitment_key(*args,'0x'+'22'*20)
+    assert first != second
+    assert first != verify_onchain.commitment_key(*args)

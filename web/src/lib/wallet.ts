@@ -1,9 +1,11 @@
+import { DEFAULT_DEPLOYMENT } from "./deployment.ts";
 import {
   AbiCoder,
   BrowserProvider,
   Contract,
   Interface,
   keccak256,
+  isAddress,
 } from "ethers";
 import type { Eip1193Provider } from "ethers";
 import type { ChainCommitment } from "./checker";
@@ -13,21 +15,25 @@ const config = import.meta.env ?? {};
 export const SEPOLIA_CHAIN_ID = 11155111n;
 export const SEPOLIA_CHAIN_HEX = "0xaa36a7";
 export const CONTRACT_ADDRESS = (
-  config.VITE_CONTRACT || ""
+  config.VITE_CONTRACT_V2 || (DEFAULT_DEPLOYMENT.version === 2 ? DEFAULT_DEPLOYMENT.address : config.VITE_CONTRACT || DEFAULT_DEPLOYMENT.address)
 ).trim();
 
 // The live deployment block is a public fallback for the current Sepolia contract.
 // VITE_CONTRACT_DEPLOYMENT_BLOCK remains the preferred override for future deployments.
 export const DEPLOYMENT_BLOCK = Number(
-  config.VITE_CONTRACT_DEPLOYMENT_BLOCK || "11850947",
+  config.VITE_CONTRACT_DEPLOYMENT_BLOCK_V2 || (DEFAULT_DEPLOYMENT.version === 2 ? String(DEFAULT_DEPLOYMENT.blockNumber) : config.VITE_CONTRACT_DEPLOYMENT_BLOCK || String(DEFAULT_DEPLOYMENT.blockNumber)),
 );
 
+export const CONTRACT_VERSION = config.VITE_CONTRACT_V2 ? 2 : DEFAULT_DEPLOYMENT.version;
 const EXPLORER_BASE = "https://sepolia.etherscan.io";
 
 export const GAP_WITNESS_ABI = [
   "error GapPaperedOver(bytes32 priorGap,bytes32 nextGap)",
   "error CommitmentChanged(bytes32 priorSeries,bytes32 nextSeries,bytes32 priorPolicy,bytes32 nextPolicy,uint8 priorVerdict,uint8 nextVerdict)",
   "error WindowTooWide()",
+  "error EmptyStation()",
+  "error EmptyPolicy()",
+  "function version() view returns (uint256)",
   "error EmptySeries()",
   "error InvalidHourBoundary()",
   "error InvalidVerdict()",
@@ -39,6 +45,8 @@ export const GAP_WITNESS_ABI = [
 export type CommitReceipt = {
   transactionHash: string;
   blockNumber: number;
+  publisher: string;
+  created: boolean;
 };
 
 export type ConflictDetails = {
@@ -144,11 +152,13 @@ export function extractRevertData(error: unknown, seen = new Set<object>()): str
   return null;
 }
 
-function commitmentKey(commitment: ChainCommitment): string {
+function commitmentKey(commitment: ChainCommitment, publisher?: string): string {
+  if (CONTRACT_VERSION === 2 && (!publisher || !isAddress(publisher))) throw new CommitmentError("Publisher address is required for a V2 record.");
   return keccak256(
     AbiCoder.defaultAbiCoder().encode(
-      ["bytes32", "uint64", "uint64"],
+      CONTRACT_VERSION === 2 ? ["address", "bytes32", "uint64", "uint64"] : ["bytes32", "uint64", "uint64"],
       [
+        ...(CONTRACT_VERSION === 2 ? [publisher] : []),
         stationBytes32(commitment.stationId),
         BigInt(commitment.windowStart),
         BigInt(commitment.windowEnd),
@@ -159,10 +169,10 @@ function commitmentKey(commitment: ChainCommitment): string {
 
 function stationBytes32(stationId: string): string {
   const bytes = new TextEncoder().encode(stationId);
-  if (bytes.length > 31) {
+  if (!bytes.length || bytes.length > 31 || stationId.includes("\0")) {
     throw new WalletError(
       "CONTRACT_NOT_CONFIGURED",
-      "Station ID is too long for the contract bytes32 field.",
+      "Station ID must contain 1–31 UTF-8 bytes and no NUL character.",
     );
   }
 
@@ -184,14 +194,14 @@ async function findPriorTransaction(
   const event = iface.getEvent("Committed");
   if (!event) return null;
 
-  const logs = await provider.getLogs({
-    address: CONTRACT_ADDRESS,
-    fromBlock,
-    toBlock: latest,
-    topics: [event.topicHash, key],
-  });
-
-  return logs.at(-1)?.transactionHash ?? null;
+  // Public RPCs often prune old history or limit log ranges. This link is optional.
+  for (let end = latest; end >= Math.max(fromBlock, latest - 20000); end -= 2000) {
+    const start = Math.max(fromBlock, latest - 20000, end - 1999);
+    const logs = await provider.getLogs({address: CONTRACT_ADDRESS, fromBlock: start,
+      toBlock: end, topics: [event.topicHash, key]});
+    if (logs.length) return logs[0].transactionHash;
+  }
+  return null;
 }
 
 export function watchWalletEvents(
@@ -269,8 +279,14 @@ export async function commitEvidence(
     );
   }
 
+  if (CONTRACT_ADDRESS.toLowerCase() === DEFAULT_DEPLOYMENT.address.toLowerCase()
+      && DEFAULT_DEPLOYMENT.runtimeHash && keccak256(code) !== DEFAULT_DEPLOYMENT.runtimeHash) {
+    throw new CommitmentError("Deployed contract bytecode does not match the recorded deployment.");
+  }
   const signer = await provider.getSigner();
+  const publisher = await signer.getAddress();
   const contract = new Contract(CONTRACT_ADDRESS, GAP_WITNESS_ABI, signer);
+  if (CONTRACT_VERSION === 2 && await contract.version() !== 2n) throw new CommitmentError("Configured contract is not publisher-scoped V2.");
 
   try {
     const tx = await contract.commit(
@@ -288,10 +304,18 @@ export async function commitEvidence(
       throw new CommitmentError("Commitment transaction was not mined.");
     }
 
-    return {
-      transactionHash: receipt.hash,
-      blockNumber: receipt.blockNumber,
-    };
+    const record = await contract.commitments(commitmentKey(commitment, publisher));
+    if (record.seriesHash !== commitment.seriesHash || record.gapHash !== commitment.gapHash
+        || record.policyHash !== commitment.policyHash || Number(record.verdict) !== commitment.verdict
+        || (CONTRACT_VERSION === 2 && record.submitter.toLowerCase() !== publisher.toLowerCase())) {
+      throw new CommitmentError("Mined transaction did not establish the expected publisher evidence.");
+    }
+    const iface = new Interface(GAP_WITNESS_ABI);
+    const created = receipt.logs.some((log: {address: string; topics: string[]; data: string}) => {
+      if (log.address.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) return false;
+      try { return iface.parseLog(log)?.name === "Committed"; } catch { return false; }
+    });
+    return {transactionHash: receipt.hash, blockNumber: receipt.blockNumber, publisher, created};
   } catch (error) {
     const data = extractRevertData(error);
     if (data) {
@@ -303,7 +327,7 @@ export async function commitEvidence(
         const nextGap = String(decoded.args[1]);
         const priorTransactionHash = await findPriorTransaction(
           provider,
-          commitmentKey(commitment),
+          commitmentKey(commitment, publisher),
         ).catch(() => null);
 
         throw new CommitmentError(
@@ -347,9 +371,9 @@ export function explorerAddressUrl(address: string): string {
 }
 
 export function isContractConfigured(): boolean {
-  return Boolean(CONTRACT_ADDRESS);
+  return isAddress(CONTRACT_ADDRESS);
 }
 
-export function getCommitmentKey(commitment: ChainCommitment): string {
-  return commitmentKey(commitment);
+export function getCommitmentKey(commitment: ChainCommitment, publisher?: string): string {
+  return commitmentKey(commitment, publisher);
 }
