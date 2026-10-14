@@ -8,21 +8,29 @@ import {
 import type { Eip1193Provider } from "ethers";
 import type { ChainCommitment } from "./checker";
 
+const config = import.meta.env ?? {};
+
 export const SEPOLIA_CHAIN_ID = 11155111n;
 export const SEPOLIA_CHAIN_HEX = "0xaa36a7";
 export const CONTRACT_ADDRESS = (
-  import.meta.env.VITE_CONTRACT || ""
+  config.VITE_CONTRACT || ""
 ).trim();
 
 // The live deployment block is a public fallback for the current Sepolia contract.
 // VITE_CONTRACT_DEPLOYMENT_BLOCK remains the preferred override for future deployments.
 export const DEPLOYMENT_BLOCK = Number(
-  import.meta.env.VITE_CONTRACT_DEPLOYMENT_BLOCK || "11850947",
+  config.VITE_CONTRACT_DEPLOYMENT_BLOCK || "11850947",
 );
 
 const EXPLORER_BASE = "https://sepolia.etherscan.io";
 
 export const GAP_WITNESS_ABI = [
+  "error GapPaperedOver(bytes32 priorGap,bytes32 nextGap)",
+  "error CommitmentChanged(bytes32 priorSeries,bytes32 nextSeries,bytes32 priorPolicy,bytes32 nextPolicy,uint8 priorVerdict,uint8 nextVerdict)",
+  "error WindowTooWide()",
+  "error EmptySeries()",
+  "error InvalidHourBoundary()",
+  "error InvalidVerdict()",
   "function commit(bytes32 stationId,uint64 windowStart,uint64 windowEnd,bytes32 seriesHash,bytes32 gapHash,bytes32 policyHash,uint8 verdict)",
   "function commitments(bytes32) view returns (bytes32 seriesHash,bytes32 gapHash,bytes32 policyHash,uint8 verdict,uint64 committedAt,address submitter)",
   "event Committed(bytes32 indexed commitmentKey,bytes32 indexed seriesHash,bytes32 gapHash,bytes32 policyHash,uint8 verdict,address indexed submitter)",
@@ -112,8 +120,10 @@ async function ensureSepolia(provider: BrowserProvider): Promise<void> {
   }
 }
 
-function extractRevertData(error: unknown): string | null {
+export function extractRevertData(error: unknown, seen = new Set<object>()): string | null {
   if (!error || typeof error !== "object") return null;
+  if (seen.has(error)) return null;
+  seen.add(error);
 
   const candidate = error as {
     data?: unknown;
@@ -126,8 +136,8 @@ function extractRevertData(error: unknown): string | null {
     return candidate.data;
   }
 
-  for (const nested of [candidate.error, candidate.info, candidate.revert]) {
-    const value = extractRevertData(nested);
+  for (const nested of [candidate.data, candidate.error, candidate.info, candidate.revert]) {
+    const value = extractRevertData(nested, seen);
     if (value) return value;
   }
 
@@ -286,7 +296,8 @@ export async function commitEvidence(
     const data = extractRevertData(error);
     if (data) {
       const iface = new Interface(GAP_WITNESS_ABI);
-      const decoded = iface.parseError(data);
+      let decoded = null;
+      try { decoded = iface.parseError(data); } catch { /* Preserve the original failure for unknown data. */ }
       if (decoded?.name === "GapPaperedOver") {
         const priorGap = String(decoded.args[0]);
         const nextGap = String(decoded.args[1]);
@@ -313,8 +324,8 @@ export async function commitEvidence(
       }
     }
 
-    const code = (error as { code?: number }).code;
-    if (code === 4001) {
+    const code = (error as { code?: number | string; info?: { error?: { code?: number } } }).code;
+    if (code === 4001 || code === "ACTION_REJECTED" || (error as { info?: { error?: { code?: number } } }).info?.error?.code === 4001) {
       throw new WalletError(
         "WALLET_REJECTED",
         "Transaction was rejected. The evidence remains unchanged.",

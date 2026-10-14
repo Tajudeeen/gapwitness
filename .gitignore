@@ -16,3 +16,7 @@ dist/
 Thumbs.db
 .vscode/
 .idea/
+
+# Browser regression artifacts
+test-results/
+playwright-report/

@@ -1,0 +1,81 @@
+name: final-evidence
+on:
+  workflow_dispatch:
+  create:
+permissions:
+  contents: write
+concurrency:
+  group: gapwitness-final-evidence
+  cancel-in-progress: false
+jobs:
+  fixture-proof:
+    if: github.actor == 'Tajudeeen' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref_name, 'proof-run/'))
+    runs-on: ubuntu-latest
+    env:
+      PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+      SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: foundry-rs/foundry-toolchain@v1
+      - run: pip install -r checker/requirements.txt
+      - run: python -m pytest checker/tests scripts/test_fixture_proof.py
+        env:
+          PYTHONPATH: checker
+      - name: Commit source fixture and verify changed-file rejection
+        run: python scripts/prove_fixture_onchain.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gapwitness-fixture-proof
+          path: contracts/deployments/fixture-proof.json
+      - name: Publish proof branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "ops/fixture-proof-${GITHUB_RUN_ID}"
+          git add contracts/deployments/fixture-proof.json
+          git commit -m 'Record independently verified environmental fixture proof'
+          git push origin HEAD
+  explorer-verification:
+    if: github.actor == 'Tajudeeen' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref_name, 'proof-run/'))
+    runs-on: ubuntu-latest
+    environment: sepolia
+    env:
+      ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Verify the existing deployment, without redeploying
+        run: |
+          test -n "$ETHERSCAN_API_KEY" || { echo 'ETHERSCAN_API_KEY is not configured.'; exit 1; }
+          ADDRESS=$(python ../scripts/read_sepolia_deployment.py --deployment deployments/sepolia.json)
+          # Compile the exact deployment revision, including its original settings.
+          SOURCE_COMMIT=$(python -c 'import json; print(json.load(open("deployments/sepolia.json"))["deploymentCommit"])')
+          git worktree add --detach /tmp/gapwitness-deployed-source "$SOURCE_COMMIT"
+          cd /tmp/gapwitness-deployed-source/contracts
+          forge verify-contract "$ADDRESS" src/GapWitness.sol:GapWitness \
+            --chain sepolia --compiler-version 0.8.24 \
+            --etherscan-api-key "$ETHERSCAN_API_KEY" --watch
+      - name: Record successful explorer verification
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('deployments/sepolia.json')
+          data = json.loads(p.read_text())
+          data['verified'] = True
+          p.write_text(json.dumps(data, indent=2) + '\n')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "ops/explorer-verification-${GITHUB_RUN_ID}"
+          git add deployments/sepolia.json
+          git commit -m 'Record successful Etherscan source verification'
+          git push origin HEAD

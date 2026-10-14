@@ -119,3 +119,18 @@ def test_cors_is_locked_to_configured_origin() -> None:
 
     assert allowed.headers["access-control-allow-origin"] == "http://localhost:5173"
     assert "access-control-allow-origin" not in denied.headers
+
+
+def test_normalized_observations_handle_quoted_csv_and_utc_naive_timestamps():
+    payload = b'timestamp,value,note\n"2026-01-01T00:00:00","0","quoted, note"\n"2026-01-01T01:00:00","-2","negative"\n"2026-01-02T00:00:00","9999","outside"\n'
+    form = form_data()
+    form["windowEnd"] = "2026-01-01T03:00:00Z"
+    response = client.post("/inspect", data=form, files={"csv": ("quoted.csv", payload, "text/csv")})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["verdict"] == "IMPOSSIBLE"
+    assert body["observations"] == [
+        {"timestamp": "2026-01-01T00:00:00Z", "value": 0.0},
+        {"timestamp": "2026-01-01T01:00:00Z", "value": -2.0},
+    ]
+    assert body["missingTimestamps"] == ["2026-01-01T02:00:00Z"]

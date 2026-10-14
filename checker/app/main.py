@@ -11,7 +11,7 @@ from Crypto.Hash import keccak
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="GapWitness Checker", version="0.5.0")
+app = FastAPI(title="GapWitness Checker", version="0.6.0")
 
 MAX_FILE_BYTES = 1_000_000
 MAX_WINDOW_HOURS = 24 * 31
@@ -206,6 +206,13 @@ def inspect_csv(
         "seriesType": series_type,
         "expectedHours": len(expected),
         "observedHours": len(observed),
+        "observations": sorted(
+            [
+                {"timestamp": ts.isoformat().replace("+00:00", "Z"), "value": float(value)}
+                for ts, value in zip(timestamps[in_window], values[in_window])
+            ],
+            key=lambda observation: observation["timestamp"],
+        ),
         "missingTimestamps": gaps,
         "materialGap": len(gaps) > 2,
         "impossibleTimestamps": impossible,

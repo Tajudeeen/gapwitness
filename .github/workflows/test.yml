@@ -34,6 +34,7 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python -m pytest -q
       - run: python ../scripts/test_prepare_chain_demo.py
+      - run: python -m pytest -q ../scripts/test_fixture_proof.py
       - run: python demo/run_demo.py
       - name: Build checker container
         run: docker build -f Dockerfile ..
@@ -47,6 +48,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: foundry-rs/foundry-toolchain@v1
       - run: forge --version
-      - run: forge install https://github.com/foundry-rs/forge-std --no-commit
+      - run: forge install https://github.com/foundry-rs/forge-std --no-git
       - run: forge build
       - run: forge test -vv

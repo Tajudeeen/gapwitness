@@ -17,6 +17,7 @@ export type CheckResult = {
   seriesType: string;
   expectedHours: number;
   observedHours: number;
+  observations: { timestamp: string; value: number }[];
   missingTimestamps: string[];
   materialGap: boolean;
   impossibleTimestamps: string[];
@@ -81,5 +82,9 @@ export async function inspectCsv(input: {
     throw await readError(response);
   }
 
-  return (await response.json()) as CheckResult;
+  const result = (await response.json()) as CheckResult;
+  if (!Array.isArray(result.observations)) {
+    throw { status: 503, code: "CHECKER_UPDATE_REQUIRED: normalized observations are unavailable" };
+  }
+  return result;
 }

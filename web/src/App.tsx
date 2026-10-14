@@ -27,26 +27,6 @@ const DEFAULT_STATION = "2178";
 const DEFAULT_WINDOW_START = "2026-09-19T07:00:00Z";
 const DEFAULT_WINDOW_END = "2026-09-20T07:00:00Z";
 
-function parseChartPoints(csv: string): Point[] {
-  const rows = csv.trim().split(/\r?\n/);
-  if (rows.length < 2) return [];
-
-  const header = rows[0].split(",").map(value => value.trim().toLowerCase());
-  const timestampIndex = header.indexOf("timestamp");
-  const valueIndex = header.indexOf("value");
-  if (timestampIndex < 0 || valueIndex < 0) return [];
-
-  return rows.slice(1).flatMap(line => {
-    const fields = line.split(",");
-    const timestamp = fields[timestampIndex]?.trim();
-    const value = Number(fields[valueIndex]?.trim());
-    if (!timestamp || !Number.isFinite(value)) return [];
-    const parsed = new Date(timestamp);
-    if (Number.isNaN(parsed.getTime())) return [];
-    return [{ timestamp: parsed.toISOString(), value }];
-  });
-}
-
 function errorMessage(status: number, code: string): string {
   if (status === 429) {
     return "Inspect is rate-limited. Try again after the checker window resets.";
@@ -127,6 +107,9 @@ function App() {
     observer.observe(element);
     return () => observer.disconnect();
   }, [view]);
+  const inspectionRequest = useRef<{ id: number; controller: AbortController | null }>({ id: 0, controller: null });
+  const commitInFlight = useRef(false);
+  const [sourceKind, setSourceKind] = useState<"upload" | "synthetic">("upload");
   const [file, setFile] = useState<File | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
   const [result, setResult] = useState<CheckResult | null>(null);
@@ -172,55 +155,80 @@ function App() {
 
   useEffect(() => {
     return watchWalletEvents(({ address, chainId }) => {
-      if (address !== null) {
-        setWalletAddress(address);
-      }
+      if (chainId === null) setWalletAddress(address);
       if (chainId !== null && chainId !== 11155111n) {
         setMessage("Wallet network changed. Commitment requires Ethereum Sepolia.");
       }
     });
   }, []);
 
-  async function inspect(upload: File) {
-    setBusy(true);
+  function clearEvidence() {
     setResult(null);
+    setPrimaryResult(null);
+    setComparisonResult(null);
     setPoints([]);
+    setActivePoint(null);
+    setTxHash(null);
+    setConflict(null);
+    setShowReceipt(false);
+  }
+
+  function cancelInspection() {
+    inspectionRequest.current.controller?.abort();
+    inspectionRequest.current.id += 1;
+    inspectionRequest.current.controller = null;
+    setBusy(false);
+    setDemoBusy(false);
+  }
+
+  function beginInspection() {
+    cancelInspection();
+    const controller = new AbortController();
+    inspectionRequest.current.controller = controller;
+    const id = inspectionRequest.current.id;
+    clearEvidence();
+    return { signal: controller.signal, current: () => id === inspectionRequest.current.id && !controller.signal.aborted };
+  }
+
+  useEffect(() => () => {
+    inspectionRequest.current.controller?.abort();
+    inspectionRequest.current.id += 1;
+  }, []);
+
+  function changeInput(setter: (value: string) => void, value: string) {
+    if (commitInFlight.current) return;
+    cancelInspection();
+    clearEvidence();
+    setter(value);
+    setMessage("Inputs changed. Inspect the selected CSV again before committing.");
+  }
+
+  async function inspect(upload: File) {
+    if (commitInFlight.current) return;
+    const request = beginInspection();
+    setBusy(true);
+    setSourceKind("upload");
     setMessage("Inspecting bytes against the declared hourly window…");
 
     try {
-      const csvText = await upload.text();
       const next = await inspectCsv({
-        stationId: station.trim(),
-        windowStart,
-        windowEnd,
-        seriesType: "pm25",
-        csv: upload,
+        stationId: station.trim(), windowStart, windowEnd,
+        seriesType: "pm25", csv: upload, signal: request.signal,
       });
-
+      if (!request.current()) return;
       setResult(next);
       setPrimaryResult(next);
-      setComparisonResult(null);
-      setPoints(parseChartPoints(csvText));
+      setPoints(next.observations);
       setCheckerState("ready");
-      setTxHash(null);
-      setConflict(null);
-      setMessage(
-        next.verdict === "GAPPED"
-          ? `${next.observedHours}/${next.expectedHours} observations verified. ${next.missingTimestamps.length} hours are missing.`
-          : next.verdict === "IMPOSSIBLE"
-            ? "The checker found a policy violation in the submitted series."
-            : "All expected observations are present in the declared window.",
-      );
+      setMessage(next.verdict === "GAPPED"
+        ? `${next.observedHours}/${next.expectedHours} observations verified. ${next.missingTimestamps.length} hours are missing.`
+        : next.verdict === "IMPOSSIBLE"
+          ? "The checker found a policy violation in the submitted series."
+          : "All expected observations are present in the declared window.");
     } catch (error) {
-      setResult(null);
-      setPoints([]);
-
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "status" in error &&
-        "code" in error
-      ) {
+      if (!request.current()) return;
+      clearEvidence();
+      if (typeof error === "object" && error !== null && "status" in error && "code" in error) {
         const checkerError = error as { status: number; code: string };
         setMessage(errorMessage(checkerError.status, checkerError.code));
       } else {
@@ -228,62 +236,52 @@ function App() {
         setMessage("Inspect is offline. Commitment is disabled.");
       }
     } finally {
-      setBusy(false);
+      if (request.current()) setBusy(false);
     }
   }
 
-
   async function runDemo() {
-    if (demoBusy) return;
+    if (commitInFlight.current) return;
+    const request = beginInspection();
     setDemoBusy(true);
-    setMessage("Running the two-state demo: finding the original gap…");
-    setResult(null);
-    setPrimaryResult(null);
-    setComparisonResult(null);
-    setPoints([]);
+    setSourceKind("synthetic");
+    setStation(DEFAULT_STATION);
+    setWindowStart(DEFAULT_WINDOW_START);
+    setWindowEnd(DEFAULT_WINDOW_END);
     setFile(null);
-    setTxHash(null);
-    setConflict(null);
-
+    setMessage("Running the synthetic comparison: finding the original gap…");
     try {
       const original = makeDemoCsv(false);
-      const later = makeDemoCsv(true);
-      const originalText = await original.text();
       const first = await inspectCsv({
-        stationId: DEFAULT_STATION,
-        windowStart: DEFAULT_WINDOW_START,
-        windowEnd: DEFAULT_WINDOW_END,
-        seriesType: "pm25",
-        csv: original,
+        stationId: DEFAULT_STATION, windowStart: DEFAULT_WINDOW_START,
+        windowEnd: DEFAULT_WINDOW_END, seriesType: "pm25", csv: original, signal: request.signal,
       });
-      setPrimaryResult(first);
-      setResult(first);
-      setPoints(parseChartPoints(originalText));
-      setFile(original);
-      setMessage("Original state recorded locally. Now testing the later filled-in version…");
-
+      if (!request.current()) return;
       const second = await inspectCsv({
-        stationId: DEFAULT_STATION,
-        windowStart: DEFAULT_WINDOW_START,
-        windowEnd: DEFAULT_WINDOW_END,
-        seriesType: "pm25",
-        csv: later,
+        stationId: DEFAULT_STATION, windowStart: DEFAULT_WINDOW_START,
+        windowEnd: DEFAULT_WINDOW_END, seriesType: "pm25", csv: makeDemoCsv(true), signal: request.signal,
       });
+      if (!request.current()) return;
+      setPrimaryResult(first);
       setComparisonResult(second);
       setResult(first);
-      setMessage("Demo complete: the same exact window moved from GAPPED to INTACT. No commitment was sent.");
+      setPoints(first.observations);
+      setFile(original);
+      setMessage("Comparison complete: GAPPED to INTACT for the same window. Synthetic data; no on-chain conflict was tested.");
       setCheckerState("ready");
-    } catch {
-      setMessage("Demo could not complete. The checker must be online.");
-      setCheckerState("offline");
+    } catch (error) {
+      if (!request.current()) return;
+      clearEvidence();
+      setMessage(typeof error === "object" && error !== null && "code" in error
+        ? String(error.code) : "Comparison could not complete. The checker must be online.");
     } finally {
-      setDemoBusy(false);
+      if (request.current()) setDemoBusy(false);
     }
   }
 
   async function handleCommit() {
-    if (!result) return;
-
+    if (!result || busy || demoBusy || commitInFlight.current) return;
+    commitInFlight.current = true;
     setCommitBusy(true);
     setConflict(null);
     setTxHash(null);
@@ -315,11 +313,13 @@ function App() {
         setMessage("Commitment failed. The evidence remains unchanged.");
       }
     } finally {
+      commitInFlight.current = false;
       setCommitBusy(false);
     }
   }
 
   function onFileChange(event: ChangeEvent<HTMLInputElement>) {
+    if (commitInFlight.current) return;
     const next = event.target.files?.[0];
     if (!next) return;
     setFile(next);
@@ -378,10 +378,10 @@ function App() {
           <h1 tabIndex={-1}>witness the hours that were missing.</h1>
             <p className="dek">Temporal integrity for environmental time series. The checker decides. The chain remembers.</p>
             <div className="hero-actions">
-              <button type="button" className="demo-button" onClick={() => void runDemo()} disabled={demoBusy || checkerState !== "ready"}>
+              <button type="button" className="demo-button" onClick={() => void runDemo()} disabled={busy || demoBusy || commitBusy || checkerState !== "ready"}>
                 {demoBusy ? "running demo…" : "run the 2-state demo →"}
               </button>
-              <span>gapped → intact → same window → conflict</span>
+              <span>synthetic comparison · no transaction</span>
             </div>
           </div>
         </div>
@@ -428,8 +428,8 @@ function App() {
       <section className="workspace">
         <aside className="rail" id="source">
           <div className="field">
-            <label>station</label>
-            <input value={station} onChange={event => setStation(event.target.value)} />
+            <label htmlFor="station-id">station</label>
+            <input id="station-id" disabled={commitBusy} value={station} onChange={event => changeInput(setStation, event.target.value)} />
           </div>
 
           <div className="field">
@@ -441,7 +441,8 @@ function App() {
             <label>window start</label>
             <input
               value={windowStart}
-              onChange={event => setWindowStart(event.target.value)}
+              disabled={commitBusy}
+              onChange={event => changeInput(setWindowStart, event.target.value)}
               aria-label="Observation window start"
             />
           </div>
@@ -450,7 +451,8 @@ function App() {
             <label>window end</label>
             <input
               value={windowEnd}
-              onChange={event => setWindowEnd(event.target.value)}
+              disabled={commitBusy}
+              onChange={event => changeInput(setWindowEnd, event.target.value)}
               aria-label="Observation window end"
             />
           </div>
@@ -462,18 +464,20 @@ function App() {
 
           <div className="field">
             <label>source</label>
-            <div className="readout">OpenAQ archive</div>
+            <div className="readout">{sourceKind === "synthetic" ? "Synthetic browser demo" : "Uploaded CSV · source unverified"}</div>
           </div>
 
           <label className={`upload${busy ? " is-busy" : ""}`}>
-            <input type="file" accept=".csv,text/csv" onChange={onFileChange} />
+            <input type="file" accept=".csv,text/csv" disabled={commitBusy} onChange={onFileChange} />
             <strong>{file ? file.name : "inspect a CSV"}</strong>
             <span>1 MB max · timestamp,value</span>
           </label>
 
-          <button type="button" className="rail-demo" onClick={() => void runDemo()} disabled={demoBusy || checkerState !== "ready"}>
+          <button type="button" className="rail-demo" onClick={() => void runDemo()} disabled={busy || demoBusy || commitBusy || checkerState !== "ready"}>
             {demoBusy ? "running evidence demo…" : "try the built-in demo"}
           </button>
+
+          {file && <button type="button" className="rail-demo" disabled={busy || demoBusy || commitBusy} onClick={() => void inspect(file)}>inspect selected CSV again</button>}
 
           <p className="message" aria-live="polite">{busy ? "● " : ""}{message}</p>
         </aside>
@@ -548,7 +552,7 @@ function App() {
                   <button
                     type="button"
                     key={hour.timestamp}
-                    className={`timeline-hour ${hour.missing ? "missing" : "observed"} ${activePoint?.timestamp === hour.timestamp ? "selected" : ""}`}
+                    className={`timeline-hour ${hour.missing ? "missing" : "observed"} ${activePoint && Date.parse(activePoint.timestamp) === Date.parse(hour.timestamp) ? "selected" : ""}`}
                     onClick={() => setActivePoint(hour.point ?? { timestamp: hour.timestamp, value: NaN })}
                     aria-label={`${prettyTime(hour.timestamp)}: ${hour.missing ? "missing" : `observed ${hour.point?.value.toFixed(2)} micrograms per cubic meter`}`}
                   >
@@ -636,8 +640,8 @@ function App() {
               <div className="comparison-conflict">
                 <span>⚠</span>
                 <div>
-                  <strong>GAP PAPERED OVER</strong>
-                  <p>same station · same exact window · different temporal state</p>
+                  <strong>DIFFERENT GAP EVIDENCE</strong>
+                  <p>same station · same exact window · synthetic comparison, no chain rejection tested</p>
                 </div>
               </div>
             </section>
@@ -741,7 +745,7 @@ function App() {
               </p>
             </div>
             <button
-              disabled={!result || checkerState !== "ready" || busy || commitBusy || !isContractConfigured()}
+              disabled={!result || checkerState !== "ready" || busy || demoBusy || commitBusy || !isContractConfigured()}
               onClick={() => void handleCommit()}
             >
               {commitBusy ? "waiting for wallet…" : walletAddress ? "commit evidence →" : "connect wallet & commit →"}

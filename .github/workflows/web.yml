@@ -20,6 +20,37 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: web/package.json
-      - run: npm install
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm test
       - run: npm run build
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r checker/requirements.txt
+      - run: npm ci
+        working-directory: web
+      - run: npx playwright install --with-deps chromium
+        working-directory: web
+      - name: Start checker
+        run: |
+          python -m uvicorn app.main:app --app-dir checker --host 127.0.0.1 --port 8000 > /tmp/checker.log 2>&1 &
+      - run: npm run test:browser
+        working-directory: web
+        env:
+          VITE_CONTRACT: '0x81433d6bedf33b72defe0b90534dc16cc2b0bc57'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure-evidence
+          path: web/test-results

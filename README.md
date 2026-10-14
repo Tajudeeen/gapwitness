@@ -40,8 +40,8 @@ The current lab focuses on hourly PM2.5 values in µg/m³. The selected track is
 
 - A responsive landing page explaining missing-hour evidence, the inspection workflow, verdicts, and trust boundaries. Its record illustration is explicitly synthetic.
 - A responsive inspection lab with a 2.6-second launch splash and navigation between source, inspection, commitment, and proof.
-- CSV upload with a declared station and UTC observation window.
-- An hourly bar chart using the landing page’s green bars and amber hatched gaps, driven by actual in-window CSV values. Zero readings stay visible at the baseline; negative values extend below zero in red. Missing hours remain distinct from measurements.
+- CSV upload with a declared station and UTC observation window. Editing inputs cancels pending inspection and clears stale evidence; the selected CSV can be inspected again. Inputs and uploads are locked while a commitment is pending.
+- An hourly bar chart using the landing page’s green bars and amber hatched gaps, driven by checker-normalized in-window observations. Quoted CSV fields and timezone-free timestamps are parsed once by the checker, so the chart and verdict use the same observations. Zero readings stay visible at the baseline; negative values extend below zero in red. Missing hours remain distinct from measurements.
 - An hourly timeline, missing-hour evidence, completeness, deterministic verdicts, and evidence hashes.
 - A two-state browser demonstration comparing a gapped file with a complete file for the same window.
 - An injected EVM wallet flow for Ethereum Sepolia, transaction explorer links, and an evidence receipt view.
@@ -139,7 +139,7 @@ File A is an adversarial derivative. It does not demonstrate a naturally occurri
 
 ### Browser demo
 
-The built-in two-state demo generates synthetic values locally and sends them to the real checker. It shares the default station/window labels with the fixtures but does not use the frozen OpenAQ CSV bytes. Its hashes therefore differ from the source fixtures.
+The built-in two-state demo generates synthetic values locally and sends them to the real checker. Its comparison is labeled as different gap evidence, with no on-chain rejection tested. Custom uploads are labeled as unverified sources, rather than automatically attributed to OpenAQ. It shares the default station/window labels with the fixtures but does not use the frozen OpenAQ CSV bytes. Its hashes therefore differ from the source fixtures.
 
 Use the repository fixtures when reproducing source-backed evidence or the chain demo. Do not describe the synthetic browser demo as observed OpenAQ measurements.
 
@@ -259,7 +259,7 @@ curl -X POST http://127.0.0.1:8000/inspect \
   -F csv=@checker/demo/file_a.csv
 ```
 
-A successful response contains station/window context, expected and observed hours, missing timestamps, impossible timestamps, verdict/code, three hashes, and a `chainCommitment` object with Unix-second window boundaries.
+A successful response contains station/window context, expected and observed hours, normalized in-window `observations` with UTC timestamps and numeric values, missing timestamps, impossible timestamps, verdict/code, three hashes, and a `chainCommitment` object with Unix-second window boundaries.
 
 HTTP 422 indicates unusable input, including duplicate/off-hour timestamps, non-finite values, an oversized window, or no observations inside the window. These are inspection errors, not verdicts. HTTP 429 includes `Retry-After`. The web surfaces failures without manufacturing a local verdict and disables commitment when the checker is unavailable.
 
@@ -334,6 +334,15 @@ The separate `deploy-sepolia` workflow supports manual dispatch and optional Eth
 
 Both routes need a funded testnet deployer and protected credentials. A deployment creates a new contract and does not migrate earlier commitments.
 
+### Source-backed on-chain proof run
+
+The owner can run the `final-evidence` workflow manually, or create an owner-controlled `proof-run/**` branch. Its two independent jobs:
+
+1. Use the corrected deployment record, recompute frozen File A, commit it only if the key is empty, compare all stored hashes and the verdict, retain the original receipt, and check File B's exact `GapPaperedOver` error payload with `eth_call` against a recorded mined block. A conflicting existing record fails rather than overwriting evidence. The public report is uploaded and committed on an `ops/fixture-proof-*` branch for integration.
+2. Verify the existing contract on Etherscan using `ETHERSCAN_API_KEY` and the exact deployment source revision. It does not deploy a new contract. Verification is marked true on an `ops/explorer-verification-*` branch only after the explorer verification command succeeds.
+
+The proof script is `scripts/prove_fixture_onchain.py`. File A is an adversarial derivative of the frozen source, not a naturally missing upstream record. File B's rejection is an RPC execution check against mined state, not a mined failed transaction. Until the workflow succeeds and its output is integrated, a prepared workflow is not a completed live proof.
+
 ## Tests and reproducibility
 
 ### Checker and source pipeline
@@ -368,6 +377,20 @@ GitHub Actions cover the checker, source processing, contract, web build, deploy
 
 For the adversarial chain rehearsal, `scripts/prepare_chain_demo.py --contract <ADDRESS>` generates the frozen fixture inputs, and `contracts/script/DemoGapPaperOver.s.sol` attempts File A followed by conflicting File B. This is a separate broadcast operation requiring test ETH.
 
+### Web regression checks
+
+With the local checker running on port 8000:
+
+```bash
+cd web
+npm ci
+npm test
+npx playwright install chromium
+VITE_CONTRACT=0x81433d6bedf33b72defe0b90534dc16cc2b0bc57 npm run test:browser
+```
+
+Browser regressions exercise real checker responses, quoted CSV observations, changed-input invalidation and retry, cancellation of older requests, and replacing an in-flight demo with a new upload. Wallet regressions cover the custom-error ABI, nested provider revert data, and disconnect events.
+
 ## Repository map
 
 | Path | Contents |
@@ -394,7 +417,7 @@ For the adversarial chain rehearsal, `scripts/prepare_chain_demo.py --contract <
 - No sensor hardware, calibration checks, live ingestion, token, marketplace, or multi-chain support.
 - The in-memory rate limiter is per process and resets when a process restarts; it is not a distributed abuse-control system.
 - Footer connectivity reflects the last application health/inspection result, not continuous monitoring.
-- The browser CSV chart parser is simpler than the server CSV parser. The server verdict and hashes are the evidence authority for an inspection.
+- The chart uses the checker’s normalized `observations`, not a separate browser CSV parser. Web and checker must be deployed together; the web rejects older responses without observations.
 - The printable receipt view is an on-screen representation, not an automatic PDF export.
 - Explorer source verification remains separate from deployment and replay proof.
 - A completed demo video is not included in the repository.
