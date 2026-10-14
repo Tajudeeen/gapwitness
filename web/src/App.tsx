@@ -95,10 +95,13 @@ function App() {
     window.history.pushState(null, "", url);
     setView(next);
     window.requestAnimationFrame(() => {
-      const target = document.getElementById(section);
-      target?.scrollIntoView({ behavior: "instant" });
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const behavior: ScrollBehavior = reducedMotion ? "instant" : "smooth";
       if (section === "top") {
+        window.scrollTo({ top: 0, behavior });
         document.querySelector<HTMLElement>("main h1")?.focus({ preventScroll: true });
+      } else {
+        document.getElementById(section)?.scrollIntoView({ behavior, block: "start" });
       }
     });
   }
