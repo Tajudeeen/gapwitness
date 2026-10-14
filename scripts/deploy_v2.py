@@ -1,6 +1,8 @@
 """Deploy V2 using the live RPC gas estimate rather than a fork-simulation estimate."""
 import json
 import os
+import subprocess
+import re
 from pathlib import Path
 from prove_fixture_onchain import cast
 from verify_onchain import rpc_call
@@ -17,7 +19,12 @@ def main():
     estimate=int(str(rpc_call(rpc,'eth_estimateGas',[{'from':publisher,'data':code}])),16)
     gas_limit=(estimate*125+99)//100
     if gas_limit>10000000:raise RuntimeError('Deployment gas estimate exceeds the explicit 10 million gas cap')
-    receipt=json.loads(cast('send','--create',code,'--rpc-url',rpc,'--private-key',key,'--gas-limit',str(gas_limit),'--json'))
+    result=subprocess.run(['cast','send','--rpc-url',rpc,'--private-key',key,'--gas-limit',str(gas_limit),'--json','--create',code],capture_output=True,text=True)
+    if result.returncode:
+        error=result.stderr.replace(key,'[redacted]').replace(key.removeprefix('0x'),'[redacted]').replace(rpc,'[rpc]')
+        error=re.sub(r'[0-9a-fA-F]{64,}', '[hex data]', error)
+        raise RuntimeError('Deployment command failed: '+error[-2000:])
+    receipt=json.loads(result.stdout)
     if int(str(receipt.get('status','0x0')),0)!=1 or not receipt.get('contractAddress'):
         raise RuntimeError('V2 deployment did not succeed')
     record={'chainId':11155111,'contract':'GapWitnessV2','contractVersion':2,
