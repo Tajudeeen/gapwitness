@@ -8,6 +8,8 @@ A report can look complete after the inconvenient hours have been removed. A has
 
 [Explore GapWitness](https://gapwitness-web.vercel.app) · [Inspect](https://gapwitness-web.vercel.app/inspect) · [Review](https://gapwitness-web.vercel.app/review) · [Evidence](https://gapwitness-web.vercel.app/evidence) · [Publish](https://gapwitness-web.vercel.app/publish) · [Verify](https://gapwitness-web.vercel.app/verify) · [Checker health](https://gapwitness-checker.vercel.app/health) · [Contract explorer](https://sepolia.etherscan.io/address/0x9988b2aa76e532b9093624ea8672543f368aca82)
 
+**Submission:** [release checklist](docs/RELEASE_CHECKLIST.md) · [submission brief](docs/SUBMISSION.md) · [3–4 minute walkthrough script](docs/DEMO_SCRIPT.md). A public video link and final fresh-deployment verification are still required before submitting.
+
 ## Contents
 
 - [Who it serves](#who-it-serves)
