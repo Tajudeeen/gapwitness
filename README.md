@@ -326,6 +326,17 @@ The earlier address `0xa7ab2d2e60a08a089f3749ac3e98b41449b23211` is historical a
 
 This is synthetic contract-regression evidence. It is distinct from the environmental fixture demo.
 
+### Source-backed fixture evidence
+
+[contracts/deployments/fixture-proof.json](contracts/deployments/fixture-proof.json) records a successfully mined commitment of frozen File A on the corrected contract:
+
+- [File A transaction](https://sepolia.etherscan.io/tx/0xb5fe1bae272e7c3e28bada96867b404c9dcb4eba0b9d786201575edd5291b1e6).
+- Station `2178`, window September 19, 2026 at 07:00Z through September 20 at 07:00Z.
+- Independently recomputed series, gap, policy, and verdict all match stored evidence.
+- File B returned the exact `GapPaperedOver` selector and both expected gap hashes through `eth_call` at Sepolia block `11911618`.
+
+File B's rejection was checked against mined state. It is not a mined failed transaction. File A's seven missing hours were deliberately removed from a complete source window.
+
 ### Deployment workflows
 
 The owner-only `/deploy-sepolia` issue-comment workflow runs contract tests, dry-runs, broadcasts, records deployment metadata, submits the live replay proof, uploads the proof artifact, and publishes a deployment-record branch. Review and integrate the new address/block before configuring the web.
@@ -341,7 +352,7 @@ The owner can run the `final-evidence` workflow manually, or create an owner-con
 1. Use the corrected deployment record, recompute frozen File A, commit it only if the key is empty, compare all stored hashes and the verdict, retain the original receipt, and check File B's exact `GapPaperedOver` error payload with `eth_call` against a recorded mined block. A conflicting existing record fails rather than overwriting evidence. The public report is uploaded and committed on an `ops/fixture-proof-*` branch for integration.
 2. Verify the existing contract on Etherscan using `ETHERSCAN_API_KEY` and the exact deployment source revision. It does not deploy a new contract. Verification is marked true on an `ops/explorer-verification-*` branch only after the explorer verification command succeeds.
 
-The proof script is `scripts/prove_fixture_onchain.py`. File A is an adversarial derivative of the frozen source, not a naturally missing upstream record. File B's rejection is an RPC execution check against mined state, not a mined failed transaction. Until the workflow succeeds and its output is integrated, a prepared workflow is not a completed live proof.
+The proof script is `scripts/prove_fixture_onchain.py`. File A is an adversarial derivative of the frozen source, not a naturally missing upstream record. File B's rejection is an RPC execution check against mined state, not a mined failed transaction. The source-backed fixture job succeeded on October 14, 2026, and its report is included above. Explorer verification remains blocked because `ETHERSCAN_API_KEY` is not configured. Add that secret in the repository Actions settings or the `sepolia` environment, then rerun the explorer job. The workflow prepares and uploads the exact deployment compiler input before requesting explorer verification.
 
 ## Tests and reproducibility
 
