@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import deque
 from io import BytesIO
 import csv as csv_module
+import asyncio
 from io import StringIO
 import os
 import math
@@ -91,24 +92,27 @@ class InspectionBodyLimit:
         if not rate_limiter.allow(client[0] if client else "unknown"):
             return await JSONResponse({"detail": "RATE_LIMITED"}, status_code=429,
                 headers={"Retry-After": str(INSPECT_RATE_WINDOW_SECONDS)})(scope, receive, send)
-        messages, total = [], 0
+        body = bytearray()
+        deadline = time.monotonic() + 15
         while True:
-            message = await receive()
+            try:
+                message = await asyncio.wait_for(receive(), timeout=max(0, deadline - time.monotonic()))
+            except asyncio.TimeoutError:
+                return await JSONResponse({"detail": "REQUEST_BODY_TIMEOUT"}, status_code=408)(scope, receive, send)
             if message["type"] == "http.disconnect":
                 return
-            total += len(message.get("body", b""))
-            if total > MAX_REQUEST_BYTES:
+            chunk = message.get("body", b"")
+            if len(body) + len(chunk) > MAX_REQUEST_BYTES:
                 return await JSONResponse({"detail": "REQUEST_TOO_LARGE"}, status_code=413)(scope, receive, send)
-            messages.append(message)
+            body.extend(chunk)
             if not message.get("more_body", False):
                 break
-        index = 0
+        delivered = False
         async def bounded_receive():
-            nonlocal index
-            if index < len(messages):
-                message = messages[index]
-                index += 1
-                return message
+            nonlocal delivered
+            if not delivered:
+                delivered = True
+                return {"type": "http.request", "body": bytes(body), "more_body": False}
             return await receive()
         await self.app(scope, bounded_receive, send)
 

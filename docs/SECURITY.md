@@ -24,7 +24,7 @@ The browser and server check the same policy independently, but their applicatio
 
 First-witness immutability rejects silent replacement. Legitimate corrected reports still need an explicitly documented revision process outside this prototype. A conflict establishes differing evidence, not intent to deceive.
 
-The rate limiter is bounded but per process. It resets on restarts and does not establish distributed abuse prevention. Slow request bodies, concurrent workload, upstream availability, and production capacity need platform controls and load tests for institutional service levels.
+The rate limiter is bounded but per process. It resets on restarts and does not establish distributed abuse prevention. Request-body assembly has a 15-second deadline and uses a bounded byte buffer even for fragmented chunks. Concurrent workload, upstream availability, and production capacity still need platform controls and load tests for institutional service levels.
 
 Historical V1 records use a global station/window key and remain vulnerable to first-writer squatting. They are retained for reproducibility and are never represented as upgraded. Only a deployed, proved V2 address has publisher isolation.
 

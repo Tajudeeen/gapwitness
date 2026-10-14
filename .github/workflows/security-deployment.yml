@@ -35,7 +35,7 @@ jobs:
       - name: Deploy publisher-scoped contract
         working-directory: contracts
         run: |
-          forge script script/DeployGapWitnessV2.s.sol:DeployGapWitnessV2 --rpc-url "$SEPOLIA_RPC_URL" --private-key "$PRIVATE_KEY" --broadcast
+          forge script script/DeployGapWitnessV2.s.sol:DeployGapWitnessV2 --rpc-url "$SEPOLIA_RPC_URL" --private-key "$PRIVATE_KEY" --gas-estimate-multiplier 300 --broadcast
           python ../scripts/record_sepolia_deployment.py --contract-name GapWitnessV2 \
             --broadcast broadcast/DeployGapWitnessV2.s.sol/11155111/run-latest.json \
             --output deployments/sepolia-v2.json --deployment-commit "$GITHUB_SHA"
