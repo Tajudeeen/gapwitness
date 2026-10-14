@@ -49,6 +49,20 @@ def check_rejection(body: dict, prior_gap: str, next_gap: str) -> str:
     return data
 
 
+def validate_receipt(receipt: dict, address: str, key: str, stored: dict) -> None:
+    if int(str(receipt.get("status", "0x0")), 0) != 1:
+        raise RuntimeError("The original mined commitment receipt could not be located")
+    if str(receipt.get("to", "")).lower() != address.lower():
+        raise RuntimeError("Commitment receipt targets another contract")
+    if str(receipt.get("from", "")).lower() != str(stored["submitter"]).lower():
+        raise RuntimeError("Commitment receipt does not belong to the first submitter")
+    expected_topics = [EVENT_TOPIC.lower(), key.lower(), str(stored["seriesHash"]).lower()]
+    if not any(str(log.get("address", "")).lower() == address.lower()
+               and [str(topic).lower() for topic in log.get("topics", [])[:3]] == expected_topics
+               for log in receipt.get("logs", [])):
+        raise RuntimeError("Receipt does not contain the original matching Committed event")
+
+
 def raw_call(rpc: str, params: list) -> dict:
     request = urllib.request.Request(rpc, data=json.dumps({"jsonrpc": "2.0", "id": 1,
         "method": "eth_call", "params": params}).encode(), headers={"Content-Type": "application/json", "User-Agent": "GapWitness/0.6"})
@@ -90,6 +104,13 @@ def main() -> None:
         raise RuntimeError("Stored evidence does not match the frozen source fixture")
     block = int(str(rpc_call(rpc, "eth_blockNumber", [])), 16)
     # Reuse an existing mined witness without claiming a replay created a new one.
+    retained_path = ROOT / "contracts/deployments/fixture-proof.json"
+    if receipt is None and retained_path.exists():
+        retained = json.loads(retained_path.read_text())
+        if retained.get("contract", "").lower() == address.lower() and retained.get("commitmentKey") == key:
+            tx_hash = retained.get("firstReceipt", {}).get("transactionHash")
+            if tx_hash:
+                receipt = rpc_call(rpc, "eth_getTransactionReceipt", [tx_hash])
     if receipt is None:
         for first in range(int(deployment["blockNumber"]), block + 1, 5000):
             logs = rpc_call(rpc, "eth_getLogs", [{"address": address,
@@ -98,10 +119,9 @@ def main() -> None:
             if logs:
                 receipt = rpc_call(rpc, "eth_getTransactionReceipt", [logs[0]["transactionHash"]])
                 break
-    if not receipt or int(str(receipt["status"]), 0) != 1:
+    if not receipt:
         raise RuntimeError("The original mined commitment receipt could not be located")
-    if str(receipt["to"]).lower() != address.lower():
-        raise RuntimeError("Commitment receipt targets another contract")
+    validate_receipt(receipt, address, key, stored)
     args_b = [values["STATION_ID"], values["WINDOW_START"], values["WINDOW_END"],
         values["FILE_B_SERIES_HASH"], values["FILE_B_GAP_HASH"],
         values["FILE_B_POLICY_HASH"], values["FILE_B_VERDICT"]]
