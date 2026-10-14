@@ -51,7 +51,7 @@ def check_rejection(body: dict, prior_gap: str, next_gap: str) -> str:
 
 def raw_call(rpc: str, params: list) -> dict:
     request = urllib.request.Request(rpc, data=json.dumps({"jsonrpc": "2.0", "id": 1,
-        "method": "eth_call", "params": params}).encode(), headers={"Content-Type": "application/json"})
+        "method": "eth_call", "params": params}).encode(), headers={"Content-Type": "application/json", "User-Agent": "GapWitness/0.6"})
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.load(response)
 

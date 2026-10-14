@@ -50,7 +50,7 @@ def rpc_call(rpc_url: str, method: str, params: list[object]) -> object:
     request = urllib.request.Request(
         rpc_url,
         data=payload,
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", "User-Agent": "GapWitness/0.6"},
         method="POST",
     )
 
