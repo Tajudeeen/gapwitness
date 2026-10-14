@@ -2,7 +2,7 @@
 import json
 import os
 from pathlib import Path
-from prove_fixture_onchain import cast, check_rejection, raw_call, validate_receipt, SIGNATURE
+from prove_fixture_onchain import cast, check_rejection, raw_call, validate_receipt, SIGNATURE, EVENT_TOPIC
 from prepare_chain_demo import build_demo_env
 from verify_onchain import rpc_call, read_commitment, commitment_key, inspect_csv, keccak256
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,9 +15,9 @@ def main():
     address, publisher = deployment['address'], deployment['deployer']
     if int(str(rpc_call(rpc, 'eth_chainId', [])), 16) != 11155111:
         raise RuntimeError('Wrong chain')
-    code = str(rpc_call(rpc, 'eth_getCode', [address, 'latest']))
+    code = str(rpc_call(rpc, 'eth_getCode', [address, hex(deployment['blockNumber'])]))
     if code == '0x': raise RuntimeError('No deployed V2 code')
-    version = rpc_call(rpc, 'eth_call', [{'to': address, 'data': '0x' + keccak256(b'version()')[:8]}, 'latest'])
+    version = rpc_call(rpc, 'eth_call', [{'to': address, 'data': '0x' + keccak256(b'version()')[:8]}, hex(deployment['blockNumber'])])
     if int(str(version), 16) != 2: raise RuntimeError('Not a V2 contract')
     station, start, end = '2178', '2026-09-19T07:00:00Z', '2026-09-20T07:00:00Z'
     a = (ROOT / 'checker/demo/file_a.csv').read_bytes()
@@ -31,21 +31,37 @@ def main():
     for owner, expected in [(publisher, key), (outsider, outsider_key)]:
         calldata = cast('calldata', 'commitmentKey(address,bytes32,uint64,uint64)', owner,
             values['STATION_ID'], values['WINDOW_START'], values['WINDOW_END'])
-        actual = rpc_call(rpc, 'eth_call', [{'to': address, 'data': calldata}, 'latest'])
+        actual = rpc_call(rpc, 'eth_call', [{'to': address, 'data': calldata}, hex(deployment['blockNumber'])])
         if actual != expected: raise RuntimeError('Contract and independent publisher key differ')
     args_a = [values['STATION_ID'], values['WINDOW_START'], values['WINDOW_END'], values['FILE_A_SERIES_HASH'],
               values['FILE_A_GAP_HASH'], values['FILE_A_POLICY_HASH'], values['FILE_A_VERDICT']]
-    receipt = json.loads(cast('send', address, SIGNATURE, *args_a, '--rpc-url', rpc, '--private-key', private_key, '--json'))
+    receipt = None
+    existing = read_commitment(rpc, address, key)
+    if not existing['exists']:
+        receipt = json.loads(cast('send', address, SIGNATURE, *args_a, '--rpc-url', rpc, '--private-key', private_key, '--confirmations', '2', '--json'))
     evidence = inspect_csv(a, station_id=station, window_start=start, window_end=end)
-    stored = read_commitment(rpc, address, key)
+    stored = read_commitment(rpc, address, key, receipt['blockNumber'] if receipt else 'latest')
     comparison = {field: stored[field] == evidence[field] for field in ['seriesHash', 'gapHash', 'policyHash', 'verdictCode']}
     if not all(comparison.values()) or stored['submitter'].lower() != publisher.lower():
         raise RuntimeError('V2 fixture record did not match')
+    proof_path = ROOT/'contracts/deployments/fixture-proof-v2.json'
+    if receipt is None and proof_path.exists():
+        retained=json.loads(proof_path.read_text())
+        if retained.get('contract','').lower()==address.lower() and retained.get('commitmentKey')==key:
+            receipt=rpc_call(rpc,'eth_getTransactionReceipt',[retained['firstReceipt']['transactionHash']])
+    if receipt is None or not receipt.get('logs'):
+        latest=int(str(rpc_call(rpc,'eth_blockNumber',[])),16)
+        for first in range(deployment['blockNumber'],latest+1,2000):
+            logs=rpc_call(rpc,'eth_getLogs',[{'address':address,'fromBlock':hex(first),
+                'toBlock':hex(min(first+1999,latest)),'topics':[EVENT_TOPIC,key]}])
+            if logs:
+                receipt=rpc_call(rpc,'eth_getTransactionReceipt',[logs[0]['transactionHash']]);break
+    if not receipt:raise RuntimeError('Original publisher witness receipt could not be found')
     validate_receipt(receipt, address, key, stored)
     args_b = [values['STATION_ID'], values['WINDOW_START'], values['WINDOW_END'], values['FILE_B_SERIES_HASH'],
               values['FILE_B_GAP_HASH'], values['FILE_B_POLICY_HASH'], values['FILE_B_VERDICT']]
     calldata_b = cast('calldata', SIGNATURE, *args_b)
-    block = int(str(rpc_call(rpc, 'eth_blockNumber', [])), 16)
+    block = int(str(receipt['blockNumber']), 0)
     rejection = check_rejection(raw_call(rpc, [{'to': address, 'from': publisher, 'data': calldata_b}, hex(block)]), values['FILE_A_GAP_HASH'], values['FILE_B_GAP_HASH'])
     outsider_call = raw_call(rpc, [{'to': address, 'from': outsider, 'data': calldata_b}, hex(block)])
     if outsider_call.get('result') != '0x': raise RuntimeError('Independent publisher could not use its own namespace')

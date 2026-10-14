@@ -70,12 +70,12 @@ def rpc_call(rpc_url: str, method: str, params: list[object]) -> object:
     return body.get("result")
 
 
-def read_commitment(rpc_url: str, contract: str, key: str) -> dict[str, object]:
+def read_commitment(rpc_url: str, contract: str, key: str, block: str = "latest") -> dict[str, object]:
     calldata = "0x" + COMMITMENTS_SELECTOR.hex() + key[2:]
     result = rpc_call(
         rpc_url,
         "eth_call",
-        [{"to": contract, "data": calldata}, "latest"],
+        [{"to": contract, "data": calldata}, block],
     )
 
     if not isinstance(result, str) or not result.startswith("0x"):

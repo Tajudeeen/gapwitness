@@ -12,6 +12,15 @@ def main():
     rpc=os.environ.get('SEPOLIA_RPC_URL') or 'https://ethereum-sepolia-rpc.publicnode.com'
     key=os.environ['PRIVATE_KEY']
     if int(str(rpc_call(rpc,'eth_chainId',[])),16)!=11155111:raise RuntimeError('Expected Sepolia')
+    existing_path=ROOT/'contracts/deployments/sepolia-v2.json'
+    if existing_path.exists():
+        existing=json.loads(existing_path.read_text())
+        receipt=rpc_call(rpc,'eth_getTransactionReceipt',[existing['transactionHash']])
+        version=rpc_call(rpc,'eth_call',[{'to':existing['address'],'data':'0x54fd4d50'},hex(existing['blockNumber'])])
+        if not receipt or int(str(receipt['status']),0)!=1 or int(str(version),16)!=2:
+            raise RuntimeError('Retained V2 deployment failed its independent chain checks')
+        print(json.dumps({'existingDeployment':True,'address':existing['address'],'transaction':existing['transactionHash']}))
+        return
     publisher=cast('wallet','address','--private-key',key)
     artifact=json.loads((ROOT/'contracts/out/GapWitnessV2.sol/GapWitnessV2.json').read_text())
     code=artifact['bytecode']['object']
