@@ -26,3 +26,17 @@ contracts/lib/
 contracts/out/
 contracts/cache/
 contracts/broadcast/
+
+# Local caches, reports and temporary captures
+.coverage
+coverage/
+htmlcov/
+*.log
+*.tsbuildinfo
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.tmp/
+tmp/
+web/videos/
+web/.playwright/
