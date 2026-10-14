@@ -30,6 +30,8 @@ A report can look complete after the inconvenient hours have been removed. A has
 - Browser evidence is independently checked before wallet submission, including the exact CSV hash and every chain input.
 - Duplicate CSV headers, inconsistent row widths, invalid station encodings, oversized request bodies, and unbounded rate-limit storage are rejected or bounded.
 - Source-backed fixture buttons and evidence JSON export make the review reproducible without a wallet.
+- A reviewer workspace adds printable reports and local revision comparison, separating restored hours, deleted hours, changed measurements, and byte-only edits.
+- [Measured evaluation](docs/EVALUATION.md) covers 601 controlled cases based on frozen real source data. [Related-work comparison](docs/ORIGINALITY.md) gives a bounded differentiation claim. The [reviewer pilot](docs/PILOT.md) includes an empty observation template and an analyzer for actual paired time and accuracy measurements.
 - V2 adds publisher-scoped station/window commitments and is the app’s default deployment. Contract tests and the live source-backed proof confirm its isolation. The existing V1 deployment remains historical evidence and was not upgraded.
 - [Security model](docs/SECURITY.md), [adoption and scaling plan](docs/ADOPTION.md), [measured local benchmarks](docs/benchmark-results.json), [submission brief](docs/SUBMISSION.md), and [3–4 minute demo script](docs/DEMO_SCRIPT.md).
 

@@ -26,7 +26,7 @@ async function sourceResponse(page: import('@playwright/test').Page, synthetic =
 }
 
 const commit = (page: import('@playwright/test').Page) => page.locator('#commit button');
-const upload = (page: import('@playwright/test').Page) => page.locator('input[type=file]');
+const upload = (page: import('@playwright/test').Page) => page.locator('input[type=file]').first();
 
 test('quoted CSV uses checker observations and input changes invalidate evidence', async ({ page }) => {
   await openLab(page);
@@ -196,4 +196,29 @@ test('extreme finite measurements do not produce invalid chart coordinates',asyn
   await upload(page).setInputFiles({name:'extreme.csv',mimeType:'text/csv',buffer:Buffer.from('timestamp,value\n2026-01-01T00:00:00Z,1e308\n2026-01-01T01:00:00Z,-1e308\n2026-01-01T02:00:00Z,0\n')});
   await expect(page.locator('.verdict')).toContainText('IMPOSSIBLE');
   expect(await page.locator('.chart-wrap svg').evaluate(node=>node.outerHTML.includes('NaN'))).toBe(false);
+});
+
+test('reviewer compares real fixture revisions locally and exports a printable record',async({page})=>{
+  await openLab(page);
+  await page.getByRole('button',{name:'load File B · complete source window',exact:true}).click();
+  await expect(page.locator('.verdict')).toContainText('INTACT');
+  let uploads=0;page.on('request',request=>{if(request.url().endsWith('/inspect'))uploads+=1;});
+  await page.getByLabel('Prior revision CSV',{exact:true}).setInputFiles(resolve('../checker/demo/file_a.csv'));
+  await expect(page.locator('.revision-result')).toContainText('7 hours added · 0 hours removed · 0 measurements changed');
+  expect(uploads).toBe(0);
+  const reportPromise=page.waitForEvent('download');
+  await page.getByRole('button',{name:'download printable review',exact:true}).click();
+  const download=await reportPromise;const parts:Buffer[]=[];
+  for await(const part of (await download.createReadStream())!)parts.push(Buffer.from(part));
+  const html=Buffer.concat(parts).toString();
+  expect(html).toContain('7 hours added, 0 removed, 0 measurements changed');
+  expect(html).toContain('No blockchain transaction is claimed');
+  expect(html).toContain("default-src 'none'");
+  await page.getByRole('button',{name:'load File A · 7 deliberate gaps',exact:true}).click();
+  await expect(page.locator('.verdict')).toContainText('GAPPED');
+  await expect(page.locator('.revision-result')).toHaveCount(0);
+  await page.getByLabel('Prior revision CSV',{exact:true}).setInputFiles(resolve('../checker/demo/file_b.csv'));
+  await expect(page.locator('.revision-result')).toContainText('0 hours added · 7 hours removed · 0 measurements changed');
+  await page.getByLabel('station',{exact:true}).fill('changed');
+  await expect(page.getByRole('region',{name:'Reviewer workspace'})).toHaveCount(0);
 });

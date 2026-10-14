@@ -1,5 +1,7 @@
 # GapWitness demo, approximately 3–4 minutes
 
+Optional reviewer-focused segment: after inspecting File B, scroll to Reviewer Workspace and choose File A as the prior CSV. Say: "This comparison shows seven hours restored, with no measurement changes among the shared hours. I can keep both CSVs, the evidence JSON, and a printable review in an existing research workflow. Our controlled evaluation covers 601 cases based on frozen real source data. That measures correctness. Independent reviewer time savings still need a real pilot." Download the printable report and briefly open it. Keep the full recording within the contest's 3–5 minute requirement by shortening the chart walkthrough.
+
 ## 0:00–0:30, landing page
 
 An environmental report can look complete after some observations have been left out. If we hash that file afterward, the hash preserves the edited file, but it cannot tell us which hours should have been there.

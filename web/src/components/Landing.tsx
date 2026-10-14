@@ -79,8 +79,8 @@ export function Landing({ navigate, checkerState }: {
         <div className="landing-section-heading"><div><p className="landing-eyebrow">05 / FIT INTO A REAL REVIEW</p><h2 id="adoption-title">Start with an existing station export.</h2></div></div>
         <div className="landing-steps">
           <article><h3>Review before accepting.</h3><p>Researchers and environmental reviewers can inspect an hourly PM2.5 export against its independently obtained reporting schedule.</p></article>
-          <article><h3>Keep reproducible evidence.</h3><p>Export the evidence JSON and retain the exact CSV. Local batch inspection is available when uploading data is unsuitable.</p></article>
-          <article><h3>Measure the actual benefit.</h3><p>Correctness fixtures and local benchmarks are available. Real-world adoption, review time savings, and environmental outcomes have not yet been measured.</p><a href={`${REPOSITORY}/blob/main/docs/ADOPTION.md`} target="_blank" rel="noreferrer">Read the pilot and scaling plan ↗</a></article>
+          <article><h3>Keep a review record.</h3><p>Export the evidence JSON and printable review. Compare a prior CSV to see restored hours, deleted observations, and changed measurements. Retain both source files.</p></article>
+          <article><h3>Inspect measured results.</h3><p>GapWitness matched all 553 controlled omission cases from one frozen source window and matched a strong schedule-aware baseline. Independent-user time savings and environmental outcomes still need measurement.</p><a href={`${REPOSITORY}/blob/main/docs/EVALUATION.md`} target="_blank" rel="noreferrer">Read the reproducible evaluation ↗</a></article>
         </div>
       </section>
 

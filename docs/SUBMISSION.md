@@ -6,7 +6,9 @@ GapWitness helps environmental reviewers detect missing observations before acce
 
 Target users are research groups, community air-quality projects, environmental reviewers, and data publishers. Adoption begins with existing station CSV exports and their reporting schedules. Browser inspection requires no wallet. Evidence export and local batch inspection fit into existing review records without requiring every observation to be stored on-chain.
 
-The distinctive design choice is to commit the declared observation window and missing-hour evidence rather than only a file hash. This is a technical distinction, not a verified claim that no other project takes a similar approach. The reference demonstration uses frozen OpenAQ data with accurately documented deliberate derivatives.
+The distinctive design choice is to bind the declared observation window and missing-hour evidence with file, policy, verdict, and publisher, then provide a portable reviewer record and revision comparison. ORIGINALITY.md compares this workflow with OpenAQ, Great Expectations, Soda, and prior blockchain provenance research. It does not establish global novelty. The reference demonstration uses frozen OpenAQ data with accurately documented deliberate derivatives.
+
+EVALUATION.md reports 553 controlled omission cases, 24 duplicate-timestamp substitutions, and 24 negative-measurement cases. GapWitness resolves all omission sets exactly and matches the strong schedule-aware baseline. It resolves 89 cases missed by an inferred-window shortcut. These are automated results, not real-world adoption or environmental outcomes. PILOT.md and the paired-observation analyzer make independent reviewer measurement ready to run.
 
 Scaling and measured results are documented in ADOPTION.md and benchmark-results.json. Present limits include hourly sampling, 31-day windows, 1 MB files, a PM2.5-focused web experience, per-process quotas, and unauthenticated station authority. The generic hourly policy is available through the API and batch utility.
 

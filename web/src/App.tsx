@@ -6,6 +6,7 @@ import type { ChangeEvent } from "react";
 import { Landing } from "./components/Landing";
 import { navigateLink } from "./lib/navigation";
 import { Footer } from "./components/Footer";
+import { ReviewPanel } from "./components/ReviewPanel";
 import {
   CHECKER_URL,
   checkHealth,
@@ -716,6 +717,8 @@ function App() {
               </div>
             </section>
           )}
+
+          {result && <ReviewPanel evidence={result} filename={file?.name ?? "synthetic-demo.csv"} source={sourceKind} />}
 
           {result && (
             <section className="chain-state">
