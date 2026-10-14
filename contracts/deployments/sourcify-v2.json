@@ -1,0 +1,40 @@
+{
+  "format": "gapwitness/source-verification/v1",
+  "provider": "Sourcify",
+  "chainId": 11155111,
+  "address": "0x9988b2aa76e532b9093624ea8672543f368aca82",
+  "deploymentCommit": "53d57913658ff49785cee0bf06814ee9466ad6a6",
+  "url": "https://repo.sourcify.dev/11155111/0x9988b2aa76e532b9093624ea8672543f368aca82",
+  "response": {
+    "isJobCompleted": true,
+    "verificationId": "5dd71e7f-fa02-40b0-8660-8a17fc34cd3d",
+    "jobStartTime": "2026-10-14T13:08:47Z",
+    "jobFinishTime": "2026-10-14T13:08:47Z",
+    "compilationTime": "209",
+    "externalVerifications": {
+      "etherscan": {
+        "error": "Daily limit of 500 source code submissions reached"
+      },
+      "routescan": {
+        "verificationId": "50061a68-ea21-592f-97c1-79216b01ac8d",
+        "statusUrl": "https://api.routescan.io/v2/network/testnet/evm/11155111/etherscan/api?module=contract&action=checkverifystatus&chainid=11155111&guid=50061a68-ea21-592f-97c1-79216b01ac8d",
+        "explorerUrl": "https://routescan.io/address/0x9988b2Aa76E532B9093624ea8672543F368acA82?chainid=11155111",
+        "contractApiUrl": "https://api.routescan.io/v2/network/testnet/evm/11155111/etherscan/api?module=contract&action=getabi&chainid=11155111&address=0x9988b2Aa76E532B9093624ea8672543F368acA82"
+      },
+      "blockscout": {
+        "error": "Explorer verification request failed (429): {\"message\":\"Too many requests. Increase limits now at https://dev.blockscout.com\",\"result\":null,\"status\":\"0\"}"
+      }
+    },
+    "contract": {
+      "match": "exact_match",
+      "creationMatch": "exact_match",
+      "runtimeMatch": "exact_match",
+      "chainId": "11155111",
+      "address": "0x9988b2Aa76E532B9093624ea8672543F368acA82",
+      "verifiedAt": "2026-10-14T13:08:47Z",
+      "matchId": "56104754"
+    }
+  },
+  "verificationId": "5dd71e7f-fa02-40b0-8660-8a17fc34cd3d",
+  "verified": true
+}

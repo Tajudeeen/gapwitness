@@ -10,7 +10,11 @@ The distinctive design choice is to bind the declared observation window and mis
 
 EVALUATION.md reports 553 controlled omission cases, 24 duplicate-timestamp substitutions, and 24 negative-measurement cases. GapWitness resolves all omission sets exactly and matches the strong schedule-aware baseline. It resolves 89 cases missed by an inferred-window shortcut. These are automated results, not real-world adoption or environmental outcomes. PILOT.md and the paired-observation analyzer make independent reviewer measurement ready to run.
 
-Scaling and measured results are documented in ADOPTION.md and benchmark-results.json. Present limits include hourly sampling, 31-day windows, 1 MB files, a PM2.5-focused web experience, per-process quotas, and unauthenticated station authority. The generic hourly policy is available through the API and batch utility.
+REAL_CORPUS.md adds thirteen retained, unedited source windows from four stations and two providers. Three contain unavailable source readings, and all match the independent reference. Source normalization and source bytes are retained. Negative-value policy flags do not establish scientific source error or misconduct.
+
+Scaling and measured results are documented in ADOPTION.md and benchmark-results.json. Present limits include hourly sampling, 31-day windows, 1 MB files, and a PM2.5-focused web experience. OPERATIONS.md documents atomic shared quotas, bounded instance concurrency, readiness, and scheduled monitoring. Production currently retains per-process quotas until an owned persistent store is configured. The generic hourly policy is available through the API and batch utility.
+
+The Pilot page records actual paired timing and answer accuracy with no prefilled participants. The Verify page prepares and checks optional operator delegations against an independently supplied issuer key. Neither feature establishes independent adoption or station authority without external evidence.
 
 ## Ready and remaining
 
@@ -20,7 +24,7 @@ Scaling and measured results are documented in ADOPTION.md and benchmark-results
 - Describe environmental impact as improved reviewability and transparency. No environmental outcome or adoption metric has been measured.
 - Organizer eligibility wording conflicts between the students-only overview and the rules allowing independent developers. Obtain confirmation before assuming eligibility as a graduate.
 - The official schedule and organizer update indicate submissions opened October 5 and close October 25 at 14:00 UTC, or 15:00 in Nigeria. An older rule sentence gives a contradictory opening time.
-- Etherscan verification is a reviewability improvement. It is not listed as a submission requirement and needs the owner's ETHERSCAN_API_KEY.
+- Sourcify verified an exact creation and runtime bytecode match for V2 on October 14. The retained result is contracts/deployments/sourcify-v2.json. Etherscan verification remains separate; its automatic relay hit the provider's daily submission limit.
 
 Official pages checked October 14, 2026:
 

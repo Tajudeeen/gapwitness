@@ -27,6 +27,11 @@ A report can look complete after the inconvenient hours have been removed. A has
 
 ## Security and reviewer workflow
 
+- [Real datasets](https://gapwitness-web.vercel.app/datasets) provides thirteen retained unedited windows from four stations and two providers. [Corpus provenance and results](docs/REAL_CORPUS.md) retains original slices, normalization, licenses, hashes, and independent reference checks.
+- [Reviewer pilot](https://gapwitness-web.vercel.app/pilot) records actual paired timing and answer accuracy, with consent, anonymous codes, and explicit CSV export. No independent participants or benefits are prefilled.
+- [Service status](https://gapwitness-web.vercel.app/status) shows actual quota mode and scoped instance counters. [Operations](docs/OPERATIONS.md) covers shared atomic admission, bounded concurrency, readiness probes, scheduled monitoring, and the outstanding production configuration.
+- V2 has an [exact Sourcify source match](https://repo.sourcify.dev/11155111/0x9988b2aa76e532b9093624ea8672543f368aca82). The Verify page also prepares and checks [operator delegations](docs/OPERATOR_AUTHORITY.md), while keeping independent operator-key authentication explicit.
+
 - Browser evidence is independently checked before wallet submission, including the exact CSV hash and every chain input.
 - Duplicate CSV headers, inconsistent row widths, invalid station encodings, oversized request bodies, and unbounded rate-limit storage are rejected or bounded.
 - Source-backed fixture buttons and evidence JSON export make the review reproducible without a wallet.
@@ -441,7 +446,7 @@ cd web
 npm ci
 npm test
 npx playwright install chromium
-VITE_CONTRACT=0x81433d6bedf33b72defe0b90534dc16cc2b0bc57 npm run test:browser
+VITE_CONTRACT_V2=0x2222222222222222222222222222222222222222 npm run test:browser
 ```
 
 Browser regressions exercise real checker responses, quoted CSV observations, changed-input invalidation and retry, cancellation of older requests, and replacing an in-flight demo with a new upload. Wallet regressions cover the custom-error ABI, nested provider revert data, and disconnect events.
@@ -470,7 +475,7 @@ Browser regressions exercise real checker responses, quoted CSV observations, ch
 - One hourly environmental series per inspection, with a PM2.5-focused web experience.
 - No authenticated station ownership or signed checker attestation on-chain.
 - No sensor hardware, calibration checks, live ingestion, token, marketplace, or multi-chain support.
-- The request body is bounded before multipart parsing, and in-memory rate-limit storage is capped at 10,000 clients. The limiter remains per process and resets on restart; it is not a distributed abuse-control system.
+- The request body is bounded before multipart parsing, and in-memory rate-limit storage is capped at 10,000 clients. Atomic shared quotas have an integration proof but need production configuration; the live status reports the active mode. Concurrent inspection slots are bounded per instance.
 - Footer connectivity reflects the last application health/inspection result, not continuous monitoring.
 - The browser independently recomputes the exact-byte hash, timestamps, missing hours, policy hash, observations, verdict, and chain inputs before accepting the checker response. Parser disagreement fails closed. Web and checker should be deployed together.
 - The printable receipt view is an on-screen representation, not an automatic PDF export.

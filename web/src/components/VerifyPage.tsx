@@ -5,6 +5,8 @@ import {PageFrame} from './PageFrame';
 import {checkPackage,downloadFile,type EvidencePackage} from '../lib/packages';
 import {verifyChain,rpcReader,PROOF_RPC,type ProofResult} from '../lib/proof';
 import {DEFAULT_DEPLOYMENT} from '../lib/deployment';
+import sourceVerification from '../../../contracts/deployments/sourcify-v2.json';
+import {AuthorityPanel} from './AuthorityPanel';
 
 const PUBLISHED:EvidencePackage={format:'gapwitness/evidence/v1',source:'published source-backed File A derivative',csvFilename:'file_a.csv',
   originalCsvRequired:true,browserEvidenceCheck:'matched',evidence:publishedProof.localEvidence as EvidencePackage['evidence'],
@@ -17,8 +19,9 @@ export function VerifyPage({current,csv}:{current:EvidencePackage|null;csv:File|
   const [jsonFile,setJsonFile]=useState<File|null>(null),[csvFile,setCsvFile]=useState<File|null>(null);
   const [publisher,setPublisher]=useState(PUBLISHED.chain!.publisher),[transaction,setTransaction]=useState(PUBLISHED.chain!.transactionHash);
   const [localMatch,setLocalMatch]=useState(false),[proof,setProof]=useState<ProofResult|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+  const [verifiedStation,setVerifiedStation]=useState('');
   const pending=useRef<{generation:number;controller:AbortController|null}>({generation:0,controller:null});
-  function clear(){pending.current.controller?.abort();pending.current.generation+=1;setLocalMatch(false);setProof(null);setError('');setBusy(false);}
+  function clear(){pending.current.controller?.abort();pending.current.generation+=1;setLocalMatch(false);setProof(null);setVerifiedStation('');setError('');setBusy(false);}
   useEffect(()=>()=>{pending.current.controller?.abort();pending.current.generation+=1;},[]);
   useEffect(()=>{
     if(mode==='current') {clear();setPublisher(current?.chain?.publisher??'');setTransaction(current?.chain?.transactionHash??'');}
@@ -40,7 +43,7 @@ export function VerifyPage({current,csv}:{current:EvidencePackage|null;csv:File|
         raw=JSON.parse(await jsonFile.text());
       }
       const checked=checkPackage(raw,new Uint8Array(await file.arrayBuffer()));
-      if(!isCurrent())return;setLocalMatch(true);
+      if(!isCurrent())return;setLocalMatch(true);setVerifiedStation(checked.evidence.stationId);
       const signal=AbortSignal.any([controller.signal,AbortSignal.timeout(45000)]);
       const result=await verifyChain(checked,publisher.trim(),rpcReader(signal),transaction.trim()||undefined);
       if(isCurrent())setProof(result);
@@ -64,9 +67,10 @@ export function VerifyPage({current,csv}:{current:EvidencePackage|null;csv:File|
     </section>
     <section className="proof-status-grid" aria-label="Verification checks">
       <article className="page-card"><span className="proof-label">Original file</span><h2>{localMatch?'Independently matched':'Not checked'}</h2><p>Exact CSV bytes, expected hours, observations, policy, verdict, and every commitment input.</p></article>
-      <article className="page-card"><span className="proof-label">Contract source</span><h2>{proof?'Pinned runtime matched':'Not freshly checked'}</h2><p>The deployed bytecode must match the compiled V2 runtime hash. Explorer source verification is still unconfirmed.</p></article>
+      <article className="page-card"><span className="proof-label">Contract source</span><h2>{proof?'Pinned runtime matched':'Not freshly checked'}</h2><p>The deployed bytecode must match the compiled V2 runtime hash. Sourcify recorded exact creation and runtime source matches.</p><a href={sourceVerification.url} target="_blank" rel="noreferrer">Verified public source on Sourcify ↗</a></article>
       <article className="page-card"><span className="proof-label">On-chain evidence</span><h2>{proof?'RPC-confirmed on Sepolia':'No fresh confirmation'}</h2><p>File, gap and policy hashes, verdict, and publisher must match at one mined snapshot.</p></article>
     </section>
+    <AuthorityPanel key={mode+publisher+verifiedStation} stationId={mode==='published'?PUBLISHED.evidence.stationId:mode==='current'?current?.evidence.stationId??'':verifiedStation} publisher={publisher.trim()}/>
     {proof&&<section className="page-card" aria-label="Verified Sepolia result"><h2>Matched at block {proof.snapshotBlock}</h2>
       <p>First witness time: {proof.firstWitnessAt}</p><p>Checked: {proof.checkedAt}</p><p>Publisher: <code>{proof.publisher}</code></p>
       <p>Commitment key: <code>{proof.commitmentKey}</code></p>

@@ -37,6 +37,9 @@ const DEFAULT_WINDOW_START = "2026-09-19T07:00:00Z";
 const DEFAULT_WINDOW_END = "2026-09-20T07:00:00Z";
 const EvidencePage = lazy(() => import("./components/EvidencePage").then(module => ({default:module.EvidencePage})));
 const VerifyPage = lazy(() => import("./components/VerifyPage").then(module => ({default:module.VerifyPage})));
+const DatasetsPage = lazy(() => import("./components/DatasetsPage").then(module => ({default:module.DatasetsPage})));
+const StatusPage = lazy(() => import("./components/StatusPage").then(module => ({default:module.StatusPage})));
+const PilotPage = lazy(() => import("./components/PilotPage").then(module => ({default:module.PilotPage})));
 
 function errorMessage(status: number, code: string): string {
   if (status === 429) {
@@ -87,6 +90,7 @@ function App() {
     const url = new URL(window.location.href);
     url.pathname = PAGE_PATHS[next];
     url.searchParams.delete("view");
+    url.searchParams.delete("dataset");
     url.hash = section === "top" ? "" : section;
     window.history.pushState(null, "", url);
     setView(next);
@@ -118,7 +122,8 @@ function App() {
   }, [view]);
   const inspectionRequest = useRef<{ id: number; controller: AbortController | null }>({ id: 0, controller: null });
   const commitInFlight = useRef(false);
-  const [sourceKind, setSourceKind] = useState<"upload" | "synthetic" | "openaq">("upload");
+  const [sourceKind, setSourceKind] = useState<"upload" | "synthetic" | "openaq" | "corpus">("upload");
+  const [activeCorpusId,setActiveCorpusId]=useState<string|null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [activeCsv, setActiveCsv] = useState<File | null>(null);
   const [importedChain, setImportedChain] = useState<ChainClaim | null>(null);
@@ -178,6 +183,7 @@ function App() {
   function clearEvidence() {
     setActiveCsv(null);
     setImportedChain(null);
+    setActiveCorpusId(null);
     setResult(null);
     setPrimaryResult(null);
     setComparisonResult(null);
@@ -219,7 +225,7 @@ function App() {
     setMessage("Inputs changed. Inspect the selected CSV again before committing.");
   }
 
-  async function inspect(upload: File, context = { stationId: station.trim(), windowStart, windowEnd }, source: "upload" | "openaq" = "upload") {
+  async function inspect(upload: File, context = { stationId: station.trim(), windowStart, windowEnd }, source: "upload" | "openaq" | "corpus" = "upload", corpusId:string|null=null) {
     if (commitInFlight.current) return;
     const request = beginInspection();
     setBusy(true);
@@ -234,6 +240,7 @@ function App() {
       if (!request.current()) return;
       setResult(next);
       setActiveCsv(upload);
+      setActiveCorpusId(corpusId);
       setPrimaryResult(next);
       setPoints(next.observations);
       setCheckerState("ready");
@@ -273,6 +280,18 @@ function App() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  async function loadCorpus(id:string) {
+    if(commitInFlight.current)return;
+    const request=beginInspection();setBusy(true);setMessage('Loading retained source dataset…');
+    try {const {corpusCsv}=await import('./lib/corpus');const {dataset,text}=await corpusCsv(id);
+      if(!request.current())return;
+      const csv=new File([text],dataset.csv,{type:'text/csv'});
+      setStation(dataset.stationId);setWindowStart(dataset.windowStart);setWindowEnd(dataset.windowEnd);setFile(csv);
+      void inspect(csv,{stationId:dataset.stationId,windowStart:dataset.windowStart,windowEnd:dataset.windowEnd},'corpus',id);
+    }catch(cause){if(request.current()){setBusy(false);setMessage(cause instanceof Error?cause.message:'Dataset could not be loaded.');}}
+  }
+  useEffect(()=>{const id=new URL(window.location.href).searchParams.get('dataset');if(view==='inspect'&&id)void loadCorpus(id);},[view]);
+
   function evidencePackage(): EvidencePackage | null {
     if (!result) return null;
     const publisher = txPublisher;
@@ -283,6 +302,7 @@ function App() {
         commitmentKey: getCommitmentKey(result.chainCommitment, publisher),
         operation: commitCreated ? "first-witness" : "exact-replay"} : importedChain,
       chainVerification: txHash ? "Receipt and record matched by the connected wallet provider" : "No fresh independent chain check",
+      ...(activeCorpusId?{sourceDatasetId:activeCorpusId}:{}),
       limits: ["Wallet identity does not certify station authority.", "Temporal completeness does not prove measurement accuracy."]};
   }
 
@@ -535,7 +555,7 @@ function App() {
 
           <div className="field">
             <label>source</label>
-            <div className="readout">{sourceKind === "synthetic" ? "Synthetic browser demo" : sourceKind === "openaq" ? "Frozen OpenAQ fixture · recorded provenance" : "Uploaded CSV · source unverified"}</div>
+            <div className="readout">{sourceKind === "synthetic" ? "Synthetic browser demo" : sourceKind === "openaq" ? "Frozen OpenAQ fixture · recorded provenance" : sourceKind === "corpus" ? "Retained real corpus · normalization documented" : "Uploaded CSV · source unverified"}</div>
           </div>
 
           <label className={`upload${busy ? " is-busy" : ""}`}>
@@ -555,6 +575,7 @@ function App() {
             <button type="button" disabled={commitBusy} onClick={() => loadSourceFixture("c")}>load File C · policy test</button>
           </div>
           {file && <button type="button" className="rail-demo" disabled={busy || demoBusy || commitBusy} onClick={() => void inspect(file)}>inspect selected CSV again</button>}
+          <a href="/datasets" onClick={event=>navigateLink(event,navigate,'datasets')}>Inspect multi-provider real datasets →</a>
 
           <p className="message" aria-live="polite">{busy ? "● " : ""}{message}</p>
         </aside>
@@ -787,6 +808,8 @@ function App() {
         {witnessPanel}<p role="status" className="page-message">{message}</p>
         {txHash && <div className="page-actions"><button onClick={() => navigate("verify")}>Independently verify this witness</button><button onClick={() => navigate("evidence")}>Save CSV and receipt metadata</button></div>}
       </PageFrame> : view === "verify" ? <VerifyPage current={evidencePackage()} csv={activeCsv} />
+      : view === "datasets" ? <DatasetsPage /> : view === "status" ? <StatusPage />
+      : view === "pilot" ? <PilotPage />
       : <PageFrame title="Page not found" description="Choose a page from the workspace navigation."><button onClick={() => navigate("inspect")}>Open inspection</button></PageFrame>}
       </Suspense>
       {view !== "home" && view !== "inspect" && view !== "lab" && <Footer checkerState={checkerState} navigate={navigate} />}

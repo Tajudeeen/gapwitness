@@ -26,5 +26,12 @@
     "to": null,
     "contractAddress": "0x9988b2aa76e532b9093624ea8672543f368aca82"
   },
-  "runtimeHash": "0xe95e96cbfe1c872a7a71cf1d7147dd1f9fac1613c5af15bd999e5eb5b7f215f3"
+  "runtimeHash": "0xe95e96cbfe1c872a7a71cf1d7147dd1f9fac1613c5af15bd999e5eb5b7f215f3",
+  "sourceVerification": {
+    "provider": "Sourcify",
+    "creationMatch": "exact_match",
+    "runtimeMatch": "exact_match",
+    "verifiedAt": "2026-10-14T13:08:47Z",
+    "url": "https://repo.sourcify.dev/11155111/0x9988b2aa76e532b9093624ea8672543f368aca82"
+  }
 }

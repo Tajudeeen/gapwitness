@@ -1,8 +1,8 @@
 import type { MouseEvent } from "react";
 
-export type Page = 'home' | 'inspect' | 'review' | 'evidence' | 'publish' | 'verify' | 'lab' | 'not-found';
+export type Page = 'home' | 'inspect' | 'review' | 'evidence' | 'publish' | 'verify' | 'datasets' | 'pilot' | 'status' | 'lab' | 'not-found';
 export type Navigate = (view: Page, section?: string) => void;
-export const PAGE_PATHS = { home: '/', inspect: '/inspect', review: '/review', evidence: '/evidence', publish: '/publish', verify: '/verify', lab: '/inspect', 'not-found': '/404' };
+export const PAGE_PATHS = { home: '/', inspect: '/inspect', review: '/review', evidence: '/evidence', publish: '/publish', verify: '/verify', datasets:'/datasets',pilot:'/pilot',status:'/status',lab: '/inspect', 'not-found': '/404' };
 
 export function readPage(url: URL): Page {
   if (url.pathname === '/' && url.searchParams.get('view') === 'lab') return 'lab';

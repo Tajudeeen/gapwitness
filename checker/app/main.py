@@ -8,6 +8,7 @@ from io import StringIO
 import os
 import math
 import time
+from .operations import MAX_ACTIVE, operations, configured_quota, client_identity
 
 import pandas as pd
 from Crypto.Hash import keccak
@@ -16,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
-app = FastAPI(title="GapWitness Checker", version="0.7.0")
+app = FastAPI(title="GapWitness Checker", version="0.8.0")
 
 MAX_FILE_BYTES = 1_000_000
 MAX_WINDOW_HOURS = 24 * 31
@@ -78,6 +79,11 @@ class RateLimiter:
 
 
 rate_limiter = RateLimiter(INSPECT_RATE_LIMIT, INSPECT_RATE_WINDOW_SECONDS)
+shared_quota = configured_quota(INSPECT_RATE_LIMIT, INSPECT_RATE_WINDOW_SECONDS)
+inspection_slots = asyncio.Semaphore(MAX_ACTIVE)
+readiness_lock = asyncio.Lock()
+readiness_checked = 0.0
+readiness_ok = False
 
 
 class InspectionBodyLimit:
@@ -88,10 +94,32 @@ class InspectionBodyLimit:
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http" or scope["method"] != "POST" or scope["path"] != "/inspect":
             return await self.app(scope, receive, send)
-        client = scope.get("client")
-        if not rate_limiter.allow(client[0] if client else "unknown"):
+        began=time.monotonic();status=500
+        async def tracked_send(message):
+            nonlocal status
+            if message['type']=='http.response.start':status=message['status']
+            await send(message)
+        try:await self.inspect_request(scope,receive,tracked_send)
+        finally:operations.finish(scope.get('_gapwitness_status',status),(time.monotonic()-began)*1000)
+
+    async def inspect_request(self, scope, receive, send):
+        client_key=client_identity(scope)
+        retry=INSPECT_RATE_WINDOW_SECONDS
+        if shared_quota:
+            try:allowed,retry=await shared_quota.allow(client_key)
+            except Exception:
+                return await JSONResponse({'detail':'QUOTA_BACKEND_UNAVAILABLE'},status_code=503,headers={'Retry-After':'3'})(scope,receive,send)
+        else:allowed=rate_limiter.allow(client_key)
+        if not allowed:
             return await JSONResponse({"detail": "RATE_LIMITED"}, status_code=429,
-                headers={"Retry-After": str(INSPECT_RATE_WINDOW_SECONDS)})(scope, receive, send)
+                headers={"Retry-After": str(retry)})(scope, receive, send)
+        if inspection_slots.locked():
+            return await JSONResponse({'detail':'INSPECTION_CAPACITY_REACHED'},status_code=503,headers={'Retry-After':'1'})(scope,receive,send)
+        await inspection_slots.acquire();operations.active+=1
+        try:await self.read_and_inspect(scope,receive,send)
+        finally:operations.active-=1;inspection_slots.release()
+
+    async def read_and_inspect(self,scope,receive,send):
         body = bytearray()
         deadline = time.monotonic() + 15
         while True:
@@ -100,6 +128,7 @@ class InspectionBodyLimit:
             except asyncio.TimeoutError:
                 return await JSONResponse({"detail": "REQUEST_BODY_TIMEOUT"}, status_code=408)(scope, receive, send)
             if message["type"] == "http.disconnect":
+                scope['_gapwitness_status']=499
                 return
             chunk = message.get("body", b"")
             if len(body) + len(chunk) > MAX_REQUEST_BYTES:
@@ -323,6 +352,29 @@ def health() -> dict[str, object]:
         "service": "gapwitness-checker",
         "version": app.version,
     }
+
+@app.get('/status')
+def service_status():
+    return {'ok':True,'service':'gapwitness-checker','version':app.version,
+        'quotas':{'mode':'shared Redis atomic quotas' if shared_quota else 'per-process only','sharedConfigured':shared_quota is not None,
+            'limit':INSPECT_RATE_LIMIT,'windowSeconds':INSPECT_RATE_WINDOW_SECONDS,
+            'globalLimit':shared_quota.global_limit if shared_quota else None,
+            'dependencyHealth':'Not probed by this status response'},'metrics':operations.snapshot()}
+
+@app.get('/ready')
+async def readiness():
+    global readiness_checked,readiness_ok
+    if shared_quota:
+        async with readiness_lock:
+            if time.monotonic()-readiness_checked>15:
+                try:await shared_quota.ping();readiness_ok=True
+                except Exception:readiness_ok=False
+                readiness_checked=time.monotonic()
+        ok=readiness_ok
+    else:ok=True
+    return JSONResponse({'ok':ok,'service':'gapwitness-checker','version':app.version,
+        'sharedConfigured':shared_quota is not None,'quotaDependency':'reachable (cached up to 15 seconds)' if shared_quota and ok else 'unavailable' if shared_quota else 'not configured',
+        'limits':'Reachability only. Shared admission, capacity, and operator authority are separate checks.'},status_code=200 if ok else 503)
 
 
 @app.post("/inspect")

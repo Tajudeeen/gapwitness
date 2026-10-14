@@ -1,0 +1,18 @@
+{
+  "format": "gapwitness/shared-quota-proof/v1",
+  "checkedAt": "2026-10-14T13:39:12.328671+00:00",
+  "independentLimiterInstances": 2,
+  "concurrentRequests": 12,
+  "clientLimit": 3,
+  "admitted": 3,
+  "denied": 9,
+  "matched": true,
+  "clock": "Redis TIME",
+  "transport": "Actual HTTPS Redis requests through workspace urllib proxy, 30-second test timeout. Production HTTPX timeout remains three seconds.",
+  "clientIdentifiers": "HMAC-hashed synthetic identifiers; no real IPs",
+  "storeScope": "Temporary Upstash agent test database. Not production configuration; expires in 72 hours.",
+  "limits": [
+    "This validates distributed admission logic, not production capacity or uptime.",
+    "Production needs an owned persistent Redis REST store and protected environment variables."
+  ]
+}

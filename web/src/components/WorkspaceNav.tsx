@@ -6,5 +6,7 @@ export function WorkspaceNav({page,navigate}:{page:Page;navigate:Navigate}) {
       href={PAGE_PATHS[target]} aria-current={page===target || (page==='lab' && target==='inspect')?'page':undefined}
       onClick={event=>navigateLink(event,navigate,target)}>{target[0].toUpperCase()+target.slice(1)}</a>)}</nav>
     <span className="network-badge">Sepolia testnet</span>
+    <nav className="workspace-secondary" aria-label="Evidence and operations navigation">{(['datasets','pilot','status'] as Page[]).map(target=><a key={target} href={PAGE_PATHS[target]}
+      aria-current={page===target?'page':undefined} onClick={event=>navigateLink(event,navigate,target)}>{target==='datasets'?'Real datasets':target==='pilot'?'Reviewer pilot':'Service status'}</a>)}</nav>
   </header>;
 }

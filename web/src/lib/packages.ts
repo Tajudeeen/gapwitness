@@ -10,6 +10,7 @@ export type EvidencePackage = {
   format: 'gapwitness/evidence/v1'; source: string; csvFilename: string;
   originalCsvRequired: true; browserEvidenceCheck: 'matched'; evidence: CheckResult;
   chain: ChainClaim | null; chainVerification?: string; limits: string[];
+  sourceDatasetId?:string;
 };
 
 export function checkPackage(raw: unknown, bytes: Uint8Array): EvidencePackage {

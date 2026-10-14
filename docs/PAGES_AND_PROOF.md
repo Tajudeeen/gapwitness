@@ -35,7 +35,7 @@ The read-only verifier checks:
 
 Altered files, mismatched evidence, wrong publishers, unknown deployments, missing records, failed/unrelated transactions, and RPC errors cannot produce a fresh confirmation. Editing verification inputs clears the prior result. The public RPC is configurable through `VITE_SEPOLIA_RPC_URL`; it must be a public browser-compatible URL with no secret credential.
 
-`contracts/deployments/runtime-v2.hex` retains the compiled runtime used by the verifier's regression tests. Its Keccak hash must match the manifest. The exact deployment source revision is recorded in `sepolia-v2.json`. Etherscan source verification remains separate and unconfirmed until the owner's verification credential is configured.
+`contracts/deployments/runtime-v2.hex` retains the compiled runtime used by the verifier's regression tests. Its Keccak hash must match the manifest. The exact deployment source revision is recorded in `sepolia-v2.json`. Sourcify confirmed exact creation and runtime matches; the actual response is retained in sourcify-v2.json. Etherscan source verification remains separate and unconfirmed.
 
 These are RPC-confirmed checks, not Ethereum light-client or Merkle state proofs. The verifier trusts the provider's responses and the delivered browser code. It does not certify station authority, source honesty, sensor calibration, scientific acceptability, or environmental outcomes. Sepolia is a test network.
 
@@ -48,3 +48,5 @@ Current inspection uploads go to the configured checker. Prior-revision comparis
 ## Validation
 
 The page tests cover navigation and browser history, refreshes, empty states, unknown paths, local persistence and deletion, tampered saved/imported evidence, source-backed revision reports, and proof success/failure using explicit RPC mocks. Live production verification separately checks the public pages and actual source-backed Sepolia witness. Mock tests are not described as mined transactions.
+
+The additional Datasets, Pilot, and Status pages provide frozen real-source inspection, actual paired review collection, and scoped instance operations. Verify supports optional operator signatures while requiring external operator-to-key authentication. See REAL_CORPUS.md, PILOT.md, OPERATOR_AUTHORITY.md, and OPERATIONS.md.
