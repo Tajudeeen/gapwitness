@@ -20,7 +20,7 @@ The Pilot page records actual paired timing and answer accuracy with no prefille
 
 - Public code, documentation, deployed lab, frozen fixtures, and independent verification are provided through README.
 - The V2 publisher-scoped deployment and its source-backed proof are integrated. Its own namespace prevents another wallet from occupying the publisher’s station/window.
-- Use DEMO_SCRIPT.md to record the required 3–5 minute video.
+- A captioned 3 minute 14 second walkthrough of the actual deployed app is complete and delivered separately. docs/recorded-walkthrough.json retains its hash and successful live Sepolia check. Publish the delivered video through the submission’s accepted video host and add that URL. DEMO_SCRIPT.md remains available for a narrated presentation.
 - Describe environmental impact as improved reviewability and transparency. No environmental outcome or adoption metric has been measured.
 - Organizer eligibility wording conflicts between the students-only overview and the rules allowing independent developers. Obtain confirmation before assuming eligibility as a graduate.
 - The official schedule and organizer update indicate submissions opened October 5 and close October 25 at 14:00 UTC, or 15:00 in Nigeria. An older rule sentence gives a contradictory opening time.

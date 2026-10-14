@@ -1,6 +1,6 @@
 # Admission and monitoring
 
-The checker bounds file bytes, assembled request bytes, upload time, and active inspections. INSPECT_MAX_CONCURRENT defaults to four, with a supported range of one to thirty-two. Exhausted capacity rejects a request with 503 before reading or parsing its body. This is an instance bound, not a global concurrency guarantee.
+The checker bounds file bytes, assembled request bytes, upload time, and active inspections. INSPECT_MAX_CONCURRENT defaults to four, with a supported range of one to thirty-two. A slot covers quota dependency requests as well as upload assembly and inspection. Exhausted capacity rejects a request with 503 before calling the quota backend, reading, or parsing its body. This is an instance bound, not a global concurrency guarantee.
 
 Optional distributed quotas use a single atomic Redis Lua command. Redis TIME establishes fixed windows. Global admission is checked before allocating a client counter. Client identifiers are HMAC-hashed with a protected salt. Keys share a Redis Cluster hash slot. Counters expire at the window boundary. Configured dependency failure rejects inspection with 503; incomplete configuration prevents startup. Without shared configuration the existing bounded limiter is per process.
 

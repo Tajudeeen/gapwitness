@@ -1,0 +1,67 @@
+{
+  "format": "gapwitness/monitor/v1",
+  "checkedAt": "2026-10-14T13:47:28.788555+00:00",
+  "checks": [
+    {
+      "url": "https://gapwitness-checker.vercel.app/health",
+      "ok": true,
+      "httpStatus": 200,
+      "elapsedMilliseconds": 4616.02,
+      "response": {
+        "ok": true,
+        "service": "gapwitness-checker",
+        "version": "0.8.0"
+      }
+    },
+    {
+      "url": "https://gapwitness-checker.vercel.app/status",
+      "ok": true,
+      "httpStatus": 200,
+      "elapsedMilliseconds": 4562.23,
+      "response": {
+        "ok": true,
+        "service": "gapwitness-checker",
+        "version": "0.8.0",
+        "quotas": {
+          "mode": "per-process only",
+          "sharedConfigured": false,
+          "limit": 30,
+          "windowSeconds": 60,
+          "globalLimit": null,
+          "dependencyHealth": "Not probed by this status response"
+        },
+        "metrics": {
+          "scope": "this-process since last start",
+          "uptimeSeconds": 64,
+          "completedRequests": 0,
+          "statusCounts": {},
+          "meanRequestMilliseconds": null,
+          "maxRequestMilliseconds": 0.0,
+          "activeInspections": 0,
+          "maxConcurrentInspections": 4
+        }
+      }
+    },
+    {
+      "url": "https://gapwitness-checker.vercel.app/ready",
+      "ok": true,
+      "httpStatus": 200,
+      "elapsedMilliseconds": 4273.23,
+      "response": {
+        "ok": true,
+        "service": "gapwitness-checker",
+        "version": "0.8.0",
+        "sharedConfigured": false,
+        "quotaDependency": "not configured",
+        "limits": "Reachability only. Shared admission, capacity, and operator authority are separate checks."
+      }
+    }
+  ],
+  "corpusMatches": true,
+  "corpusWindows": 13,
+  "limits": [
+    "Point-in-time checks, not a global uptime percentage.",
+    "Status metrics cover only the responding process.",
+    "Shared quota configuration is reported separately from dependency health."
+  ]
+}

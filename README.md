@@ -480,7 +480,7 @@ Browser regressions exercise real checker responses, quoted CSV observations, ch
 - The browser independently recomputes the exact-byte hash, timestamps, missing hours, policy hash, observations, verdict, and chain inputs before accepting the checker response. Parser disagreement fails closed. Web and checker should be deployed together.
 - The printable receipt view is an on-screen representation, not an automatic PDF export.
 - Explorer source verification remains separate from deployment and replay proof.
-- A completed demo video is not included in the repository.
+- A completed captioned 3 minute 14 second demo is delivered separately. Its hash, live-check context, and capture metadata are retained in [recorded-walkthrough.json](docs/recorded-walkthrough.json). Reproduce with web/scripts/record_walkthrough.mjs and web/scripts/render_walkthrough.py.
 
 The delivery scope is a focused reviewer workspace, a checker, a contract, retained source files, independent verification, and a demo video. Keep new work tied to that evidence flow.
 

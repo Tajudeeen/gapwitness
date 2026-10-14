@@ -37,6 +37,7 @@ The analyzer rejects empty records, duplicate pairs, invalid durations, and malf
 ## Feedback and adoption evidence
 
 Ask what part of the task was difficult, whether the exported record fits their workflow, which explanations were unclear, and whether they would use it again. Keep actual feedback rather than rewriting it as praise. Claim an independent trial only after one occurred, active adoption only when the tool is used in real work, and environmental benefit only when a downstream outcome has been observed and supported.
-# In-app collection
+
+## In-app collection
 
 Open https://gapwitness-web.vercel.app/pilot. The browser records actual stopwatch duration and exact timestamp accuracy for paired baseline and tool phases. It starts with zero participants and saves locally only after both phases. Use anonymous codes, record the normal method, obtain consent, counterbalance order, and retain the source CSV hash. Export CSV for scripts/analyze_pilot.py. Synthetic browser-test trials are regression checks and must not be counted as real participants. A participant code is not independent identity authentication.

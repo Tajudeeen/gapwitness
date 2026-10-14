@@ -103,6 +103,14 @@ class InspectionBodyLimit:
         finally:operations.finish(scope.get('_gapwitness_status',status),(time.monotonic()-began)*1000)
 
     async def inspect_request(self, scope, receive, send):
+        # Bound quota dependency requests as well as upload assembly and parsing.
+        if inspection_slots.locked():
+            return await JSONResponse({'detail':'INSPECTION_CAPACITY_REACHED'},status_code=503,headers={'Retry-After':'1'})(scope,receive,send)
+        await inspection_slots.acquire();operations.active+=1
+        try:await self.admit_and_inspect(scope,receive,send)
+        finally:operations.active-=1;inspection_slots.release()
+
+    async def admit_and_inspect(self,scope,receive,send):
         client_key=client_identity(scope)
         retry=INSPECT_RATE_WINDOW_SECONDS
         if shared_quota:
@@ -113,11 +121,7 @@ class InspectionBodyLimit:
         if not allowed:
             return await JSONResponse({"detail": "RATE_LIMITED"}, status_code=429,
                 headers={"Retry-After": str(retry)})(scope, receive, send)
-        if inspection_slots.locked():
-            return await JSONResponse({'detail':'INSPECTION_CAPACITY_REACHED'},status_code=503,headers={'Retry-After':'1'})(scope,receive,send)
-        await inspection_slots.acquire();operations.active+=1
-        try:await self.read_and_inspect(scope,receive,send)
-        finally:operations.active-=1;inspection_slots.release()
+        await self.read_and_inspect(scope,receive,send)
 
     async def read_and_inspect(self,scope,receive,send):
         body = bytearray()

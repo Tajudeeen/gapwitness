@@ -52,8 +52,10 @@ def test_quota_outage_and_exhausted_capacity_reject_before_reading_body(monkeypa
         async def send(message):messages.append(message)
         async def downstream(*args):raise AssertionError('Rejected request must not reach parser')
         class Quota:
-            async def allow(self,client):raise RuntimeError('dependency unavailable')
-        monkeypatch.setattr(main,'shared_quota',Quota() if kind=='quota' else None)
+            async def allow(self,client):
+                if kind=='capacity':raise AssertionError('Exhausted capacity must not call quota backend')
+                raise RuntimeError('dependency unavailable')
+        monkeypatch.setattr(main,'shared_quota',Quota())
         monkeypatch.setattr(main,'inspection_slots',asyncio.Semaphore(0 if kind=='capacity' else 4))
         scope={'type':'http','method':'POST','path':'/inspect','client':('192.0.2.155',1),'headers':[]}
         await main.InspectionBodyLimit(downstream)(scope,forbidden_receive,send)

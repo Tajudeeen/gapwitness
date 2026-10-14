@@ -1,5 +1,12 @@
 name: service-monitor
 on:
+  push:
+    paths:
+      - 'checker/**'
+      - 'scripts/monitor_service.py'
+      - 'scripts/verify_real_corpus.py'
+      - 'data/corpus/**'
+      - '.github/workflows/service-monitor.yml'
   schedule:
     - cron: '17,47 * * * *'
   workflow_dispatch:
