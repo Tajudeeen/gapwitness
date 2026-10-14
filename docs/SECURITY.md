@@ -22,7 +22,9 @@ The contract still permits arbitrary claims within the sender's own namespace. I
 
 The browser and server check the same policy independently, but their application code and delivery infrastructure are trusted. CSV bytes go to the configured HTTP checker. They are not posted on-chain. Local batch review avoids uploads. Sensor calibration and physical truth require domain validation outside GapWitness.
 
-First-witness immutability rejects silent replacement. Legitimate corrected reports still need an explicitly documented revision process outside this prototype. A conflict establishes differing evidence, not intent to deceive.
+First-witness immutability rejects silent replacement. The revision comparison makes added/deleted hours and changed measurements explicit. Legitimate corrected reports still need documented review and acceptance. A conflict establishes differing evidence, not intent to deceive.
+
+Browser-saved records are not trusted on reopen. Their exact CSV bytes and every evidence field are recomputed before entering the active workflow. Saved chain metadata cannot restore a witnessed receipt in the publication view. The separate verifier requires fresh RPC matching of the pinned runtime, stored fields, publisher key, and optional transaction. Its results trust the RPC provider and delivered browser code; they are not light-client proofs. IndexedDB is local browser storage rather than cloud backup or authenticated organizational retention.
 
 The rate limiter is bounded but per process. It resets on restarts and does not establish distributed abuse prevention. Request-body assembly has a 15-second deadline and uses a bounded byte buffer even for fragmented chunks. Concurrent workload, upstream availability, and production capacity still need platform controls and load tests for institutional service levels.
 

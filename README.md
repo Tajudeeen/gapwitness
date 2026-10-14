@@ -6,7 +6,7 @@ GapWitness checks the temporal integrity of an hourly environmental CSV. It comp
 
 A report can look complete after the inconvenient hours have been removed. A hash taken afterward preserves that edited file, but cannot show which expected hours disappeared. GapWitness makes the declared window and its missing observations part of the evidence.
 
-[Explore GapWitness](https://gapwitness-web.vercel.app) · [Open the lab](https://gapwitness-web.vercel.app/?view=lab) · [Checker health](https://gapwitness-checker.vercel.app/health) · [Contract explorer](https://sepolia.etherscan.io/address/0x9988b2aa76e532b9093624ea8672543f368aca82) · [Report an issue](https://github.com/Tajudeeen/gapwitness/issues/new)
+[Explore GapWitness](https://gapwitness-web.vercel.app) · [Inspect](https://gapwitness-web.vercel.app/inspect) · [Review](https://gapwitness-web.vercel.app/review) · [Evidence](https://gapwitness-web.vercel.app/evidence) · [Publish](https://gapwitness-web.vercel.app/publish) · [Verify](https://gapwitness-web.vercel.app/verify) · [Checker health](https://gapwitness-checker.vercel.app/health) · [Contract explorer](https://sepolia.etherscan.io/address/0x9988b2aa76e532b9093624ea8672543f368aca82)
 
 ## Contents
 
@@ -31,6 +31,7 @@ A report can look complete after the inconvenient hours have been removed. A has
 - Duplicate CSV headers, inconsistent row widths, invalid station encodings, oversized request bodies, and unbounded rate-limit storage are rejected or bounded.
 - Source-backed fixture buttons and evidence JSON export make the review reproducible without a wallet.
 - A reviewer workspace adds printable reports and local revision comparison, separating restored hours, deleted hours, changed measurements, and byte-only edits.
+- Dedicated Inspect, Review, Evidence, Publish, and Verify pages keep each task focused. Explicit browser saves retain original CSVs and evidence JSON, and reopening recomputes the evidence. The wallet-free verifier reads the actual Sepolia V2 runtime, record, and optional transaction. See [pages and proof workflow](docs/PAGES_AND_PROOF.md) for trust boundaries, persistence limits, and the full walkthrough.
 - [Measured evaluation](docs/EVALUATION.md) covers 601 controlled cases based on frozen real source data. [Related-work comparison](docs/ORIGINALITY.md) gives a bounded differentiation claim. The [reviewer pilot](docs/PILOT.md) includes an empty observation template and an analyzer for actual paired time and accuracy measurements.
 - V2 adds publisher-scoped station/window commitments and is the app’s default deployment. Contract tests and the live source-backed proof confirm its isolation. The existing V1 deployment remains historical evidence and was not upgraded.
 - [Security model](docs/SECURITY.md), [adoption and scaling plan](docs/ADOPTION.md), [measured local benchmarks](docs/benchmark-results.json), [submission brief](docs/SUBMISSION.md), and [3–4 minute demo script](docs/DEMO_SCRIPT.md).
@@ -476,7 +477,7 @@ Browser regressions exercise real checker responses, quoted CSV observations, ch
 - Explorer source verification remains separate from deployment and replay proof.
 - A completed demo video is not included in the repository.
 
-The delivery scope is a page, a checker, a contract, reproducible files, independent verification, and a focused demo video. Keep new work tied to that evidence flow.
+The delivery scope is a focused reviewer workspace, a checker, a contract, retained source files, independent verification, and a demo video. Keep new work tied to that evidence flow.
 
 ## Contributing and attribution
 

@@ -17,8 +17,8 @@ export function Landing({ navigate, checkerState }: {
         <a className="landing-brand" href="#top"><img src="/gapwitness-logo.svg" alt="" width="40" height="40" />GapWitness</a>
         <nav aria-label="Main navigation">
           <a href="#how-it-works">How it works</a>
-          <a href="#evidence">The evidence</a>
-          <a className="landing-nav-cta" href="?view=lab" onClick={openLab}>Open the lab <span aria-hidden="true">↗</span></a>
+          <a href="/verify" onClick={event=>navigateLink(event,navigate,"verify")}>Verify proof</a>
+          <a className="landing-nav-cta" href="/inspect" onClick={openLab}>Open the app <span aria-hidden="true">↗</span></a>
         </nav>
       </header>
 
@@ -27,7 +27,7 @@ export function Landing({ navigate, checkerState }: {
           <p className="landing-eyebrow"><span /> ENVIRONMENTAL DATA / TEMPORAL INTEGRITY</p>
           <h1 id="landing-title" tabIndex={-1}>The missing hours<br />tell a story.<br /><em>Keep the evidence.</em></h1>
           <p className="landing-intro">A clean chart can hide an incomplete record. GapWitness checks an hourly environmental CSV against the window you declare, reveals what is missing, and lets you preserve a verifiable commitment.</p>
-          <div className="landing-actions"><a className="landing-button" href="?view=lab" onClick={openLab}>Inspect your data <span aria-hidden="true">↗</span></a><a className="landing-text-link" href="#how-it-works">See how it works <span aria-hidden="true">↓</span></a></div>
+          <div className="landing-actions"><a className="landing-button" href="/inspect" onClick={openLab}>Inspect your data <span aria-hidden="true">↗</span></a><a className="landing-text-link" href="#how-it-works">See how it works <span aria-hidden="true">↓</span></a></div>
           <p className="landing-caption">No wallet needed to inspect. Optional commitments on Ethereum Sepolia.</p>
         </div>
         <div className="landing-specimen">
@@ -52,7 +52,7 @@ export function Landing({ navigate, checkerState }: {
       </section>
 
       <section className="landing-section" id="how-it-works" aria-labelledby="workflow-title">
-        <div className="landing-section-heading"><div><p className="landing-eyebrow">02 / FROM FILE TO EVIDENCE</p><h2 id="workflow-title">Three steps. A traceable record.</h2></div><a className="landing-text-link" href="?view=lab" onClick={openLab}>Try it in the lab ↗</a></div>
+        <div className="landing-section-heading"><div><p className="landing-eyebrow">02 / FROM FILE TO EVIDENCE</p><h2 id="workflow-title">Three steps. A traceable record.</h2></div><a className="landing-text-link" href="/inspect" onClick={openLab}>Try it in the lab ↗</a></div>
         <div className="landing-steps">
           <article><span className="landing-step-number">01</span><h3>Declare the window.</h3><p>Choose the station, start time, and end time in UTC. Upload your hourly CSV with timestamp and value columns.</p><span className="landing-step-label">YOUR FILE + YOUR EXPECTED WINDOW</span></article>
           <article><span className="landing-step-number">02</span><h3>Inspect what is there.</h3><p>See missing hours, invalid negative PM2.5 values, the policy verdict, and hashes of the submitted bytes and evidence.</p><span className="landing-step-label">DETERMINISTIC CHECKER / NO WALLET</span></article>
@@ -84,7 +84,7 @@ export function Landing({ navigate, checkerState }: {
         </div>
       </section>
 
-      <section className="landing-closing" aria-labelledby="start-title"><p className="landing-eyebrow">START WITH THE RECORD YOU HAVE</p><h2 id="start-title">Make the missing hours visible.</h2><p>Load frozen source examples, inspect a CSV, or try the clearly labeled synthetic comparison.</p><a className="landing-button" href="?view=lab" onClick={openLab}>Open the inspection lab <span aria-hidden="true">↗</span></a></section>
+      <section className="landing-closing" aria-labelledby="start-title"><p className="landing-eyebrow">START WITH THE RECORD YOU HAVE</p><h2 id="start-title">Make the missing hours visible.</h2><p>Load frozen source examples, inspect a CSV, or try the clearly labeled synthetic comparison.</p><a className="landing-button" href="/inspect" onClick={openLab}>Open the inspection lab <span aria-hidden="true">↗</span></a></section>
       <Footer checkerState={checkerState} navigate={navigate} />
     </main>
   );

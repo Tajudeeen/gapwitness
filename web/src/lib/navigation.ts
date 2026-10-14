@@ -1,8 +1,16 @@
 import type { MouseEvent } from "react";
 
-export type Navigate = (view: "home" | "lab", section?: string) => void;
+export type Page = 'home' | 'inspect' | 'review' | 'evidence' | 'publish' | 'verify' | 'lab' | 'not-found';
+export type Navigate = (view: Page, section?: string) => void;
+export const PAGE_PATHS = { home: '/', inspect: '/inspect', review: '/review', evidence: '/evidence', publish: '/publish', verify: '/verify', lab: '/inspect', 'not-found': '/404' };
 
-export function navigateLink(event: MouseEvent<HTMLAnchorElement>, navigate: Navigate, view: "home" | "lab", section?: string) {
+export function readPage(url: URL): Page {
+  if (url.pathname === '/' && url.searchParams.get('view') === 'lab') return 'lab';
+  const path = url.pathname.replace(/\/$/, '') || '/';
+  return (Object.keys(PAGE_PATHS) as Page[]).find(page => page !== 'lab' && PAGE_PATHS[page] === path) ?? 'not-found';
+}
+
+export function navigateLink(event: MouseEvent<HTMLAnchorElement>, navigate: Navigate, view: Page, section?: string) {
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   event.preventDefault();
   navigate(view, section);

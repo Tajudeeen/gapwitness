@@ -1,47 +1,47 @@
 # GapWitness demo, approximately 3–4 minutes
 
-Optional reviewer-focused segment: after inspecting File B, scroll to Reviewer Workspace and choose File A as the prior CSV. Say: "This comparison shows seven hours restored, with no measurement changes among the shared hours. I can keep both CSVs, the evidence JSON, and a printable review in an existing research workflow. Our controlled evaluation covers 601 cases based on frozen real source data. That measures correctness. Independent reviewer time savings still need a real pilot." Download the printable report and briefly open it. Keep the full recording within the contest's 3–5 minute requirement by shortening the chart walkthrough.
+Open https://gapwitness-web.vercel.app before recording. Download File A and File B from `checker/demo/` if you want to demonstrate revision comparison. Use the dedicated pages in the top navigation. The full video must remain within the contest's 3–5 minute requirement.
 
-## 0:00–0:30, landing page
+## 0:00–0:30, Home
 
-An environmental report can look complete after some observations have been left out. If we hash that file afterward, the hash preserves the edited file, but it cannot tell us which hours should have been there.
+An environmental report can look complete after some observations have been left out. A file hash preserves whatever was submitted, but it does not tell a reviewer which expected hours are missing.
 
-I built GapWitness for the Climate Data & Environmental Monitoring track. It helps reviewers check hourly environmental records against an independently declared reporting window and preserve evidence for later review.
+I built GapWitness for environmental reviewers who need to inspect hourly records against a separately declared schedule and keep evidence they can reproduce later.
 
-## 0:30–1:15, lab, load File A
+## 0:30–1:10, Inspect
 
-This example comes from a frozen OpenAQ PM2.5 source window. File A is a deliberate test derivative. I removed seven known hours so we can check whether the tool detects them. I am not claiming those hours were missing from the upstream source.
+Click Inspect your data, then load File A. Point to the station and UTC window, the chart gaps, and the GAPPED verdict.
 
-The window is 24 hours. GapWitness finds 17 observations and lists the seven absent hours. The hatched slots keep missing observations separate from actual measurements. You can select each hour to inspect it.
+This example uses a frozen OpenAQ PM2.5 source window. File A is a deliberate test derivative with seven removed hours. I am not claiming those hours were missing from the upstream source.
 
-The Python checker calculates the result, and the browser independently checks the original CSV bytes, timestamps, hashes, and verdict before allowing a commitment. An altered checker response is rejected.
+The declared window has 24 hours. GapWitness finds 17 observations and identifies the seven missing timestamps. The server computes the result, and the browser independently checks the original bytes, measurements, policy, verdict, and every commitment input before accepting it.
 
-## 1:15–1:50, download evidence, load File B and File C
+## 1:10–1:45, Review
 
-I can export this evidence as JSON and retain the exact CSV. Inspection does not require a wallet, and organizations can run the same checks locally in a batch without uploading their files.
+Click Continue to review. Point to the recommended action and longest missing run. If using comparison, choose the downloaded File B as the prior revision.
 
-File B preserves the complete source window. It returns INTACT. File C contains a deliberately impossible negative PM2.5 value, so it returns IMPOSSIBLE. An intact record establishes temporal completeness under this policy. It does not prove sensor accuracy.
+The review page explains what needs attention. Comparing this edited file with the complete source shows seven removed hours and no measurement changes among the shared observations. A legitimate correction should be explained rather than automatically treated as fraud. I can export a printable review and keep it with the source files and evidence JSON.
 
-## 1:50–2:40, V2 proof file and explorer
+## 1:45–2:10, Evidence
 
-The publisher-scoped Sepolia contract stores compact hashes and the verdict. The CSV remains off-chain. Each signing wallet has its own namespace for a station and window, so another wallet cannot occupy that publisher's record first.
+Click Keep this evidence, then Save current inspection in this browser. Point to the saved record and download controls. You can briefly refresh and click Open and recheck if time allows.
 
-This public proof contains the mined File A receipt and matching series, gap, policy, and verdict fields. The changed File B was rejected through an RPC execution check against mined state. That rejection is not a mined failed transaction.
+The evidence page stores the original CSV and JSON in this browser only when I choose to save them. Reopening checks the evidence again. It is a practical review record, not a cloud backup. I can download both files for independent review.
 
-An exact replay keeps the original witness and timestamp. A changed submission for the same publisher and window conflicts with the first record. This makes differing evidence visible without claiming that every correction is fraudulent.
+## 2:10–3:05, Verify
 
-## 2:40–3:25, adoption and limits
+Click Verify. Keep Published File A proof selected and click Verify original bytes and Sepolia. Wait for the actual RPC result. Point to the local file match, pinned runtime match, snapshot block, publisher, transaction, and matching event. Open the transaction in a separate prepared tab if needed.
 
-The first users are environmental reviewers, researchers, and data publishers checking station exports before accepting a report. They can inspect a CSV, retain the evidence, and optionally publish a witness for later independent verification.
+This is a real source-backed witness on Ethereum Sepolia. The verifier recomputes the original CSV, checks the deployed contract bytecode against the pinned V2 runtime, reads the publisher's record, and checks the mined transaction and its calldata. No wallet is needed to verify it.
 
-The measured results today are correctness checks and local computation benchmarks. I have not measured emissions reduced, real-world adoption, or reviewer time saved. A practical pilot would measure review time and usability with independent reviewers and their own files.
+If the RPC is unavailable, say exactly that and show the recorded transaction and independent CLI proof instead. Never describe an unavailable fresh check as passed. The published File B rejection is an eth_call check against mined state, not a mined failed transaction.
 
-Wallet identity also does not establish station authority. Reviewers must confirm the publisher independently. GapWitness keeps the missing hours visible and gives reviewers evidence they can reproduce.
+## 3:05–3:35, Publish and close
 
-## Recording checklist
+Click Publish. Point to the current station/window, checked evidence, and optional wallet button. A live commitment is optional for the video. Do not promise a new transaction unless one has actually been confirmed.
 
-- Use the frozen fixture buttons for the source-backed demonstration.
-- Open the V2 deployment and fixture-proof files after they have been integrated.
-- Show the transaction explorer and the independent verifier's matching result.
-- Keep source-backed examples and the synthetic browser comparison clearly distinguished.
-- Show no wallet keys, populated environment files, or unrelated private data.
+V2 gives each publisher a separate namespace, so another wallet cannot occupy its station and window. Publication preserves the submitted evidence. It does not certify station ownership, sensor calibration, or environmental truth.
+
+Our controlled evaluation covers 601 cases derived from frozen real source data. GapWitness matched all 553 omission cases and matched a strong schedule-aware baseline. Independent reviewer time savings still need a real pilot.
+
+GapWitness gives a reviewer a clear path from original file to explained discrepancy, retained review, and independently checkable testnet witness.

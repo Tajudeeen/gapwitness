@@ -32,10 +32,11 @@ export function Footer({ checkerState, navigate }: FooterProps) {
 
         <nav className="footer-nav" aria-label="Lab navigation">
           <h3>Explore the lab</h3>
-          <a href="?view=lab#source" onClick={event => navigateLink(event, navigate, "lab", "source")}>Source &amp; observation window</a>
-          <a href="?view=lab#inspect" onClick={event => navigateLink(event, navigate, "lab", "inspect")}>Inspect the series</a>
-          <a href="?view=lab#commit" onClick={event => navigateLink(event, navigate, "lab", "commit")}>Commit the evidence</a>
-          <a href="?view=lab#witness" onClick={event => navigateLink(event, navigate, "lab", "witness")}>Understand the proof</a>
+          <a href="/inspect" onClick={event => navigateLink(event, navigate, "inspect")}>Inspect the series</a>
+          <a href="/review" onClick={event => navigateLink(event, navigate, "review")}>Review and compare</a>
+          <a href="/evidence" onClick={event => navigateLink(event, navigate, "evidence")}>Saved evidence records</a>
+          <a href="/publish" onClick={event => navigateLink(event, navigate, "publish")}>Publish on Sepolia</a>
+          <a href="/verify" onClick={event => navigateLink(event, navigate, "verify")}>Verify original bytes and chain</a>
         </nav>
 
         <nav className="footer-nav" aria-label="Verification resources">

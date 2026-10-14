@@ -1,12 +1,17 @@
 import sourceA from "../../checker/demo/file_a.csv?raw";
 import sourceB from "../../checker/demo/file_b.csv?raw";
 import sourceC from "../../checker/demo/file_c_impossible.csv?raw";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { Landing } from "./components/Landing";
 import { navigateLink } from "./lib/navigation";
 import { Footer } from "./components/Footer";
 import { ReviewPanel } from "./components/ReviewPanel";
+import { WitnessPanel } from "./components/WitnessPanel";
+import { WorkspaceNav } from "./components/WorkspaceNav";
+import { PageFrame } from "./components/PageFrame";
+import { PAGE_PATHS, readPage, type Page } from "./lib/navigation";
+import { type EvidencePackage, type ChainClaim } from "./lib/packages";
 import {
   CHECKER_URL,
   checkHealth,
@@ -16,8 +21,6 @@ import {
 import {
   commitEvidence,
   connectWallet,
-  explorerAddressUrl,
-  explorerTransactionUrl,
   isContractConfigured,
   CONTRACT_ADDRESS,
   CONTRACT_VERSION,
@@ -32,6 +35,8 @@ type Point = { timestamp: string; value: number };
 const DEFAULT_STATION = "2178";
 const DEFAULT_WINDOW_START = "2026-09-19T07:00:00Z";
 const DEFAULT_WINDOW_END = "2026-09-20T07:00:00Z";
+const EvidencePage = lazy(() => import("./components/EvidencePage").then(module => ({default:module.EvidencePage})));
+const VerifyPage = lazy(() => import("./components/VerifyPage").then(module => ({default:module.VerifyPage})));
 
 function errorMessage(status: number, code: string): string {
   if (status === 429) {
@@ -71,20 +76,17 @@ function shortHash(value: string): string {
   return value.length > 18 ? `${value.slice(0, 10)}…${value.slice(-8)}` : value;
 }
 
-function shortAddress(value: string): string {
-  return value.length > 14 ? `${value.slice(0, 8)}…${value.slice(-6)}` : value;
-}
-
 function prettyTime(timestamp: string): string {
   return new Date(timestamp).toISOString().slice(11, 16) + " UTC";
 }
 
 function App() {
-  const [view, setView] = useState<"home" | "lab">(() => new URLSearchParams(window.location.search).get("view") === "lab" ? "lab" : "home");
-  function navigate(next: "home" | "lab", section = "top") {
+  const [view, setView] = useState<Page>(() => readPage(new URL(window.location.href)));
+  function navigate(next: Page, section = "top") {
+    if (next === "lab") next = section === "commit" ? "publish" : section === "witness" ? "verify" : "inspect";
     const url = new URL(window.location.href);
-    if (next === "lab") url.searchParams.set("view", "lab");
-    else url.searchParams.delete("view");
+    url.pathname = PAGE_PATHS[next];
+    url.searchParams.delete("view");
     url.hash = section === "top" ? "" : section;
     window.history.pushState(null, "", url);
     setView(next);
@@ -97,12 +99,13 @@ function App() {
     });
   }
   useEffect(() => {
-    const onPopState = () => setView(new URLSearchParams(window.location.search).get("view") === "lab" ? "lab" : "home");
+    const onPopState = () => setView(readPage(new URL(window.location.href)));
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
   useEffect(() => {
-    document.title = view === "lab" ? "Inspection lab | GapWitness" : "GapWitness | Keep the missing hours visible";
+    document.title = view === "home" ? "GapWitness | Keep the missing hours visible" : `${view === "lab" ? "Inspection lab" : view[0].toUpperCase() + view.slice(1)} | GapWitness`;
+    if (view !== "home") window.requestAnimationFrame(() => document.querySelector<HTMLElement>('main h1')?.focus({preventScroll:true}));
   }, [view]);
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartWidth, setChartWidth] = useState(920);
@@ -117,6 +120,8 @@ function App() {
   const commitInFlight = useRef(false);
   const [sourceKind, setSourceKind] = useState<"upload" | "synthetic" | "openaq">("upload");
   const [file, setFile] = useState<File | null>(null);
+  const [activeCsv, setActiveCsv] = useState<File | null>(null);
+  const [importedChain, setImportedChain] = useState<ChainClaim | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
   const [result, setResult] = useState<CheckResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -171,6 +176,8 @@ function App() {
   }, []);
 
   function clearEvidence() {
+    setActiveCsv(null);
+    setImportedChain(null);
     setResult(null);
     setPrimaryResult(null);
     setComparisonResult(null);
@@ -226,6 +233,7 @@ function App() {
       });
       if (!request.current()) return;
       setResult(next);
+      setActiveCsv(upload);
       setPrimaryResult(next);
       setPoints(next.observations);
       setCheckerState("ready");
@@ -258,18 +266,35 @@ function App() {
   }
 
   function downloadEvidence() {
-    if (!result) return;
-    const publisher = txPublisher;
-    const proof = {format: "gapwitness/evidence/v1", source: sourceKind,
-      csvFilename: file?.name, originalCsvRequired: true, browserEvidenceCheck: "matched",
-      evidence: result, chain: txHash ? {chainId: 11155111, contract: CONTRACT_ADDRESS,
-        contractVersion: CONTRACT_VERSION, publisher, transactionHash: txHash,
-        commitmentKey: getCommitmentKey(result.chainCommitment, publisher ?? undefined),
-        operation: commitCreated ? "first-witness" : "exact-replay"} : null,
-      limits: ["Wallet identity does not certify station authority.", "Temporal completeness does not prove measurement accuracy."]};
+    const proof = evidencePackage();
+    if (!proof) return;
     const url = URL.createObjectURL(new Blob([JSON.stringify(proof, null, 2) + "\n"], {type: "application/json"}));
     const link = document.createElement("a"); link.href = url; link.download = "gapwitness-evidence.json"; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function evidencePackage(): EvidencePackage | null {
+    if (!result) return null;
+    const publisher = txPublisher;
+    return {format: "gapwitness/evidence/v1", source: sourceKind,
+      csvFilename: activeCsv?.name ?? file?.name ?? "original.csv", originalCsvRequired: true, browserEvidenceCheck: "matched",
+      evidence: result, chain: txHash && publisher ? {chainId: 11155111, contract: CONTRACT_ADDRESS,
+        contractVersion: CONTRACT_VERSION, publisher, transactionHash: txHash,
+        commitmentKey: getCommitmentKey(result.chainCommitment, publisher),
+        operation: commitCreated ? "first-witness" : "exact-replay"} : importedChain,
+      chainVerification: txHash ? "Receipt and record matched by the connected wallet provider" : "No fresh independent chain check",
+      limits: ["Wallet identity does not certify station authority.", "Temporal completeness does not prove measurement accuracy."]};
+  }
+
+  function openSaved(bundle: EvidencePackage, original: File) {
+    if (commitInFlight.current) throw new Error("Wait for the wallet operation before opening another record.");
+    if (bundle.evidence.seriesType !== "pm25") throw new Error("The web workspace supports PM2.5. Use the local batch reviewer for a generic series.");
+    cancelInspection(); clearEvidence();
+    setResult(bundle.evidence); setPoints(bundle.evidence.observations);setActiveCsv(original);setFile(original);
+    setStation(bundle.evidence.stationId);setWindowStart(bundle.evidence.windowStart);setWindowEnd(bundle.evidence.windowEnd);
+    setSourceKind("upload");setImportedChain(bundle.chain);
+    setMessage("Saved CSV independently rechecked. Its chain metadata has not been freshly verified.");
+    navigate("review");
   }
 
   async function runDemo() {
@@ -297,6 +322,7 @@ function App() {
       setPrimaryResult(first);
       setComparisonResult(second);
       setResult(first);
+      setActiveCsv(original);
       setPoints(first.observations);
       setFile(original);
       setMessage("Comparison complete: GAPPED to INTACT for the same window. Synthetic data; no on-chain conflict was tested.");
@@ -391,6 +417,12 @@ function App() {
     ? Math.round((result.observedHours / result.expectedHours) * 1000) / 10
     : 0;
 
+  const witnessPanel = <WitnessPanel result={result} walletAddress={walletAddress} txHash={txHash}
+    txPublisher={txPublisher} commitCreated={commitCreated} conflict={conflict} busy={busy} demoBusy={demoBusy}
+    commitBusy={commitBusy} checkerState={checkerState} showReceipt={showReceipt} setShowReceipt={setShowReceipt}
+    handleCommit={handleCommit} />;
+  const emptyReview = <section className="page-card"><h2>Start with an inspection</h2><p>Declare the station and UTC window, then inspect the original CSV. No wallet is needed.</p><button onClick={() => navigate("inspect")}>Inspect a CSV</button></section>;
+
   return (
     <>
       <div className={`splash ${showIntro ? "is-visible" : "is-hidden"}`} aria-hidden={!showIntro}>
@@ -402,15 +434,17 @@ function App() {
           <span className="splash-meta">TEMPORAL INTEGRITY / ENVIRONMENTAL TIME SERIES</span>
         </div>
       </div>
-      {view === "home" ? <Landing navigate={navigate} checkerState={checkerState} /> : <main id="top" className={`lab ${showIntro ? "is-behind-splash" : ""}`}>
-      <a className="lab-home-link" href="?" onClick={event => navigateLink(event, navigate, "home")}>← GapWitness home</a>
+      {view !== "home" && <WorkspaceNav page={view} navigate={navigate} />}
+      <Suspense fallback={<PageFrame title="Opening page" description="Loading the requested workspace." ><p role="status">Loading page…</p></PageFrame>}>
+      {view === "home" ? <Landing navigate={navigate} checkerState={checkerState} /> : view === "lab" || view === "inspect" ? <main id="top" className={`lab ${showIntro ? "is-behind-splash" : ""}`}>
+      <a className="lab-home-link" href="/" onClick={event => navigateLink(event, navigate, "home")}>← GapWitness home</a>
       <header className="masthead">
         <div className="brand">
           <img className="brand-mark" src="/gapwitness-logo.svg" alt="GapWitness logo" />
           <div>
             <p className="eyebrow">GAPWITNESS / ENVIRONMENTAL INTEGRITY LAB</p>
-          <h1 tabIndex={-1}>witness the hours that were missing.</h1>
-            <p className="dek">Temporal integrity for environmental time series. The checker decides. The chain remembers.</p>
+          <h1 tabIndex={-1}>{view === "lab" ? "witness the hours that were missing." : "Inspect an hourly CSV."}</h1>
+            <p className="dek">Declare the reporting window, inspect the original file, and see exactly which hours are missing.</p>
             <div className="hero-actions">
               <button type="button" className="demo-button" onClick={() => void runDemo()} disabled={busy || demoBusy || commitBusy || checkerState !== "ready"}>
                 {demoBusy ? "running demo…" : "run the 2-state demo →"}
@@ -425,15 +459,17 @@ function App() {
         </div>
         <div className="steps">
           {[
-            ["01 SOURCE", "source"],
-            ["02 INSPECT", "inspect"],
-            ["03 COMMIT", "commit"],
-            ["04 WITNESS", "witness"],
+            ["01 INSPECT", "inspect"],
+            ["02 REVIEW", "review"],
+            ["03 KEEP", "evidence"],
+            ["04 PUBLISH", "publish"],
+            ["05 VERIFY", "verify"],
           ].map(([step, target], index) => (
             <a
               key={step}
-              className={result || index < 2 ? "active" : ""}
-              href={`#${target}`}
+              className={index === 0 ? "active" : ""}
+              href={PAGE_PATHS[target as Page]}
+              onClick={event => navigateLink(event, navigate, target as Page)}
             >
               <span>{step}</span><i />
             </a>
@@ -617,7 +653,7 @@ function App() {
             <span><i className="legend-dot point" /> submitted observations</span>
             {result && result.impossibleTimestamps.length > 0 && <span><i className="legend-dot invalid" /> negative measurement</span>}
             <span><i className="legend-dot verdict-dot" /> deterministic verdict</span>
-            <button type="button" className="why-button" onClick={() => document.getElementById("witness")?.scrollIntoView({ behavior: "smooth" })}>why this matters ↓</button>
+            <button type="button" className="why-button" onClick={() => navigate("verify")}>Verify the proof →</button>
           </div>
 
           <div className={`verdict ${result?.verdict?.toLowerCase() ?? "none"}`} aria-live="polite">
@@ -718,92 +754,16 @@ function App() {
             </section>
           )}
 
-          {result && <ReviewPanel evidence={result} filename={file?.name ?? "synthetic-demo.csv"} source={sourceKind} />}
+          {view === "lab" && result && <ReviewPanel evidence={result} filename={file?.name ?? "synthetic-demo.csv"} source={sourceKind} />}
 
-          {result && (
-            <section className="chain-state">
-              <div>
-                <span className="kicker">CHAIN</span>
-                <h3>sepolia commitment</h3>
-                <p>{CONTRACT_VERSION === 2 ? "Publisher-scoped records. Another wallet cannot occupy your namespace." : "Historical global namespace. Station ownership is not authenticated."}</p>
-              </div>
-              <div className="chain-lines">
-                <div><span>contract</span><code>{isContractConfigured() ? "configured" : "not configured"}</code></div>
-                <div><span>wallet</span><code>{walletAddress ? walletAddress : "not connected"}</code></div>
-                <div><span>verdict code</span><code>{result.chainCommitment.verdict}</code></div>
-              </div>
-              {txHash && (
-                <p className="chain-success">
-                  committed · <a href={explorerTransactionUrl(txHash)} target="_blank" rel="noreferrer">{txHash}</a>
-                  {walletAddress && <> · <a href={explorerAddressUrl(walletAddress)} target="_blank" rel="noreferrer">wallet</a></>}
-                </p>
-              )}
-              {conflict && (
-                <div className="conflict">
-                  <strong>GapPaperedOver</strong>
-                  <span>prior gap: <code>{conflict.priorGap}</code></span>
-                  <span>new gap: <code>{conflict.nextGap}</code></span>
-                  {conflict.priorTransactionHash && (
-                    <a href={explorerTransactionUrl(conflict.priorTransactionHash)} target="_blank" rel="noreferrer">
-                      view prior commitment →
-                    </a>
-                  )}
-                </div>
-              )}
-            </section>
-          )}
-
-          {txHash && result && (
-            <section className="receipt" aria-label="Evidence receipt">
-              <div className="receipt-top">
-                <div>
-                  <span className="kicker">EVIDENCE RECEIPT</span>
-                  <h3>temporal integrity witness</h3>
-                </div>
-                <span className="receipt-status">{commitCreated ? "WITNESSED" : "REPLAY CONFIRMED"} · SEPOLIA</span>
-              </div>
-              <div className="receipt-grid">
-                <div><span>STATION</span><b>{result.stationId}</b></div>
-                <div><span>WINDOW</span><b>{new Date(result.windowStart).toISOString().slice(0,16).replace("T"," ")} → {new Date(result.windowEnd).toISOString().slice(11,16)} UTC</b></div>
-                <div><span>VERDICT</span><b>{result.verdict}</b></div>
-                <div><span>MISSING</span><b>{result.missingTimestamps.length} HOURS</b></div>
-                <div><span>PUBLISHER</span><code>{txPublisher}</code></div>
-                <div><span>TX</span><code>{shortHash(txHash)}</code></div>
-                <div><span>CONTRACT</span><code>{shortAddress(CONTRACT_ADDRESS || "not configured")}</code></div>
-              </div>
-              <div className="receipt-actions">
-                <a href={explorerTransactionUrl(txHash)} target="_blank" rel="noreferrer">view transaction →</a>
-                {CONTRACT_ADDRESS && <a href={explorerAddressUrl(CONTRACT_ADDRESS)} target="_blank" rel="noreferrer">view contract →</a>}
-                <button type="button" onClick={() => setShowReceipt(!showReceipt)}>{showReceipt ? "hide printable view" : "show printable view"}</button>
-              </div>
-              {showReceipt && <div className="receipt-print"><strong>GAPWITNESS / {result.verdict}</strong><span>{result.stationId} · {result.missingTimestamps.length} missing hours</span><code>{txHash}</code></div>}
-            </section>
-          )}
-
-          <div className="commit-row" id="commit">
-            <div>
-              <span className="kicker">COMMIT</span>
-              <p>
-                {isContractConfigured()
-                  ? walletAddress
-                    ? "Wallet connected. The next click sends the checker evidence to Sepolia."
-                    : "Your wallet is only requested when you choose to commit."
-                  : "Sepolia contract address is not configured yet. Commitment is disabled."}
-              </p>
-            </div>
-            <button
-              disabled={!result || checkerState !== "ready" || busy || demoBusy || commitBusy || !isContractConfigured()}
-              onClick={() => void handleCommit()}
-            >
-              {commitBusy ? "waiting for wallet…" : walletAddress ? "commit evidence →" : "connect wallet & commit →"}
-            </button>
-          </div>
+          {view === "lab" && witnessPanel}
+          {view === "inspect" && <div className="page-actions next-steps"><button disabled={!result || busy || demoBusy} onClick={() => navigate("review")}>Continue to review</button><button disabled={!result || busy || demoBusy} onClick={() => navigate("publish")}>Publish on Sepolia</button></div>}
 
           <p className="endpoint-note">checker: {CHECKER_URL}</p>
         </section>
       </section>
 
-      <section className="proof-drawer" id="witness">
+      {view === "lab" && <section className="proof-drawer" id="witness">
         <div className="proof-title">
           <span className="kicker">READ THE EVIDENCE CORRECTLY</span>
           <h2>strong claims. narrow claims.</h2>
@@ -814,10 +774,22 @@ function App() {
           <details><summary><span>×</span><b>WHAT THIS DOES NOT PROVE</b><i>+</i></summary><p>sensor calibration, physical truth, source honesty, or that a measurement was scientifically correct. Integrity is not truth.</p></details>
           <details><summary><span>!</span><b>INSUFFICIENT DATA</b><i>+</i></summary><p>not a verdict. If the checker cannot establish a usable evidence window, it returns 422 and no verdict is committed.</p></details>
         </div>
-      </section>
+      </section>}
 
       <Footer checkerState={checkerState} navigate={navigate} />
-    </main>}
+    </main> : view === "review" ? <PageFrame title="Review the inspection" description="Decide what needs explanation, compare a prior revision, and keep a printable record.">
+      {result ? <><div className="page-card"><h2>Station {result.stationId} · {result.verdict}</h2><p>{result.windowStart} to {result.windowEnd}</p><span className="proof-label">Original bytes independently checked in this browser</span></div>
+        <ReviewPanel evidence={result} filename={activeCsv?.name ?? "original.csv"} source={sourceKind} />
+        <div className="page-actions"><button onClick={() => navigate("evidence")}>Keep this evidence</button><button onClick={() => navigate("publish")}>Publish on Sepolia</button><button onClick={() => navigate("inspect")}>Edit source and window</button></div></> : emptyReview}
+    </PageFrame> : view === "evidence" ? <EvidencePage current={evidencePackage()} csv={activeCsv} onOpen={openSaved} navigate={navigate} />
+      : view === "publish" ? <PageFrame title="Publish a testnet witness" description="Optional Sepolia publication preserves your evidence in your publisher namespace. It is not a certificate of station authority.">
+        {result ? <section className="page-card"><h2>Station {result.stationId} · {result.verdict}</h2><p>{result.windowStart} to {result.windowEnd}</p><p>{result.missingTimestamps.length} missing hours. Original bytes independently checked in this browser.</p></section> : emptyReview}
+        {witnessPanel}<p role="status" className="page-message">{message}</p>
+        {txHash && <div className="page-actions"><button onClick={() => navigate("verify")}>Independently verify this witness</button><button onClick={() => navigate("evidence")}>Save CSV and receipt metadata</button></div>}
+      </PageFrame> : view === "verify" ? <VerifyPage current={evidencePackage()} csv={activeCsv} />
+      : <PageFrame title="Page not found" description="Choose a page from the workspace navigation."><button onClick={() => navigate("inspect")}>Open inspection</button></PageFrame>}
+      </Suspense>
+      {view !== "home" && view !== "inspect" && view !== "lab" && <Footer checkerState={checkerState} navigate={navigate} />}
     </>
   );
 }
