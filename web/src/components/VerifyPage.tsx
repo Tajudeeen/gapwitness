@@ -77,6 +77,13 @@ export function VerifyPage({current,csv}:{current:EvidencePackage|null;csv:File|
       {proof.transactionHash&&<p><a href={`https://sepolia.etherscan.io/tx/${proof.transactionHash}`} target="_blank" rel="noreferrer">Verified transaction ↗</a> · block {proof.transactionBlock}. {proof.witnessEvent?'A matching new-witness event is present.':'No new witness event in this receipt. The existing matching record is preserved.'}</p>}
       <button onClick={()=>downloadFile(new Blob([JSON.stringify({format:'gapwitness/verification/v1',...proof,rpc:PROOF_RPC,
         limits:['RPC responses are trusted; this is not an Ethereum light-client proof.','Station authority and measurement accuracy are not certified.']},null,2)+'\n'],{type:'application/json'}),'gapwitness-verification.json')}>Download verification result</button></section>}
+    <section className="page-card" aria-label="Three evidence boundaries"><h2>Three questions, three different kinds of evidence</h2>
+      <div className="proof-status-grid">
+        <div><span className="proof-label">01 / COMPLETENESS</span><h3>Were expected hours present?</h3><p>GapWitness recomputes the declared schedule and exact missing timestamps from the original CSV. This check is reproducible.</p></div>
+        <div><span className="proof-label">02 / PUBLICATION</span><h3>Does a published record match?</h3><p>A fresh Sepolia check confirms a specific publisher wallet, evidence hashes, and transaction. Wallet identity alone does not authenticate a station operator.</p></div>
+        <div><span className="proof-label">03 / SCIENTIFIC TRUST</span><h3>Were the readings true?</h3><p>Sensor calibration, station authorization, data origin, and acceptable scientific interpretation require external evidence. They are outside this check.</p></div>
+      </div>
+    </section>
     <section className="page-card"><h2>Know exactly what this establishes</h2><p>Sepolia is a test network. A matching record timestamps a publisher's submitted evidence. It does not establish station ownership, source honesty, measurement calibration, regulatory acceptance, or environmental outcomes. This verifier trusts its RPC provider. A verification result records a point-in-time check.</p>
       <p>V2 contract: <a href={`https://sepolia.etherscan.io/address/${DEFAULT_DEPLOYMENT.address}`} target="_blank" rel="noreferrer">{DEFAULT_DEPLOYMENT.address}</a></p>
       <a href="https://github.com/Tajudeeen/gapwitness/blob/main/scripts/verify_onchain.py" target="_blank" rel="noreferrer">Use the independent Python verifier ↗</a></section>
