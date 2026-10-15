@@ -50,6 +50,12 @@ export function PilotPage(){
       {baseline&&tool&&<><p>Normal method {baseline.seconds.toFixed(2)} seconds, exact answer {baseline.correct?'matched':'did not match'}. GapWitness {tool.seconds.toFixed(2)} seconds, exact answer {tool.correct?'matched':'did not match'}.</p>
         <button onClick={save}>Save paired task locally</button></>}
       <p role="status">{message}</p><button onClick={reset}>Reset unfinished task</button></section>
+    <section className="page-card"><h2>Make this a real independent review</h2>
+      <p>Recruit three to five consenting environmental-data reviewers. Ask each to complete both methods, with alternating task order, and to share their exported CSV privately. The app does not transmit or combine records from their browsers.</p>
+      <p>Use an existing competent method as the baseline. Repeating a dataset can make the second attempt easier even without this tool, so report both the successes and unfavorable results.</p>
+      <p><a href="https://github.com/Tajudeeen/gapwitness/blob/main/docs/PILOT_INVITATION.md" target="_blank" rel="noreferrer">Open invitation and reviewer instructions ↗</a></p>
+      <p>No independent reviewer time saving, adoption, or environmental outcome is established until real results are collected and examined.</p>
+    </section>
     <section className="page-card"><h2>{rows.length} paired tasks in this browser</h2><p>Export recorded observations for the paired analyzer. No result from this browser is automatically published as adoption or environmental impact.</p>
       <button disabled={!rows.length} onClick={()=>downloadFile(new Blob([pilotCsv(rows)],{type:'text/csv'}),'gapwitness-pilot-observations.csv')}>Export observed pilot CSV</button>
       <p>Run scripts/analyze_pilot.py on the exported CSV. Report order, sample size, task definitions, accuracy, and limitations with any public time-saving claim.</p></section>
