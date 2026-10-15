@@ -1,6 +1,7 @@
 import type { CSSProperties, MouseEvent } from "react";
 import { navigateLink, type Navigate } from "../lib/navigation";
 import { Footer } from "./Footer";
+import { SourceImpact } from "./SourceImpact";
 
 const REPOSITORY = "https://github.com/Tajudeeen/gapwitness";
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
@@ -74,6 +75,8 @@ export function Landing({ navigate, checkerState }: {
         <div><p className="landing-eyebrow">04 / OPEN TO VERIFICATION</p><h2 id="trust-title">Evidence with<br /><em>honest boundaries.</em></h2><p>Temporal integrity is a specific claim. It does not prove sensor calibration, source honesty, or physical truth.</p></div>
         <div className="landing-trust-resources"><article><h3>Reproduce the result</h3><p>Explore the checker, frozen OpenAQ fixtures, data provenance, and independent verification scripts.</p><a href={`${REPOSITORY}#readme`} target="_blank" rel="noreferrer">Read the documentation ↗</a></article><article><h3>Inspect the commitment</h3><p>The permissionless contract stores submitted claims; it does not execute the checker. In V2, the signing wallet owns its record namespace for a station and window. Wallet identity does not certify station authority.</p><a href={`${REPOSITORY}/blob/main/contracts/deployments/fixture-proof-v2.json`} target="_blank" rel="noreferrer">View the publisher-scoped proof ↗</a></article></div>
       </section>
+
+      <SourceImpact navigate={navigate}/>
 
       <section className="landing-section" aria-labelledby="adoption-title">
         <div className="landing-section-heading"><div><p className="landing-eyebrow">05 / FIT INTO A REAL REVIEW</p><h2 id="adoption-title">Start with an existing station export.</h2></div></div>
