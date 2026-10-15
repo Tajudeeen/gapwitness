@@ -1082,3 +1082,71 @@ html { scroll-padding-top: 88px; }
   .page-frame button:hover:not(:disabled), .next-steps button:hover:not(:disabled),
   .landing a[class*="cta"]:hover { transform: none; }
 }
+
+
+/* Source-backed example: a visible environmental consequence, never a synthetic impact claim. */
+.impact-story {
+  border-block: 1px solid #b6baa7;
+  padding: clamp(28px, 4vw, 52px) clamp(18px, 3vw, 36px);
+  background: linear-gradient(120deg, rgba(231, 237, 220, .9), rgba(247, 242, 232, .92));
+  color: #24372c;
+}
+.impact-story h2, .impact-story h3 {
+  margin: 10px 0 18px;
+  font: 400 clamp(24px, 3vw, 38px)/1.25 "Libre Baskerville", Georgia, serif;
+  letter-spacing: -.025em;
+}
+.impact-story-compact {
+  margin: 26px 0;
+  border: 1px solid #a4b39c;
+  border-radius: 10px;
+  padding: 24px;
+}
+.impact-story-compact h3 { font-size: 24px; }
+.impact-story > p { max-width: 780px; line-height: 1.7; }
+.impact-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 3vw, 40px);
+  max-width: 850px;
+  margin: 28px 0;
+}
+.impact-measure { min-width: 0; }
+.impact-measure > span {
+  font: 500 11px/1.4 "DM Mono", monospace;
+  color: #4c6754;
+  display: block;
+}
+.impact-measure strong {
+  display: block;
+  font: 600 clamp(24px, 3.5vw, 40px)/1.3 "DM Sans", sans-serif;
+  letter-spacing: -.05em;
+  padding: 9px 0;
+}
+.impact-measure strong small {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: normal;
+}
+.impact-measure > small { display: block; margin-top: 10px; color: #506154; }
+.impact-track {
+  height: 12px;
+  border-radius: 3px;
+  background: #d4dccb;
+  overflow: hidden;
+}
+.impact-track i { display: block; height: 100%; background: #557b60; }
+.impact-measure:nth-child(2) .impact-track i { background: #b88d52; }
+.impact-result strong { color: #8c4b24; }
+.impact-story .impact-caveat {
+  padding-left: 14px;
+  border-left: 2px solid #8c9582;
+  color: #5c675a;
+  font-size: 12px;
+}
+.impact-links { display: flex; flex-wrap: wrap; gap: 14px 26px; padding-top: 8px; }
+.impact-links a { color: #2b613e; text-underline-offset: 4px; font-size: 13px; }
+@media (max-width: 650px) {
+  .impact-values { grid-template-columns: 1fr; }
+  .impact-story-compact { padding: 18px; }
+}
