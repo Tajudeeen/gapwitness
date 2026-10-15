@@ -51,6 +51,14 @@ python scripts/inspect_batch.py checker/demo/review-manifest.json --output batch
 
 Measured benchmark medians were 2.643 ms for 24 observations, 3.515 ms for 168, and 6.521 ms for 744 in this recorded local environment. These are synthetic computation measurements, not production capacity, adoption, or environmental impact claims.
 
+## What missing hours can change
+
+The [source-backed impact comparison](https://gapwitness-web.vercel.app/) calculates the arithmetic mean of a frozen complete AirNow/OpenAQ PM2.5 window and a deliberately gapped derivative with seven omitted hours. The mean changes from **3.2792 to 2.9882 µg/m³**, or **8.87% lower**. It demonstrates that omission can affect a reported summary, not that upstream data was manipulated or that any health or climate outcome occurred. [Reproduce the evaluation](docs/EVALUATION.md).
+
+A separate [real-source corpus](docs/REAL_CORPUS.md) includes naturally unavailable readings in retained, unedited windows. The two evidence classes are explicitly distinguished.
+
+Independent reviewer time-saving and adoption results are **not yet established**. The [participant invitation and pilot guide](docs/PILOT_INVITATION.md) describe how to collect them. [Organizer eligibility and submission-time clarification](docs/ORGANIZER_CLARIFICATION.md) also remains outstanding.
+
 ## Who it serves
 
 | User | Task | Useful output |
