@@ -16,11 +16,21 @@ Scaling and measured results are documented in ADOPTION.md and benchmark-results
 
 The Pilot page records actual paired timing and answer accuracy with no prefilled participants. The Verify page prepares and checks optional operator delegations against an independently supplied issuer key. Neither feature establishes independent adoption or station authority without external evidence.
 
+## Demonstrable consequence of missing observations
+
+In the frozen OpenAQ/AirNow complete 24-hour PM2.5 window, the available-reading mean is 3.2792 µg/m³. File A deliberately deletes seven rows without modifying the other values, leaving 17 observations and a mean of 2.9882 µg/m³ (8.87% lower). The live landing and source-backed Review view compute and display these values from the source fixtures. This illustrates distortion of a *summary statistic*, not a natural outage, alleged fraud, or a health or climate outcome. See EVALUATION.md and web/tests/impact.test.mjs.
+
+The unedited real-source corpus independently demonstrates naturally unavailable readings and exact timestamp detection. It must not be conflated with the deliberately altered File A example.
+
+The Verify page now separates the evidence for completeness, public testnet publication, and external scientific/source authority. Only the first two can be checked by GapWitness itself. Authorization and sensor calibration remain outside the current product.
+
+Pilot instructions and a participant invitation are in PILOT_INVITATION.md. There are **no independent measurements yet**, and external reviewers must voluntarily share their local exports.
+
 ## Ready and remaining
 
 - Public code, documentation, deployed lab, frozen fixtures, and independent verification are provided through README.
 - The V2 publisher-scoped deployment and its source-backed proof are integrated. Its own namespace prevents another wallet from occupying the publisher’s station/window.
-- A captioned 3 minute 14 second walkthrough of the actual deployed app is complete and delivered separately. docs/recorded-walkthrough.json retains its hash and successful live Sepolia check. Publish the delivered video through the submission’s accepted video host and add that URL. DEMO_SCRIPT.md remains available for a narrated presentation.
+- A captioned 3 minute 14 second walkthrough of the actual deployed app is complete and delivered separately. docs/recorded-walkthrough.json retains its hash and successful live Sepolia check. Publish the delivered video through the submission’s accepted video host and add that URL. DEMO_SCRIPT.md now includes the new calculated-impact and real-source scenes for a revised narrated submission recording. The previously delivered video is not automatically updated.
 - Describe environmental impact as improved reviewability and transparency. No environmental outcome or adoption metric has been measured.
 - Organizer eligibility wording conflicts between the students-only overview and the rules allowing independent developers. Obtain confirmation before assuming eligibility as a graduate.
 - The official schedule and organizer update indicate submissions opened October 5 and close October 25 at 14:00 UTC, or 15:00 in Nigeria. An older rule sentence gives a contradictory opening time.
