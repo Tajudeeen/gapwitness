@@ -19,6 +19,10 @@ Official rules: https://ieee-climatechain-hack.devpost.com/rules
 
 ## Final gate checklist
 
+- [ ] Send the [organizer clarification request](ORGANIZER_CLARIFICATION.md) and retain the reply. The Devpost overview and detailed rules conflict.
+- [ ] Recruit real reviewers using the [pilot invitation](PILOT_INVITATION.md) if possible. Report observed results only after consent and analysis.
+- [ ] Check the source-backed mean comparison reports approximately 3.2792 vs 2.9882 µg/m³ and -8.87%; ensure it is labeled a controlled omission.
+- [ ] Film an updated 3–5 minute walkthrough from [DEMO_SCRIPT.md](DEMO_SCRIPT.md), or confirm the existing public video adequately shows the final product.
 - [ ] Confirm Devpost account/team eligibility and that the submission form accepts the project. The rules include independent developers, while older overview copy may differ.
 - [ ] Confirm the video is publicly viewable, 3 to 5 minutes long, with audio/captions and working playback.
 - [ ] Open every user-facing route in a fresh private browser tab: Home, Inspect, Review, Evidence, Publish, Verify, Datasets, Pilot, Status.
