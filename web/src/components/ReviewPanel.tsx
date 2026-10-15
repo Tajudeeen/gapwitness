@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CheckResult } from '../lib/checker';
 import { localEvidence } from '../lib/evidence';
+import { SourceImpact } from './SourceImpact';
 import { compareRevisions, reviewHtml, reviewSummary } from '../lib/review';
 
 function download(content: string, filename: string, type: string) {
@@ -63,6 +64,7 @@ export function ReviewPanel({ evidence, filename, source }: { evidence: CheckRes
         policyHash: evidence.policyHash, priorFilename: priorName, currentFilename: filename,
         originalCsvsRequired: true, comparison }, null, 2) + '\n', 'gapwitness-revision.json', 'application/json')}>download revision comparison</button>
     </div>}
+    <SourceImpact compact evidence={evidence} />
     <a href="https://github.com/Tajudeeen/gapwitness/blob/main/docs/PILOT.md" target="_blank" rel="noreferrer">Run a measured reviewer pilot ↗</a>
   </section>;
 }
