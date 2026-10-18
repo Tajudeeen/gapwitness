@@ -19,7 +19,9 @@ for i,scene in enumerate(capture['scenes']):
  start=max(scene['start'],scene['end']-scene.get('holdSeconds',19)-(0 if i==0 else 3));end=scene['end'];duration=end-start
  clip=folder/f'clip-{i:02}.mp4'
  if not args.reuse_clips:
-  subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-xerror','-y','-i',capture['videoPath'],'-ss',str(start),'-t',str(duration),'-an','-c:v','libx264','-crf','20','-preset','ultrafast','-threads','2','-r','25',str(clip)],check=True)
+  temporary=folder/f'.clip-{i:02}.mp4'
+  subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-xerror','-y','-i',capture['videoPath'],'-ss',str(start),'-t',str(duration),'-an','-c:v','libx264','-crf','20','-preset','ultrafast','-threads','2','-r','25','-movflags','+faststart',str(temporary)],check=True)
+  temporary.replace(clip)
  probe=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','json',str(clip)]))
  if abs(float(probe['format']['duration'])-duration)>.12:raise RuntimeError('Clip duration does not match the actual capture scene')
  clips.append(clip)
@@ -27,9 +29,12 @@ for i,scene in enumerate(capture['scenes']):
  events.append(f'Dialogue: 0,{stamp(cursor)},{stamp(cursor+duration)},Caption,,0,0,0,,{text}\n');cursor+=duration
 (folder/'captions.ass').write_text(styles+''.join(events));
 (folder/'clips.txt').write_text(''.join("file '"+str(clip)+"'\n" for clip in clips))
-cmd=['ffmpeg','-hide_banner','-loglevel','warning','-xerror','-y','-f','concat','-safe','0','-i',str(folder/'clips.txt'),'-vf',f'pad=1440:1080:0:0:color=0x141920,ass={folder}/captions.ass,format=yuv420p','-filter_threads','1','-c:v','libx264','-crf','23','-preset','fast','-threads','2','-movflags','+faststart',str(folder/'GapWitness-Demo.mp4')]
+temporary=folder/'.GapWitness-Demo.mp4'
+cmd=['ffmpeg','-hide_banner','-loglevel','warning','-xerror','-y','-f','concat','-safe','0','-i',str(folder/'clips.txt'),'-vf',f'pad=1440:1080:0:0:color=0x141920,ass={folder}/captions.ass,format=yuv420p','-filter_threads','1','-c:v','libx264','-crf','23','-preset','fast','-threads','2','-movflags','+faststart',str(temporary)]
 subprocess.run(cmd,check=True)
-probe=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','json',str(folder/'GapWitness-Demo.mp4')]))
+probe=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','json',str(temporary)]))
 if abs(float(probe['format']['duration'])-cursor)>.5:raise RuntimeError('Rendered duration differs from expected complete recording')
 if not 180<=cursor<=300:raise RuntimeError('Submission demo must be 3–5 minutes')
+subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-xerror','-i',str(temporary),'-f','null','-'],check=True)
+temporary.replace(folder/'GapWitness-Demo.mp4')
 print(json.dumps({'rendered':True,'seconds':cursor,'file':str(folder/'GapWitness-Demo.mp4')}))

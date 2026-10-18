@@ -1,0 +1,202 @@
+{
+  "format": "gapwitness/release-check/v1",
+  "checkedAt": "2026-10-18T11:06:27.203769+00:00",
+  "webUrl": "https://gapwitness-web.vercel.app",
+  "checkerUrl": "https://gapwitness-checker.vercel.app",
+  "checks": [
+    {
+      "name": "route:/",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "scope": "HTTP shell only; browser interaction is checked separately"
+      }
+    },
+    {
+      "name": "route:/inspect",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "scope": "HTTP shell only; browser interaction is checked separately"
+      }
+    },
+    {
+      "name": "route:/review",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "scope": "HTTP shell only; browser interaction is checked separately"
+      }
+    },
+    {
+      "name": "route:/evidence",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "scope": "HTTP shell only; browser interaction is checked separately"
+      }
+    },
+    {
+      "name": "route:/publish",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "scope": "HTTP shell only; browser interaction is checked separately"
+      }
+    },
+    {
+      "name": "route:/verify",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "scope": "HTTP shell only; browser interaction is checked separately"
+      }
+    },
+    {
+      "name": "route:/datasets",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "scope": "HTTP shell only; browser interaction is checked separately"
+      }
+    },
+    {
+      "name": "route:/pilot",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "scope": "HTTP shell only; browser interaction is checked separately"
+      }
+    },
+    {
+      "name": "route:/status",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "scope": "HTTP shell only; browser interaction is checked separately"
+      }
+    },
+    {
+      "name": "checker:/health",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "response": {
+          "ok": true,
+          "service": "gapwitness-checker",
+          "version": "0.8.0"
+        }
+      }
+    },
+    {
+      "name": "checker:/status",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "response": {
+          "ok": true,
+          "service": "gapwitness-checker",
+          "version": "0.8.0",
+          "quotas": {
+            "mode": "per-process only",
+            "sharedConfigured": false,
+            "limit": 30,
+            "windowSeconds": 60,
+            "globalLimit": null,
+            "dependencyHealth": "Not probed by this status response"
+          },
+          "metrics": {
+            "scope": "this-process since last start",
+            "uptimeSeconds": 12,
+            "completedRequests": 0,
+            "statusCounts": {},
+            "meanRequestMilliseconds": null,
+            "maxRequestMilliseconds": 0.0,
+            "activeInspections": 0,
+            "maxConcurrentInspections": 4
+          }
+        }
+      }
+    },
+    {
+      "name": "checker:/ready",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "response": {
+          "ok": true,
+          "service": "gapwitness-checker",
+          "version": "0.8.0",
+          "sharedConfigured": false,
+          "quotaDependency": "not configured",
+          "limits": "Reachability only. Shared admission, capacity, and operator authority are separate checks."
+        }
+      }
+    },
+    {
+      "name": "deployed-source",
+      "passed": true,
+      "detail": {
+        "format": "gapwitness/release/v1",
+        "commit": "7c6c37066bccd5fed872b54be4d3db89db1a3b45",
+        "dirty": false,
+        "builtAt": "2026-10-18T11:05:26.971Z"
+      }
+    },
+    {
+      "name": "fixture:file_a.csv",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "verdict": "GAPPED",
+        "observedHours": 17,
+        "expectedHours": 24,
+        "missingHours": 7,
+        "allEvidenceFieldsMatched": true
+      }
+    },
+    {
+      "name": "fixture:file_b.csv",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "verdict": "INTACT",
+        "observedHours": 24,
+        "expectedHours": 24,
+        "missingHours": 0,
+        "allEvidenceFieldsMatched": true
+      }
+    },
+    {
+      "name": "fixture:file_c_impossible.csv",
+      "passed": true,
+      "detail": {
+        "httpStatus": 200,
+        "verdict": "IMPOSSIBLE",
+        "observedHours": 24,
+        "expectedHours": 24,
+        "missingHours": 0,
+        "allEvidenceFieldsMatched": true
+      }
+    },
+    {
+      "name": "retained-corpus",
+      "passed": true,
+      "detail": {
+        "windows": 13,
+        "allMatched": true
+      }
+    }
+  ],
+  "requestedChecksPassed": true,
+  "productionSharedQuotaConfigured": false,
+  "externalSubmissionGaps": [
+    "Public 3\u20135 minute demo video URL is missing. Duration and playback require a separate check.",
+    "Devpost project URL is missing. A project URL alone does not confirm final submission.",
+    "Written organizer eligibility confirmation is pending because the overview and rules conflict."
+  ],
+  "limits": [
+    "Point-in-time HTTP and exact evidence checks do not replace browser tests or a fresh Sepolia RPC verification.",
+    "No independent pilot, operator authority, video playback, or Devpost submission is inferred from software tests."
+  ]
+}

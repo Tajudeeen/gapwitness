@@ -24,16 +24,16 @@ Latest engineering evidence: [October 18 release validation](RELEASE_VALIDATION.
 - [ ] Send the [organizer clarification request](ORGANIZER_CLARIFICATION.md) and retain the reply. The Devpost overview and detailed rules conflict.
 - [ ] Recruit real reviewers using the [pilot invitation](PILOT_INVITATION.md) if possible. Report observed results only after consent and analysis.
 - [ ] Check the source-backed mean comparison reports approximately 3.2792 vs 2.9882 µg/m³ and -8.87%; ensure it is labeled a controlled omission.
-- [ ] Film an updated 3–5 minute walkthrough from [DEMO_SCRIPT.md](DEMO_SCRIPT.md), or confirm the existing public video adequately shows the final product.
+- [x] Film an updated 3–5 minute walkthrough. The October 18 captioned 3:49 delivery shows the final deployed implementation. Full decode, duration and fresh Sepolia proof are retained in recorded-walkthrough.json. A public upload is still required.
 - [ ] Confirm Devpost account/team eligibility and that the submission form accepts the project. The rules include independent developers, while older overview copy may differ.
 - [ ] Confirm the video is publicly viewable, 3 to 5 minutes long, with audio/captions and working playback.
 - [ ] Open every user-facing route in a fresh private browser tab: Home, Inspect, Review, Evidence, Publish, Verify, Datasets, Pilot, Status.
-- [ ] Load frozen File A and confirm 17/24 observations, seven missing hours, and GAPPED.
-- [ ] Load File B and confirm 24/24 observations and INTACT.
+- [x] Load frozen File A and confirm 17/24 observations, seven missing hours, and GAPPED. The October 18 deployed checker response matched every recomputed evidence field.
+- [x] Load File B and confirm 24/24 observations and INTACT. The October 18 deployed checker response matched every recomputed evidence field.
 - [ ] On Verify, choose the published File A example and perform **fresh** Sepolia verification. Check the runtime hash, publisher, chain record, mined transaction and event. Do not pass on cached metadata alone.
 - [ ] Check mobile layout, smooth navigation, keyboard focus and reduced-motion behavior.
 - [x] Run the repository's checker, contract, web, and browser regression suites. October 18 results are retained in RELEASE_VALIDATION.md. Re-run checks if implementation changes.
-- [ ] Check public deployment after the latest frontend commit, and confirm the checker health and status endpoints from a real browser. A source commit alone does not prove Vercel has deployed it.
+- [x] Check public deployment after the October 18 implementation commit. release.json identifies the clean tested source, the live release checker passed 17 checks, and the actual deployed app is used for the updated walkthrough. Recheck after implementation changes.
 - [ ] Check there are no committed keys, .env files, unlicensed third-party images, private pilot records or generated build artifacts.
 - [ ] Fill in the video URL and final project URL. Copy the concise, accurate product description from docs/SUBMISSION.md.
 

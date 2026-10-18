@@ -20,6 +20,18 @@ The fresh chain check was read-only. No new transaction was sent and no private 
 
 The browser suite manages both Vite and the real local Python checker. Its quota allowance is raised only in the test service, so repeated tests cannot exhaust the production-default 30-request limit. Injected wallet and transaction-conflict cases use explicit browser test providers, not real wallet approvals.
 
+## Verified public deployment
+
+Release `7c6c37066bccd5fed872b54be4d3db89db1a3b45` is served by the public frontend with `dirty: false` in release.json. Both existing Vercel projects reported successful deployments. All seven GitHub jobs passed: build, browser, checker, contract, deployment-record, proof, and monitor.
+
+The actual production MetaMask SDK also opened and closed its QR dialog successfully with its external relay deliberately blocked. This checks deployed bundle compatibility, not a real phone session.
+
+The post-deployment release checker passed all 17 requested checks, including nine route shells, health/status/readiness, the exact frontend commit, three complete source-fixture evidence responses, and all thirteen retained source windows. The timestamped output is `docs/deployed-release-2026-10-18.json`. Its default pass does not waive the explicitly listed external gaps.
+
+## Refreshed demonstration
+
+The delivered GapWitness-Demo.mp4 is 228.8 seconds (3:49), H.264, 1440 × 1080, with burned-in English captions. The full file decoded successfully. It records the actual public implementation release with no request mocks and independently confirms the retained Sepolia witness at block 11,940,673. The retained metadata and SHA-256 are in recorded-walkthrough.json. It contains no new wallet transaction or independent pilot result. It still needs publication on an accepted public video host.
+
 ## External items still pending
 
 - Production shared quota activation. The Vercel API returned HTTP 403 for the existing team. No persistent credentials were installed. See OPERATIONS.md for exact protected settings and the verification command.

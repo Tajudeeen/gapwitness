@@ -1,83 +1,110 @@
 {
   "format": "gapwitness/recorded-walkthrough/v1",
   "origin": "https://gapwitness-web.vercel.app",
-  "recordedAt": "2026-10-14T13:51:55.219Z",
-  "seconds": 218.965,
+  "recordedAt": "2026-10-18T11:10:01.127Z",
+  "seconds": 246.434,
   "liveRpcConfirmed": true,
+  "freshProofText": "Matched at block 11940673\n\nFirst witness time: 2026-10-14T07:57:24.000Z\n\nChecked: 2026-10-18T11:07:43.682Z\n\nPublisher: 0x541291139b59570d1cd5d0e64df217b3f6efd7c8\n\nCommitment key: 0x696ed3671d6138bec75c0d15cf1919a58cc36f277fd008ddd1197bbf3413b657\n\nVerified transaction \u2197 \u00b7 block 11911907. A matching new-witness event is present.\n\nDownload verification result",
   "requestMocks": false,
   "syntheticPilotRecords": 0,
   "scenes": [
     {
       "start": 0,
-      "end": 29.519,
+      "end": 25.322,
       "title": "GapWitness: review missing environmental observations",
-      "caption": "A focused review workflow for hourly environmental CSVs. Declare the reporting window, inspect the original bytes, and preserve reproducible evidence."
+      "caption": "A focused review workflow for hourly environmental CSVs. Declare the reporting window, inspect the original bytes, and preserve reproducible evidence.",
+      "holdSeconds": 12
     },
     {
-      "start": 29.519,
-      "end": 49.457,
+      "start": 25.322,
+      "end": 45.225,
       "title": "Inspect the declared window",
-      "caption": "This frozen AirNow/OpenAQ derivative deliberately removes seven hours. It is a controlled example, with source provenance and no claim of a natural outage."
+      "caption": "This frozen AirNow/OpenAQ derivative deliberately removes seven hours. It is a controlled example, with source provenance and no claim of a natural outage.",
+      "holdSeconds": 19
     },
     {
-      "start": 49.457,
-      "end": 68.543,
+      "start": 45.225,
+      "end": 64.299,
       "title": "Review findings and revisions",
-      "caption": "The reviewer sees exact missing timestamps and a reproducible decision record. Revision comparison distinguishes restored hours, deleted hours, and changed measurements."
+      "caption": "The reviewer sees exact missing timestamps and a reproducible decision record. Revision comparison distinguishes restored hours, deleted hours, and changed measurements.",
+      "holdSeconds": 19
     },
     {
-      "start": 68.544,
-      "end": 88.459,
+      "start": 64.299,
+      "end": 82.323,
+      "title": "Show how omissions change a summary",
+      "caption": "Seven deliberately omitted source readings lower the available-reading mean from 3.2792 to 2.9882 micrograms per cubic metre, or 8.87%. This is a controlled arithmetic comparison, not an observed environmental outcome.",
+      "holdSeconds": 18
+    },
+    {
+      "start": 82.323,
+      "end": 102.284,
       "title": "Keep original bytes and portable evidence",
-      "caption": "Saving is explicit. The browser retains the original CSV and evidence package locally, then rechecks them on reopen. Retained source bytes make later review possible."
+      "caption": "Saving is explicit. The browser retains the original CSV and evidence package locally, then rechecks them on reopen. Retained source bytes make later review possible.",
+      "holdSeconds": 19
     },
     {
-      "start": 88.459,
-      "end": 121.767,
+      "start": 102.284,
+      "end": 132.557,
       "title": "Verify the actual Sepolia witness",
-      "caption": "This is a fresh public RPC check, without a wallet or mocked response. Verification checks the pinned runtime, publisher-scoped record, transaction calldata, receipt, and matching event."
+      "caption": "This is a fresh public RPC check, without a wallet or mocked response. Verification checks the pinned runtime, publisher-scoped record, transaction calldata, receipt, and matching event.",
+      "holdSeconds": 23
     },
     {
-      "start": 121.767,
-      "end": 141.374,
+      "start": 132.557,
+      "end": 152.16,
       "title": "Thirteen retained real-source windows",
-      "caption": "Four stations and two providers extend the evaluation beyond edited fixtures. Source hashes, licenses, raw slices, and normalization are documented. Three windows have unavailable source readings."
+      "caption": "Four stations and two providers extend the evaluation beyond edited fixtures. Source hashes, licenses, raw slices, and normalization are documented. Three windows have unavailable source readings.",
+      "holdSeconds": 19
     },
     {
-      "start": 141.375,
-      "end": 161.678,
+      "start": 152.161,
+      "end": 171.871,
       "title": "Inspect a naturally unavailable reading window",
-      "caption": "York Fishergate, April 2025, has two unavailable PM2.5 readings in the retained source. No numeric observations were deleted or edited. These findings do not establish fraud or misconduct."
+      "caption": "York Fishergate, April 2025, has two unavailable PM2.5 readings in the retained source. No numeric observations were deleted or edited. These findings do not establish fraud or misconduct.",
+      "holdSeconds": 19
     },
     {
-      "start": 161.678,
-      "end": 181.295,
+      "start": 171.871,
+      "end": 190.023,
+      "title": "Optional publishing from desktop or phone",
+      "caption": "The Publish page supports browser wallets and on-demand MetaMask mobile or QR pairing. Connecting alone does not sign or publish. A wallet owner approves the testnet transaction separately.",
+      "holdSeconds": 18
+    },
+    {
+      "start": 190.023,
+      "end": 209.559,
       "title": "Collect measured reviewer benefits",
-      "caption": "The pilot starts with zero records. It times paired normal-method and GapWitness tasks, checks exact answers, and exports observed results. No independent adoption or time-saving benefit has yet been established."
+      "caption": "The pilot starts with zero records. It times paired normal-method and GapWitness tasks, checks exact answers, and exports observed results. No independent adoption or time-saving benefit has yet been established.",
+      "holdSeconds": 19
     },
     {
-      "start": 181.295,
-      "end": 201.365,
+      "start": 209.559,
+      "end": 229.093,
       "title": "Report actual operational protection",
-      "caption": "The status page exposes actual quota mode and scoped instance measurements. Shared admission logic has a real cross-instance test; production activation still needs a protected persistent store."
+      "caption": "The status page exposes actual quota mode and scoped instance measurements. Shared admission logic has a real cross-instance test; production activation still needs a protected persistent store.",
+      "holdSeconds": 19
     },
     {
-      "start": 201.366,
-      "end": 218.965,
+      "start": 229.093,
+      "end": 246.434,
       "title": "Keep the proof boundaries visible",
-      "caption": "V2 has exact source verification through Sourcify. Optional operator signatures require an independently established operator key. Sepolia evidence cannot prove sensor calibration, scientific truth, or environmental outcomes."
+      "caption": "V2 has exact source verification through Sourcify. Optional operator signatures require an independently established operator key. Sepolia evidence cannot prove sensor calibration, scientific truth, or environmental outcomes.",
+      "holdSeconds": 17
     }
   ],
-  "sourceCommit": "a4a7b5f562014cb5db9dae0e8b6f207aff9653b8",
+  "sourceCommit": "7c6c37066bccd5fed872b54be4d3db89db1a3b45",
   "deliveredVideo": "GapWitness-Demo.mp4",
-  "deliveredDurationSeconds": 194.04,
-  "videoSha256": "7af6e0ad614df4cf2fd665b1fdad79cb4b39311ab207f9d62e40d9eb9ca52ed6",
-  "videoBytes": 5157800,
-  "presentation": "Actual deployed-app recording with English captions. Loading waits trimmed. No request mocks, synthetic pilot records, or new wallet transaction.",
+  "deliveredDurationSeconds": 228.8,
+  "videoSha256": "1dd1c191c446a4875574c27918a2db0772c0ee689162bc23d83f849f77a82367",
+  "videoBytes": 6531128,
+  "publicVideoUrl": null,
+  "presentation": "Actual deployed-app recording with burned-in English captions and loading waits trimmed. Silent, with no voice-over. No request mocks, synthetic pilot records, or new wallet transaction.",
+  "fullVideoDecodePassed": true,
+  "sceneTimeline": "Raw capture timings. The rendered export trims loading waits while preserving each completed scene.",
   "observedFreshProof": {
-    "blockNumber": 11913659,
-    "checkedAt": "2026-10-14T13:49:54.066Z",
+    "blockNumber": 11940673,
     "witnessBlockNumber": 11911907,
-    "evidence": "Visible verification result in the actual recording, independently asserted by the recording script."
+    "checkedAt": "2026-10-18T11:07:43.682Z"
   }
 }
