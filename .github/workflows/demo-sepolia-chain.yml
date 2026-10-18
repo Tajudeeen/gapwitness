@@ -62,7 +62,7 @@ jobs:
       - name: Commit and independently verify the frozen fixtures
         working-directory: .
         run: python scripts/prove_fixture_onchain.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: gapwitness-fixture-proof
           path: contracts/deployments/fixture-proof.json

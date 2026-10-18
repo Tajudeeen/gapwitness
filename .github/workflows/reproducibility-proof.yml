@@ -44,7 +44,7 @@ jobs:
           print("reproducibility proof validated")
           PY
       - name: Upload proof artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gapwitness-demo-proof
           path: /tmp/gapwitness-demo-proof.json
