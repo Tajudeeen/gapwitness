@@ -46,4 +46,4 @@ Briefly open Publish and Pilot. Do not send a new transaction unless necessary; 
 - Verify the source File A scenario matches the expected 17/24 hours before filming.
 - Keep the public video 3–5 minutes, use a public playback URL, and check it in an incognito browser.
 - Don't claim emissions reduction, fraud detection, source certification, or reviewer time savings.
-- Existing delivery metadata is in docs/recorded-walkthrough.json. It describes a prior walkthrough, not this updated script.
+- The refreshed captioned 3:49 delivery is described in [recorded-walkthrough.json](recorded-walkthrough.json). Raw capture timings and the rendered export duration are recorded separately.

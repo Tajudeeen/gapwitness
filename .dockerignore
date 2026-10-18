@@ -1,0 +1,8 @@
+# The checker image only needs these source inputs from the repository root.
+**
+!checker/
+!checker/requirements.txt
+!checker/app/
+!checker/app/**
+**/__pycache__/
+**/*.py[cod]

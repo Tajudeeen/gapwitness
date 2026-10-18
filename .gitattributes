@@ -1,0 +1,13 @@
+# Keep source code portable across Windows and Unix checkouts.
+*.py text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.mjs text eol=lf
+*.sol text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+
+# Exact CSV bytes are hashed by the checker and provenance manifests.
+*.csv -text

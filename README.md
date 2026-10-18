@@ -1,221 +1,44 @@
 # GapWitness
 
-### Witness the hours that were missing.
+Witness the hours that were missing.
 
-GapWitness checks the temporal integrity of an hourly environmental CSV. It compares the submitted timestamps with an independently declared observation window, exposes missing hours and invalid measurements, and lets a reviewer commit compact evidence on Ethereum Sepolia.
+GapWitness checks an hourly environmental CSV against a declared reporting window, reveals missing hours and invalid measurements, and preserves reproducible review evidence. Reviewers can optionally publish compact evidence on Ethereum Sepolia.
 
-A report can look complete after the inconvenient hours have been removed. A hash taken afterward preserves that edited file, but cannot show which expected hours disappeared. GapWitness makes the declared window and its missing observations part of the evidence.
+A file hash preserves the file it receives. When hours have already been removed, a reviewer also needs the expected schedule and the exact missing timestamps. GapWitness keeps those questions together.
 
-[Explore GapWitness](https://gapwitness-web.vercel.app) · [Inspect](https://gapwitness-web.vercel.app/inspect) · [Review](https://gapwitness-web.vercel.app/review) · [Evidence](https://gapwitness-web.vercel.app/evidence) · [Publish](https://gapwitness-web.vercel.app/publish) · [Verify](https://gapwitness-web.vercel.app/verify) · [Checker health](https://gapwitness-checker.vercel.app/health) · [Contract explorer](https://sepolia.etherscan.io/address/0x9988b2aa76e532b9093624ea8672543f368aca82)
+[Open the app](https://gapwitness-web.vercel.app) · [Verify the published example](https://gapwitness-web.vercel.app/verify) · [Real datasets](https://gapwitness-web.vercel.app/datasets) · [Service status](https://gapwitness-web.vercel.app/status) · [Documentation](docs/README.md)
 
-**Submission:** [release checklist](docs/RELEASE_CHECKLIST.md) · [submission brief](docs/SUBMISSION.md) · [3–5 minute walkthrough script](docs/DEMO_SCRIPT.md). A public video link and final fresh-deployment verification are still required before submitting.
+## Try the review flow
 
-**Release completion:** [mobile and QR publishing](docs/MOBILE_WALLET.md) · [production quota activation](docs/OPERATIONS.md#activate-and-verify) · [submission link record](docs/submission-links.json). Run `python scripts/check_release.py --output /tmp/gapwitness-release.json` for point-in-time deployment, fixture and corpus checks. Add `--expect-commit <full-sha>` to require the deployed frontend's `release.json` to match the tested commit, `--require-shared` after production quota activation, or `--require-submission` to reject missing external submission evidence. These checks do not invent a pilot, phone approval, or organizer response.
+1. Open [Inspect](https://gapwitness-web.vercel.app/inspect), wait for `checker ready`, and load `File A · 7 deliberate gaps`. The declared 24-hour window contains 17 observations and seven missing hours.
+2. Open Review to see missing timestamps, a suggested review action, a printable report, and a local comparison with a prior CSV.
+3. Open Evidence to explicitly save the original bytes and evidence in this browser, download them, or reopen and recheck a saved record.
+4. Open Publish if you want to submit a testnet witness through a browser wallet or MetaMask mobile/QR pairing. Publishing requires wallet approval and Sepolia test ETH.
+5. Open Verify, select `Published File A proof`, and run a fresh check of the original CSV, pinned contract runtime, publisher-scoped record, and transaction.
 
-## Contents
+Inspection and verification don't require a wallet. Use the app's navigation to retain the current inspection. Refreshing clears an unsaved inspection. Browser saves aren't cloud storage or cross-device sync.
 
-- [Who it serves](#who-it-serves)
-- [What the lab includes](#what-the-lab-includes)
-- [Evidence and verdicts](#evidence-and-verdicts)
-- [Trust boundary](#trust-boundary)
-- [Demo data and provenance](#demo-data-and-provenance)
-- [Architecture](#architecture)
-- [Run locally](#run-locally)
-- [API reference](#api-reference)
-- [Independent verification](#independent-verification)
-- [Sepolia deployment and live proof](#sepolia-deployment-and-live-proof)
-- [Tests and reproducibility](#tests-and-reproducibility)
-- [Repository map](#repository-map)
-- [Known limits and scope](#known-limits-and-scope)
-- [Contributing and attribution](#contributing-and-attribution)
+The default URL opens the homepage. Current task routes are `/inspect`, `/review`, `/evidence`, `/publish`, `/verify`, `/datasets`, `/pilot`, and `/status`. The 2.6-second splash currently appears only through the legacy `?view=lab` entry. It doesn't run on the homepage or ordinary task navigation.
 
-## Security and reviewer workflow
+## What the evidence shows
 
-- [Real datasets](https://gapwitness-web.vercel.app/datasets) provides thirteen retained unedited windows from four stations and two providers. [Corpus provenance and results](docs/REAL_CORPUS.md) retains original slices, normalization, licenses, hashes, and independent reference checks.
-- [Reviewer pilot](https://gapwitness-web.vercel.app/pilot) records actual paired timing and answer accuracy, with consent, anonymous codes, and explicit CSV export. No independent participants or benefits are prefilled.
-- [Service status](https://gapwitness-web.vercel.app/status) shows actual quota mode and scoped instance counters. [Operations](docs/OPERATIONS.md) covers shared atomic admission, bounded concurrency, readiness probes, scheduled monitoring, and the outstanding production configuration.
-- V2 has an [exact Sourcify source match](https://repo.sourcify.dev/11155111/0x9988b2aa76e532b9093624ea8672543f368aca82). The Verify page also prepares and checks [operator delegations](docs/OPERATOR_AUTHORITY.md), while keeping independent operator-key authentication explicit.
-
-- Browser evidence is independently checked before wallet submission, including the exact CSV hash and every chain input.
-- Duplicate CSV headers, inconsistent row widths, invalid station encodings, oversized request bodies, and unbounded rate-limit storage are rejected or bounded.
-- Source-backed fixture buttons and evidence JSON export make the review reproducible without a wallet.
-- A reviewer workspace adds printable reports and local revision comparison, separating restored hours, deleted hours, changed measurements, and byte-only edits.
-- Dedicated Inspect, Review, Evidence, Publish, and Verify pages keep each task focused. Explicit browser saves retain original CSVs and evidence JSON, and reopening recomputes the evidence. The wallet-free verifier reads the actual Sepolia V2 runtime, record, and optional transaction. See [pages and proof workflow](docs/PAGES_AND_PROOF.md) for trust boundaries, persistence limits, and the full walkthrough.
-- [Measured evaluation](docs/EVALUATION.md) covers 601 controlled cases based on frozen real source data. [Related-work comparison](docs/ORIGINALITY.md) gives a bounded differentiation claim. The [reviewer pilot](docs/PILOT.md) includes an empty observation template and an analyzer for actual paired time and accuracy measurements.
-- V2 adds publisher-scoped station/window commitments and is the app’s default deployment. Contract tests and the live source-backed proof confirm its isolation. The existing V1 deployment remains historical evidence and was not upgraded.
-- [Security model](docs/SECURITY.md), [adoption and scaling plan](docs/ADOPTION.md), [measured local benchmarks](docs/benchmark-results.json), [submission brief](docs/SUBMISSION.md), and [3–4 minute demo script](docs/DEMO_SCRIPT.md).
-
-Local review without uploading files:
-
-```bash
-python scripts/inspect_batch.py checker/demo/review-manifest.json --output batch-evidence.json
-```
-
-Measured benchmark medians were 2.643 ms for 24 observations, 3.515 ms for 168, and 6.521 ms for 744 in this recorded local environment. These are synthetic computation measurements, not production capacity, adoption, or environmental impact claims.
-
-## What missing hours can change
-
-The [source-backed impact comparison](https://gapwitness-web.vercel.app/) calculates the arithmetic mean of a frozen complete AirNow/OpenAQ PM2.5 window and a deliberately gapped derivative with seven omitted hours. The mean changes from **3.2792 to 2.9882 µg/m³**, or **8.87% lower**. It demonstrates that omission can affect a reported summary, not that upstream data was manipulated or that any health or climate outcome occurred. [Reproduce the evaluation](docs/EVALUATION.md).
-
-A separate [real-source corpus](docs/REAL_CORPUS.md) includes naturally unavailable readings in retained, unedited windows. The two evidence classes are explicitly distinguished.
-
-Independent reviewer time-saving and adoption results are **not yet established**. The [participant invitation and pilot guide](docs/PILOT_INVITATION.md) describe how to collect them. [Organizer eligibility and submission-time clarification](docs/ORGANIZER_CLARIFICATION.md) also remains outstanding.
-
-## Who it serves
-
-| User | Task | Useful output |
-| --- | --- | --- |
-| Environmental data reviewer | Check a station file before accepting a report | Missing timestamps, completeness, physical-rule violations |
-| Researcher or data publisher | Preserve the evidence behind a specific observation window | Exact-byte hashes and an independently reproducible result |
-| Auditor or community analyst | Compare a later file with previously committed evidence | A commitment match or an explicit conflict |
-| Hackathon reviewer | Reproduce a focused climate-data integrity demonstration | Frozen fixtures, source manifests, tests, transaction receipts |
-
-The current lab focuses on hourly PM2.5 values in µg/m³. The selected track is Climate Data & Environmental Monitoring.
-
-## What the lab includes
-
-- A responsive landing page explaining missing-hour evidence, the inspection workflow, verdicts, and trust boundaries. Its record illustration is explicitly synthetic.
-- A responsive inspection lab with a 2.6-second launch splash and navigation between source, inspection, commitment, and proof.
-- CSV upload with a declared station and UTC observation window. Editing inputs cancels pending inspection and clears stale evidence; the selected CSV can be inspected again. Inputs and uploads are locked while a commitment is pending.
-- An hourly bar chart using the landing page’s green bars and amber hatched gaps, driven by checker-normalized in-window observations. The browser independently parses quoted CSV fields and UTC timestamps and checks the server evidence before rendering a committable result. Zero readings stay visible at the baseline; negative values extend below zero in red. Missing hours remain distinct from measurements.
-- An hourly timeline, missing-hour evidence, completeness, deterministic verdicts, and evidence hashes.
-- A two-state browser demonstration comparing a gapped file with a complete file for the same window.
-- An injected EVM wallet flow and optional MetaMask mobile/QR pairing for Ethereum Sepolia, separate connection/disconnection controls, transaction explorer links, and an evidence receipt view.
-- A resource footer with source attribution, documentation, independent verification links, last-known checker connectivity, and proof limits.
-
-The default URL opens the landing page. `?view=lab` opens the inspection lab directly; `?view=lab#source`, `#inspect`, `#commit`, and `#witness` link to its sections. In-app navigation preserves the selected file and inspection results, supports browser back and forward, and does not replay the launch splash. These query routes work with static hosting without server rewrite rules.
-
-Inspection does not require a wallet. Commitment requests a wallet and requires test ETH for gas. The browser demo performs two checker requests and sends no transaction.
-
-## Evidence and verdicts
-
-The observation window is start-inclusive and end-exclusive: `[windowStart, windowEnd)`. Expected timestamps occur at exact UTC hourly boundaries.
-
-| Verdict | Code | Meaning |
-| --- | --- | --- |
-| `INTACT` | 0 | Every expected hour is present and no configured hard rule is violated |
-| `GAPPED` | 1 | At least one expected hour is absent |
-| `IMPOSSIBLE` | 2 | An in-window PM2.5 value violates the non-negative rule |
-
-`IMPOSSIBLE` takes priority when a file also has gaps. Missing timestamps remain in the response. `materialGap` is true when more than two hours are missing in total; it is not a claim about a contiguous gap or scientific significance.
-
-### Input requirements
-
-| Input | Requirement |
+| Result | Meaning |
 | --- | --- |
-| File | Non-empty CSV, at most 1,000,000 bytes, with a `.csv` filename for API uploads |
-| Columns | `timestamp` and `value` |
-| Timestamp | Parseable, unique instant, exactly on a UTC hour, including subsecond precision |
-| Value | Finite numeric measurement; negative PM2.5 produces `IMPOSSIBLE` |
-| Window | Starts at or after the Unix epoch, both ends hour-aligned, end after start, maximum 744 hours |
-| Observations | At least one valid observation inside the declared window |
-| Station | Non-empty identifier; use at most 31 UTF-8 bytes for web and independent on-chain verification |
+| `INTACT` | Every expected hour is present and the configured hard rule passes |
+| `GAPPED` | One or more expected hours are absent |
+| `IMPOSSIBLE` | An in-window PM2.5 measurement violates the non-negative rule |
 
-The API and browser enforce the same 1–31 UTF-8 byte station limit and reject NUL characters, preventing ambiguous zero-padded encodings.
+The checker validates the CSV, then the browser independently recomputes its evidence before enabling publication. The contract stores submitted hashes and a verdict. It doesn't parse the CSV or certify sensor accuracy, station ownership, or scientific truth. Fresh verification depends on the RPC provider and must actually complete before chain confirmation is claimed.
 
-Timestamps without an explicit timezone are currently interpreted as UTC. Include `Z` or a timezone offset to avoid ambiguity. Out-of-window rows are validated and included in the exact-byte series hash, but do not count toward completeness or in-window physical-rule violations.
+The frozen File A fixture deliberately removes seven hours from a complete AirNow/OpenAQ window. Its available-reading mean is 2.9882 µg/m³ versus 3.2792 µg/m³ for the complete file, an 8.87% reduction. This controlled comparison demonstrates an arithmetic effect of omission. It doesn't establish manipulation or an environmental outcome.
 
-### Hash definitions
-
-| Field | Definition |
-| --- | --- |
-| `seriesHash` | Ethereum Keccak-256 of the exact submitted CSV bytes |
-| `gapHash` | Keccak-256 of the sorted missing UTC timestamps joined by newline characters, with no trailing newline |
-| `policyHash` | Keccak-256 of the versioned checker policy identifier |
-| Commitment key | V2: Keccak-256 of ABI-encoded `address publisher`, `bytes32 stationId`, `uint64 windowStart`, and `uint64 windowEnd`. Historical V1 omits publisher. |
-
-The PM2.5 policy identifier is `gapwitness/pm25/hourly/v1`. The API also supports `generic` temporal inspection with its own policy hash; the web lab uses PM2.5.
-
-Wallet and verifier station IDs use UTF-8 text padded with zero bytes to 32 bytes. A different byte order, whitespace, line ending, or measurement formatting changes the exact-byte series hash even if the displayed values look the same.
-
-### Commitment rules
-
-For the same publisher, station, and exact window in V2. Historical V1 uses only station and window:
-
-- The first commitment stores the evidence, submitter, and block timestamp.
-- An identical replay succeeds as a no-op, preserving the first submitter and timestamp and emitting no new `Committed` event.
-- A changed gap hash reverts with `GapPaperedOver`.
-- A changed series hash, policy hash, or verdict reverts with `CommitmentChanged`.
-- A different station or window uses a different commitment key.
-
-## Trust boundary
-
-Temporal integrity does not establish sensor calibration, source honesty, scientific accuracy, or physical truth.
-
-The Python checker computes the verdict, and the browser independently recomputes evidence before enabling commitment. The Solidity contract stores the submitted hashes and verdict and enforces consistency for an occupied station/window key. It does not parse the CSV, recompute the hashes, or authenticate a checker response.
-
-The historical V1 contract is permissionless and uses a global station/window key. The first writer can occupy that key with arbitrary claims. V2 source includes the signing publisher in the key, preventing another wallet from occupying its namespace; the deployed V2 proof records its source-backed witness and publisher isolation. A station label does not establish ownership or source authority. A commitment is a timestamped submission to verify against the retained CSV, rather than a certified environmental record. There is no oracle signature or station-authorization registry.
-
-No AI decides the verdict. Uploaded CSV bytes are transmitted to the configured checker. Only compact hashes, the verdict, and commitment metadata are stored on-chain. Retain the original file and declared window for independent verification.
-
-## Demo data and provenance
-
-### Frozen OpenAQ fixtures
-
-| Property | Recorded value |
-| --- | --- |
-| Archive location | 2178, Del Norte |
-| PM2.5 sensor | 3920 |
-| Archive day | September 19, 2026 |
-| Provider | AirNow |
-| Recorded data license | US Public Domain |
-| Acquisition date | October 5, 2026 UTC |
-| UTC observation window | September 19 at 07:00 through September 20 at 07:00 |
-| Source timestamp convention | `exclusive-time-ending` |
-
-[data/source/openaq-demo.json](data/source/openaq-demo.json) records the exact archive URL, archive SHA-256, sensor, selected window, removed hours, and fixture hashes.
-
-| Fixture | Construction | Expected result |
-| --- | --- | --- |
-| [File A](checker/demo/file_a.csv) | Seven rows removed from the frozen complete window, 15:00Z through 21:00Z | `GAPPED`, seven missing hours |
-| [File B](checker/demo/file_b.csv) | Selected source-window rows with measurements preserved | `INTACT` |
-| [File C](checker/demo/file_c_impossible.csv) | Deliberate impossible-measurement derivative | `IMPOSSIBLE` |
-
-File A is an adversarial derivative. It does not demonstrate a naturally occurring gap in the upstream OpenAQ record. File C is a policy-test fixture, not an allegation about the source.
-
-### Browser demo
-
-The built-in two-state demo generates synthetic values locally and sends them to the real checker. Its comparison is labeled as different gap evidence, with no on-chain rejection tested. Custom uploads are labeled as unverified sources, rather than automatically attributed to OpenAQ. It shares the default station/window labels with the fixtures but does not use the frozen OpenAQ CSV bytes. Its hashes therefore differ from the source fixtures.
-
-Use the repository fixtures when reproducing source-backed evidence or the chain demo. Do not describe the synthetic browser demo as observed OpenAQ measurements.
-
-### Rebuild the fixtures
-
-Do not hand-edit frozen fixture files. The source pipeline is:
-
-1. Discover a complete hourly sensor window with `scripts/discover_openaq_window.py`.
-2. Download a selected archive day with `scripts/fetch_openaq_day.py`.
-3. Select the complete window with `scripts/select_openaq_window.py`.
-4. Derive the explicit missing-hour file with `scripts/derive_openaq_fixtures.py`.
-5. Derive the impossible-measurement fixture with `scripts/derive_impossible_fixture.py`.
-
-Run each script with `--help` for its exact arguments. Selection, sensor identity, source bytes, timestamps, and generated hashes must be recorded together. [Source notes](data/source/openaq.md) explain acquisition requirements.
-
-## Architecture
-
-```mermaid
-flowchart TD
-  F["CSV + declared window"] --> W["React inspection lab"]
-  W --> C["Python deterministic checker"]
-  C --> W
-  W -->|Wallet approval| S["Sepolia commitment contract"]
-  F --> V["Independent Python verifier"]
-  S --> V
-```
-
-| Layer | Stack | Responsibility |
-| --- | --- | --- |
-| Web | React 19, TypeScript, Vite, ethers v6 | Upload, visualization, evidence presentation, wallet interaction |
-| Checker | Python, FastAPI, pandas, PyCryptodome | CSV validation, expected hours, verdicts, Keccak evidence |
-| Contract | Solidity 0.8.24, Foundry | Immutable first-witness storage and conflict rejection |
-| Verification | Python CLI and Ethereum JSON-RPC | Recompute evidence and compare on-chain fields |
-| Hosting | Separate Vercel web/checker projects | Public browser client and HTTP checker |
+The separate [retained corpus](docs/REAL_CORPUS.md) contains 13 unedited normalized windows from four stations and two providers, including naturally unavailable readings. [Evaluation](docs/EVALUATION.md) covers 601 controlled cases. Independent reviewer time savings and adoption haven't been established. The [pilot](docs/PILOT.md) collects actual paired observations without prefilled results.
 
 ## Run locally
 
-Prerequisites: Python 3.12, Node.js 22 or newer, npm, and Foundry for contract work. Run commands from the repository root unless stated otherwise.
+Use Python 3.12, Node.js 22 or newer, and npm. Foundry is needed for contract work. Start from the repository root.
 
-### 1. Start the checker
+In the first terminal:
 
 ```bash
 python -m venv .venv
@@ -224,9 +47,7 @@ python -m pip install -r checker/requirements.txt
 python -m uvicorn app.main:app --app-dir checker --host 127.0.0.1 --port 8000
 ```
 
-On Windows PowerShell, activate with `.\.venv\Scripts\Activate.ps1` instead of the Bash activation command. Check `http://127.0.0.1:8000/health` and interactive API docs at `http://127.0.0.1:8000/docs`.
-
-### 2. Start the web lab
+On Windows PowerShell, activate with `.\.venv\Scripts\Activate.ps1`.
 
 In a second terminal:
 
@@ -234,274 +55,65 @@ In a second terminal:
 cd web
 npm ci
 cp .env.example .env
-```
-
-For PowerShell, use `Copy-Item .env.example .env`. Set the local checker URL in `web/.env`:
-
-```dotenv
-VITE_CHECKER_URL=http://127.0.0.1:8000
-VITE_CONTRACT_V2=0x9988b2aa76e532b9093624ea8672543f368aca82
-VITE_CONTRACT_DEPLOYMENT_BLOCK_V2=11911878
-```
-
-```bash
 npm run dev
 ```
 
-Open `http://localhost:5173`. The checker defaults to allowing that browser origin. Use the exact same hostname in your browser as the configured origin.
+On PowerShell, use `Copy-Item .env.example .env`. Set `VITE_CHECKER_URL=http://127.0.0.1:8000` in `web/.env`, then open `http://localhost:5173`. Use that exact browser hostname to match the checker's allowed origin. Only `web/` owns the Node package manifest and lockfile.
 
-### Configuration
-
-| Variable | Service | Purpose |
-| --- | --- | --- |
-| `VITE_CHECKER_URL` | Web | Checker base URL, defaults to `http://localhost:8000` |
-| `VITE_CONTRACT_V2` | Web | Optional V2 address override; normally use the proved deployment manifest |
-| `VITE_CONTRACT_DEPLOYMENT_BLOCK_V2` | Web | Optional V2 start block override for locating prior events |
-| `WEB_ORIGIN` | Checker | Single allowed browser origin, default `http://localhost:5173` |
-| `INSPECT_RATE_LIMIT` | Checker | Per-client inspection allowance, default 30 |
-| `INSPECT_RATE_WINDOW_SECONDS` | Checker | In-memory rate-limit window, default 60 seconds |
-| `PRIVATE_KEY` | Deployment only | Deployer wallet key, kept in encrypted workflow secrets |
-| `SEPOLIA_RPC_URL` | Deployment/verification | Ethereum Sepolia JSON-RPC endpoint |
-| `ETHERSCAN_API_KEY` | Optional source verification | Explorer verification credential |
-
-Vite variables are public build-time settings. Never place secrets in a `VITE_*` variable. Environment changes require a new web deployment.
-
-Production uses `https://gapwitness-checker.vercel.app` for the API and `https://gapwitness-web.vercel.app` as the checker CORS origin. Browser access requires public endpoints without a hosting sign-in wall. CORS controls browser access, not API authentication.
-
-## API reference
-
-### `GET /health`
-
-Returns HTTP 200 with `ok`, service name, and checker version. This is a service reachability check, not proof of source freshness or contract health.
-
-### `POST /inspect`
-
-Multipart form fields:
-
-| Field | Type | Required |
-| --- | --- | --- |
-| `stationId` | Text | Yes |
-| `windowStart` | ISO timestamp | Yes |
-| `windowEnd` | ISO timestamp | Yes |
-| `seriesType` | `pm25` or `generic` | Defaults to `pm25` |
-| `csv` | CSV upload | Yes |
+For a checker container, run this from the repository root:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/inspect \
-  -F stationId=2178 \
-  -F windowStart=2026-09-19T07:00:00Z \
-  -F windowEnd=2026-09-20T07:00:00Z \
-  -F seriesType=pm25 \
-  -F csv=@checker/demo/file_a.csv
+docker build -f checker/Dockerfile -t gapwitness-checker .
+docker run --rm -p 8000:8000 gapwitness-checker
 ```
 
-A successful response contains station/window context, expected and observed hours, normalized in-window `observations` with UTC timestamps and numeric values, missing timestamps, impossible timestamps, verdict/code, three hashes, and a `chainCommitment` object with Unix-second window boundaries.
+The root Docker ignore file limits the context to checker application code and its requirements. [Configuration and API details](docs/TECHNICAL_REFERENCE.md#configuration) cover origins, request bounds, public build-time variables, and verification commands. Shared Redis quotas are optional. The current fallback is per-process limiting, and the status page reports the active mode.
 
-HTTP 422 indicates unusable input, including duplicate/off-hour timestamps, non-finite values, an oversized window, or no observations inside the window. These are inspection errors, not verdicts. HTTP 429 includes `Retry-After`. The web surfaces failures without manufacturing a local verdict and disables commitment when the checker is unavailable.
+## Reproduce the checks
 
-## Independent verification
-
-### Recompute local evidence
+With the Python environment active:
 
 ```bash
-python verify.py checker/demo/file_a.csv \
-  --station-id 2178 \
-  --window-start 2026-09-19T07:00:00Z \
-  --window-end 2026-09-20T07:00:00Z
+PYTHONPATH=checker python -m pytest checker/tests scripts/test_*.py -q
+python checker/demo/run_demo.py
+python scripts/verify_real_corpus.py
 ```
 
-### Compare with a committed record
-
-```bash
-python scripts/verify_onchain.py checker/demo/file_a.csv \
-  --station-id 2178 \
-  --window-start 2026-09-19T07:00:00Z \
-  --window-end 2026-09-20T07:00:00Z \
-  --contract 0x81433d6bedf33b72defe0b90534dc16cc2b0bc57 \
-  --rpc-url https://ethereum-sepolia-rpc.publicnode.com
-```
-
-This verifier checks Sepolia chain identity, commitment existence, and matching series, gap, policy, and verdict fields. It emits JSON and exits 0 only on a complete match. It does not trust the browser.
-
-The CSV must already have been committed for that exact station/window. Deploying a contract or running the synthetic replay regression does not commit File A. A missing record correctly produces a failed verification.
-
-### Generate a fixture proof report
-
-```bash
-python scripts/build_demo_proof.py \
-  --contract 0x81433d6bedf33b72defe0b90534dc16cc2b0bc57 \
-  --deployment-tx 0xe073807470287af98f97f903a54da5d13edf51cbeaad987c13e314c62f0c018d \
-  --deployment-block 11850947 \
-  --output /tmp/gapwitness-demo-proof.json
-```
-
-This report recomputes fixture evidence and records supplied deployment metadata. It does not itself broadcast transactions or prove that the frozen fixtures are committed.
-
-## Sepolia deployment and live proof
-
-### Current publisher-scoped V2 deployment
-
-| Field | Value |
-| --- | --- |
-| Contract | [`0x9988b2aa76e532b9093624ea8672543f368aca82`](https://sepolia.etherscan.io/address/0x9988b2aa76e532b9093624ea8672543f368aca82) |
-| Deployment transaction | [`0x8cbd2951e5fe7b3640c6f1e81021d2953c347ddd10338a30446e9d0688b5c4b0`](https://sepolia.etherscan.io/tx/0x8cbd2951e5fe7b3640c6f1e81021d2953c347ddd10338a30446e9d0688b5c4b0) |
-| Deployment block | `11911878` |
-| Publisher-scoped File A transaction | [`0xbca8fc950d106c7952ec78787bd8b57181d4ec4febb3882653318ea6dea7ad08`](https://sepolia.etherscan.io/tx/0xbca8fc950d106c7952ec78787bd8b57181d4ec4febb3882653318ea6dea7ad08) |
-| Fixture publisher | `0x541291139b59570d1cd5d0e64df217b3f6efd7c8` |
-| Deployment and proof | [sepolia-v2.json](contracts/deployments/sepolia-v2.json), [fixture-proof-v2.json](contracts/deployments/fixture-proof-v2.json) |
-| Explorer source verification | Still requires `ETHERSCAN_API_KEY` |
-
-The web uses `web/src/lib/deployment.ts` and checks its recorded runtime hash before commitment. Legacy `VITE_CONTRACT` values cannot silently override the V2 default. Optional V2 overrides use the explicitly named V2 variables.
-
-The live proof verifies File A's stored hashes and verdict, File B rejection for its original publisher at a mined block, and distinct publisher keys agreeing between Python and Solidity. An outsider's submission is simulated in its own namespace. The Foundry fuzz test additionally proves that an attacker's actual state mutation in the local EVM cannot occupy another publisher's record. The outsider simulation is not a mined attacker transaction.
-
-Verify the V2 fixture independently:
-
-```bash
-python scripts/verify_onchain.py checker/demo/file_a.csv --station-id 2178 \
-  --window-start 2026-09-19T07:00:00Z --window-end 2026-09-20T07:00:00Z \
-  --contract 0x9988b2aa76e532b9093624ea8672543f368aca82 \
-  --publisher 0x541291139b59570d1cd5d0e64df217b3f6efd7c8
-```
-
-### Historical corrected V1 deployment
-
-| Field | Value |
-| --- | --- |
-| Chain | Ethereum Sepolia, `11155111` |
-| Contract | [`0x81433d6bedf33b72defe0b90534dc16cc2b0bc57`](https://sepolia.etherscan.io/address/0x81433d6bedf33b72defe0b90534dc16cc2b0bc57) |
-| Deployment transaction | [`0xe073807470287af98f97f903a54da5d13edf51cbeaad987c13e314c62f0c018d`](https://sepolia.etherscan.io/tx/0xe073807470287af98f97f903a54da5d13edf51cbeaad987c13e314c62f0c018d) |
-| Deployment block | `11850947` |
-| Source commit | `d93102c11f8076f73ab2bcbcfd039541ac36568b` |
-| Deployment record | [contracts/deployments/sepolia.json](contracts/deployments/sepolia.json) |
-| Explorer source verification | Not recorded as verified |
-
-The earlier address `0xa7ab2d2e60a08a089f3749ac3e98b41449b23211` is historical and lacks the replay-provenance fix. It was not upgraded. Use the corrected address above.
-
-### Mined replay evidence
-
-[contracts/deployments/replay-proof.json](contracts/deployments/replay-proof.json) contains the commitment key, original storage, storage after replay, and both mined receipts.
-
-- [First submission](https://sepolia.etherscan.io/tx/0x8cfb9fd4af3716ffc680363efdd5c9ce522b1c375e3f6e5b81220559369a0cd9) created the witness.
-- [Exact replay](https://sepolia.etherscan.io/tx/0x85803de16c1e8a0b8c580d4b2c07e6a3feca25d9ca0c02dad939bcb7b0881ad8) succeeded in the next block, preserved every stored field, and emitted no event.
-
-This is synthetic contract-regression evidence. It is distinct from the environmental fixture demo.
-
-### Source-backed fixture evidence
-
-[contracts/deployments/fixture-proof.json](contracts/deployments/fixture-proof.json) records a successfully mined commitment of frozen File A on the corrected contract:
-
-- [File A transaction](https://sepolia.etherscan.io/tx/0xb5fe1bae272e7c3e28bada96867b404c9dcb4eba0b9d786201575edd5291b1e6).
-- Station `2178`, window September 19, 2026 at 07:00Z through September 20 at 07:00Z.
-- Independently recomputed series, gap, policy, and verdict all match stored evidence.
-- File B returned the exact `GapPaperedOver` selector and both expected gap hashes through `eth_call` at Sepolia block `11911618`.
-
-File B's rejection was checked against mined state. It is not a mined failed transaction. File A's seven missing hours were deliberately removed from a complete source window.
-
-### Deployment workflows
-
-The owner-only `/deploy-sepolia` issue-comment workflow runs contract tests, dry-runs, broadcasts, records deployment metadata, submits the live replay proof, uploads the proof artifact, and publishes a deployment-record branch. Review and integrate the new address/block before configuring the web.
-
-The separate `deploy-sepolia` workflow supports manual dispatch and optional Etherscan source verification through the `sepolia` environment. It does not automatically run the replay proof.
-
-Both routes need a funded testnet deployer and protected credentials. A deployment creates a new contract and does not migrate earlier commitments.
-
-### Source-backed on-chain proof run
-
-The owner can run the `final-evidence` workflow manually, or create an owner-controlled `proof-run/**` branch. Its two independent jobs:
-
-1. Use the corrected deployment record, recompute frozen File A, commit it only if the key is empty, compare all stored hashes and the verdict, retain the original receipt, and check File B's exact `GapPaperedOver` error payload with `eth_call` against a recorded mined block. A conflicting existing record fails rather than overwriting evidence. The public report is uploaded and committed on an `ops/fixture-proof-*` branch for integration.
-2. Verify the existing contract on Etherscan using `ETHERSCAN_API_KEY` and the exact deployment source revision. It does not deploy a new contract. Verification is marked true on an `ops/explorer-verification-*` branch only after the explorer verification command succeeds.
-
-The proof script is `scripts/prove_fixture_onchain.py`. File A is an adversarial derivative of the frozen source, not a naturally missing upstream record. File B's rejection is an RPC execution check against mined state, not a mined failed transaction. The source-backed fixture job succeeded on October 14, 2026, and its report is included above. Explorer verification remains blocked because `ETHERSCAN_API_KEY` is not configured. Add that secret in the repository Actions settings or the `sepolia` environment, then rerun the explorer job. The workflow prepares and uploads the exact deployment compiler input before requesting explorer verification.
-
-## Tests and reproducibility
-
-### Checker and source pipeline
-
-```bash
-cd checker
-python -m pytest -q
-python ../scripts/test_prepare_chain_demo.py
-python demo/run_demo.py
-```
-
-### Contract
-
-```bash
-cd contracts
-forge install https://github.com/foundry-rs/forge-std --no-git
-forge build
-forge test -vv
-```
-
-Replay tests assert that a different wallet and later timestamp cannot overwrite the first witness and that no duplicate evidence event is emitted. Fuzz tests vary callers and replay timing. The regressions fail against the earlier implementation.
-
-### Web
+For the frontend:
 
 ```bash
 cd web
-npm ci
+npm test
 npm run build
 ```
 
-GitHub Actions cover the checker, source processing, contract, web build, deployment-record parsing, and deterministic fixture proof. The frozen OpenAQ fixture demo must remain reproducible from its manifests.
+[Contributing](CONTRIBUTING.md) includes browser and contract checks. [Release validation](docs/RELEASE_VALIDATION.md) retains the October 18 engineering results and explains which live checks depend on external services. Timestamped reports aren't continuous health guarantees.
 
-For the adversarial chain rehearsal, `scripts/prepare_chain_demo.py --contract <ADDRESS>` generates the frozen fixture inputs, and `contracts/script/DemoGapPaperOver.s.sol` attempts File A followed by conflicting File B. This is a separate broadcast operation requiring test ETH.
+## Current testnet proof
 
-### Web regression checks
+| Record | Link |
+| --- | --- |
+| V2 contract | [Sepolia contract](https://sepolia.etherscan.io/address/0x9988b2aa76e532b9093624ea8672543f368aca82) |
+| Published File A witness | [Mined transaction](https://sepolia.etherscan.io/tx/0xbca8fc950d106c7952ec78787bd8b57181d4ec4febb3882653318ea6dea7ad08) |
+| Exact source match | [Sourcify](https://repo.sourcify.dev/11155111/0x9988b2aa76e532b9093624ea8672543f368aca82) |
+| Retained manifests and receipts | [Deployment records](contracts/deployments/README.md) |
 
-With the local checker running on port 8000:
-
-```bash
-cd web
-npm ci
-npm test
-npx playwright install chromium
-VITE_CONTRACT_V2=0x2222222222222222222222222222222222222222 npm run test:browser
-```
-
-Browser regressions exercise real checker responses, quoted CSV observations, changed-input invalidation and retry, cancellation of older requests, and replacing an in-flight demo with a new upload. Wallet regressions cover the custom-error ABI, nested provider revert data, and disconnect events.
+V2 namespaces each station/window record by publisher address. Identical replays preserve the first witness. Conflicting evidence for an occupied key reverts. Historical V1 records remain available for reproducibility and aren't the app's default deployment. See the [technical reference](docs/TECHNICAL_REFERENCE.md#sepolia-deployment-and-live-proof).
 
 ## Repository map
 
-| Path | Contents |
+| Path | Purpose |
 | --- | --- |
-| `web/src/App.tsx` | Inspection lab, chart, two-state demo, evidence receipt |
-| `web/src/components/Footer.tsx` | Navigation, verification resources, attribution, connectivity display |
-| `web/src/lib/checker.ts` | Checker HTTP client and response types |
-| `web/src/lib/wallet.ts` | Wallet connection, station encoding, commitment and explorer helpers |
-| `checker/app/main.py` | Deterministic inspection and FastAPI endpoints |
-| `checker/demo/` | Frozen environmental fixtures and local demonstration |
-| `checker/tests/` | Inspection, API, source-pipeline, and verification regressions |
-| `contracts/src/GapWitness.sol` | Commitment registry |
-| `contracts/test/` | Contract behavior and fuzz tests |
-| `contracts/script/` | Deployment and adversarial chain rehearsal |
-| `contracts/deployments/` | Public deployment metadata and replay receipts |
-| `data/source/` | Archive provenance, source conventions, fixture hashes |
-| `scripts/` | Source processing, deployment records, proof and verification tools |
-| `.github/workflows/` | Builds, checks, source freezing, and deployment workflows |
+| `web/` | React, TypeScript, Vite, wallet integration, and browser evidence checks |
+| `checker/` | FastAPI checker, frozen demo fixtures, and Python tests |
+| `contracts/` | Solidity contracts, Foundry tests, deployment manifests, and receipts |
+| `data/` | Retained source slices, provenance, corpus, and empty pilot template |
+| `scripts/` | Data preparation, evaluation, monitoring, and independent verification |
+| `docs/` | Technical reference, review workflow, evaluation, operations, and submission evidence |
+| `.github/workflows/` | Automated tests, builds, monitoring, and explicitly gated live operations |
 
-## Known limits and scope
+## Submission and attribution
 
-- One hourly environmental series per inspection, with a PM2.5-focused web experience.
-- No authenticated station ownership or signed checker attestation on-chain.
-- No sensor hardware, calibration checks, live ingestion, token, marketplace, or multi-chain support.
-- The request body is bounded before multipart parsing, and in-memory rate-limit storage is capped at 10,000 clients. Atomic shared quotas have an integration proof but need production configuration; the live status reports the active mode. Concurrent inspection slots are bounded per instance.
-- Footer connectivity reflects the last application health/inspection result, not continuous monitoring.
-- The browser independently recomputes the exact-byte hash, timestamps, missing hours, policy hash, observations, verdict, and chain inputs before accepting the checker response. Parser disagreement fails closed. Web and checker should be deployed together.
-- The printable receipt view is an on-screen representation, not an automatic PDF export.
-- Explorer source verification remains separate from deployment and replay proof.
-- A completed captioned 3 minute 14 second demo is delivered separately. Its hash, live-check context, and capture metadata are retained in [recorded-walkthrough.json](docs/recorded-walkthrough.json). Reproduce with web/scripts/record_walkthrough.mjs and web/scripts/render_walkthrough.py.
+Start with the [release checklist](docs/RELEASE_CHECKLIST.md), [submission brief](docs/SUBMISSION.md), and [demo script](docs/DEMO_SCRIPT.md). Public video and Devpost URLs belong in [submission-links.json](docs/submission-links.json). External evidence such as organizer clarification, real phone approval, and independent reviewer observations must be recorded separately from automated tests.
 
-The delivery scope is a focused reviewer workspace, a checker, a contract, retained source files, independent verification, and a demo video. Keep new work tied to that evidence flow.
-
-## Contributing and attribution
-
-Open an issue with the affected file/window, steps to reproduce, expected result, and actual result. Include public transaction hashes when relevant. Never include wallet keys, populated environment files, or private data.
-
-For changes, preserve frozen fixture provenance, update this README, run the relevant checks, and use a reviewable branch. Do not introduce mocked on-chain success or describe generated demo data as observed measurements.
-
-GapWitness is built by [Deeen_Codes](https://github.com/Tajudeeen). Frozen source attribution belongs to OpenAQ and its recorded provider, AirNow. These references do not imply partnership or endorsement.
-
-No repository-wide software license is currently included. The source-data license in a manifest applies to those recorded data, not automatically to the application code.
+Built by [Deeen_Codes](https://github.com/Tajudeeen). Frozen source attribution belongs to the providers and licenses recorded in the manifests. Those references don't imply endorsement. No repository-wide software license is currently included.

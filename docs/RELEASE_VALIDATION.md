@@ -34,7 +34,7 @@ The delivered GapWitness-Demo.mp4 is 228.8 seconds (3:49), H.264, 1440 × 1080, 
 
 ## External items still pending
 
-- Production shared quota activation. The Vercel API returned HTTP 403 for the existing team. No persistent credentials were installed. See OPERATIONS.md for exact protected settings and the verification command.
+- Optional production shared quota activation. The Vercel API returned HTTP 403 for the existing team during this release. No persistent credentials were installed. The checker supports per-process limiting without Redis. See OPERATIONS.md for protected shared-quota settings and the verification command if multi-instance quota coordination is needed.
 - An actual phone owner approving the new MetaMask relay flow. The app exposes and builds the integration, but automated injected-wallet tests are not a real phone trial.
 - Written organizer confirmation resolving the students-only overview versus the detailed rules allowing independent developers.
 - Independent pilot observations. The pilot collection and analyzer are ready, but no independent participant or time-saving number is claimed.

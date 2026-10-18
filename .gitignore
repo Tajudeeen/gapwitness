@@ -11,6 +11,8 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.*.example
+.vercel/
 # OS / editor
 .DS_Store
 Thumbs.db
@@ -40,3 +42,9 @@ htmlcov/
 tmp/
 web/videos/
 web/.playwright/
+
+# Local demo exports and CLI outputs. Retained proof records stay tracked.
+/artifacts/
+/recordings/
+/gapwitness-demo/
+/batch-evidence.json
