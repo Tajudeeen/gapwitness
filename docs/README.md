@@ -17,7 +17,7 @@ Start with the [project README](../README.md). Commands in these documents run f
 | Prepare a submission and video | [Submission brief](SUBMISSION.md), [release checklist](RELEASE_CHECKLIST.md), [demo script](DEMO_SCRIPT.md), [video handoff](VIDEO_UPLOAD.md), [external link record](submission-links.json) |
 | Review open external evidence | [Proof requests](EXTERNAL_PROOF_REQUESTS.md), [organizer clarification](ORGANIZER_CLARIFICATION.md) |
 | Contribute changes | [Contributing](../CONTRIBUTING.md) |
-| Review the pending root license choice | [MIT proposal, not yet adopted](LICENSING.md) |
+| Check software and source-data licensing | [MIT license and scope](LICENSING.md) |
 
 ## Retained release evidence
 

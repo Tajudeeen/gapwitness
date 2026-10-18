@@ -12,7 +12,7 @@ Include the affected page or command, steps to reproduce, the declared station a
 
 Use a focused branch and explain the behavior being changed. Keep the frozen fixture and corpus bytes intact. Regenerate source-derived files through the documented scripts and retain their manifests. Never edit a recorded receipt or test result to make a check appear successful.
 
-Source-data licenses apply to their recorded datasets. This repository currently has no repository-wide software license. Don't assume a dataset license also licenses the application code.
+Original project software and associated documentation are licensed under the [MIT License](LICENSE). Source-data licenses apply to their recorded datasets, and third-party software retains its own terms. See [licensing scope](docs/LICENSING.md).
 
 ## Validate the affected layers
 
