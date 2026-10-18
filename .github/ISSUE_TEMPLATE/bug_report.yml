@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a reproducible application or documentation problem.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a vulnerability, follow [SECURITY.md](https://github.com/Tajudeeen/gapwitness/blob/main/SECURITY.md) instead of publishing exploit details here. Use public or synthetic data and never attach credentials or restricted records.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - Inspect or review
+        - Evidence storage or export
+        - Wallet or publishing
+        - Verification
+        - Checker API or operations
+        - Contract
+        - Documentation or local setup
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Commit or deployment URL
+      description: Include the source revision or public app URL you tested.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the declared station and UTC window where relevant, using non-sensitive inputs.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the exact error and public transaction hash if relevant.
+    validations:
+      required: true

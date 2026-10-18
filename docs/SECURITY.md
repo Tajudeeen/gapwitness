@@ -1,5 +1,7 @@
 # Threat model and security evidence
 
+For responsible reporting, use the repository's root [SECURITY.md](../SECURITY.md). Dependency updates and automated scanning are covered in [DEPENDENCIES.md](DEPENDENCIES.md).
+
 ## Protections implemented
 
 | Threat | Protection | Evidence |

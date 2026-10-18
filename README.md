@@ -8,6 +8,8 @@ A file hash preserves the file it receives. When hours have already been removed
 
 [Open the app](https://gapwitness-web.vercel.app) · [Verify the published example](https://gapwitness-web.vercel.app/verify) · [Real datasets](https://gapwitness-web.vercel.app/datasets) · [Service status](https://gapwitness-web.vercel.app/status) · [Documentation](docs/README.md)
 
+[Report a vulnerability](SECURITY.md) · [Dependency maintenance and automated scans](docs/DEPENDENCIES.md) · [Report a bug](https://github.com/Tajudeeen/gapwitness/issues/new?template=bug_report.yml)
+
 ## Try the review flow
 
 1. Open [Inspect](https://gapwitness-web.vercel.app/inspect), wait for `checker ready`, and load `File A · 7 deliberate gaps`. The declared 24-hour window contains 17 observations and seven missing hours.
@@ -116,4 +118,4 @@ V2 namespaces each station/window record by publisher address. Identical replays
 
 Start with the [release checklist](docs/RELEASE_CHECKLIST.md), [submission brief](docs/SUBMISSION.md), and [demo script](docs/DEMO_SCRIPT.md). Public video and Devpost URLs belong in [submission-links.json](docs/submission-links.json). External evidence such as organizer clarification, real phone approval, and independent reviewer observations must be recorded separately from automated tests.
 
-Built by [Deeen_Codes](https://github.com/Tajudeeen). Frozen source attribution belongs to the providers and licenses recorded in the manifests. Those references don't imply endorsement. No repository-wide software license is currently included.
+Built by [Deeen_Codes](https://github.com/Tajudeeen). Frozen source attribution belongs to the providers and licenses recorded in the manifests. Those references don't imply endorsement. No repository-wide software license is currently included. An [MIT proposal](docs/LICENSING.md) is prepared for the owner's explicit choice; it has not been adopted.

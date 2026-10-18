@@ -10,12 +10,14 @@ Start with the [project README](../README.md). Commands in these documents run f
 | Understand source attribution and retained real windows | [Real corpus](REAL_CORPUS.md), [OpenAQ source notes](../data/source/openaq.md) |
 | Assess correctness, measured arithmetic effects, and local performance | [Evaluation](EVALUATION.md), [evaluation results](evaluation-results.json), [benchmark results](benchmark-results.json) |
 | Understand security and scientific trust boundaries | [Security model](SECURITY.md), [operator authority](OPERATOR_AUTHORITY.md) |
+| Report vulnerabilities or maintain dependencies | [Security reporting policy](../SECURITY.md), [dependency maintenance and scanning](DEPENDENCIES.md) |
 | Configure quotas, monitor the checker, and assess scaling | [Operations](OPERATIONS.md), [adoption plan](ADOPTION.md) |
 | Collect actual reviewer observations | [Pilot](PILOT.md), [invitation](PILOT_INVITATION.md), [empty observation template](../data/pilot/observations-template.csv) |
 | Assess differentiation | [Related work](ORIGINALITY.md) |
 | Prepare a submission and video | [Submission brief](SUBMISSION.md), [release checklist](RELEASE_CHECKLIST.md), [demo script](DEMO_SCRIPT.md), [video handoff](VIDEO_UPLOAD.md), [external link record](submission-links.json) |
 | Review open external evidence | [Proof requests](EXTERNAL_PROOF_REQUESTS.md), [organizer clarification](ORGANIZER_CLARIFICATION.md) |
 | Contribute changes | [Contributing](../CONTRIBUTING.md) |
+| Review the pending root license choice | [MIT proposal, not yet adopted](LICENSING.md) |
 
 ## Retained release evidence
 

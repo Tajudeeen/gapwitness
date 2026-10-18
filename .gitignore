@@ -48,3 +48,4 @@ web/.playwright/
 /recordings/
 /gapwitness-demo/
 /batch-evidence.json
+/web/npm-audit.json

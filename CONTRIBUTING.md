@@ -4,6 +4,8 @@ Start with the [README](README.md) and [technical reference](docs/TECHNICAL_REFE
 
 ## Report a problem
 
+For vulnerabilities, follow the root [security policy](SECURITY.md). Use public issues for non-sensitive bugs only. Dependency update cadence, lockfile expectations, and audit scope are documented in [dependency maintenance](docs/DEPENDENCIES.md).
+
 Include the affected page or command, steps to reproduce, the declared station and UTC window, and the expected and actual results. Use a small public or synthetic CSV. Include a public transaction hash when relevant. Don't post private datasets, participant records, wallet keys, or populated environment files.
 
 ## Make a change
