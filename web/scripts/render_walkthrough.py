@@ -14,9 +14,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 '''
 def stamp(seconds):
  cs=round(seconds*100);return f'{cs//360000}:{cs//6000%60:02}:{cs//100%60:02}.{cs%100:02}'
-clips=[];cursor=0;events=[];holds=[12,19,19,19,23,19,19,19,19,17]
+clips=[];cursor=0;events=[]
 for i,scene in enumerate(capture['scenes']):
- start=max(scene['start'],scene['end']-holds[i]-(0 if i==0 else 3));end=scene['end'];duration=end-start
+ start=max(scene['start'],scene['end']-scene.get('holdSeconds',19)-(0 if i==0 else 3));end=scene['end'];duration=end-start
  clip=folder/f'clip-{i:02}.mp4'
  if not args.reuse_clips:
   subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-xerror','-y','-i',capture['videoPath'],'-ss',str(start),'-t',str(duration),'-an','-c:v','libx264','-crf','20','-preset','ultrafast','-threads','2','-r','25',str(clip)],check=True)
@@ -31,4 +31,5 @@ cmd=['ffmpeg','-hide_banner','-loglevel','warning','-xerror','-y','-f','concat',
 subprocess.run(cmd,check=True)
 probe=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','json',str(folder/'GapWitness-Demo.mp4')]))
 if abs(float(probe['format']['duration'])-cursor)>.5:raise RuntimeError('Rendered duration differs from expected complete recording')
+if not 180<=cursor<=300:raise RuntimeError('Submission demo must be 3–5 minutes')
 print(json.dumps({'rendered':True,'seconds':cursor,'file':str(folder/'GapWitness-Demo.mp4')}))

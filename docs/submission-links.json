@@ -1,0 +1,11 @@
+{
+  "format": "gapwitness/submission-links/v1",
+  "liveUrl": "https://gapwitness-web.vercel.app",
+  "repositoryUrl": "https://github.com/Tajudeeen/gapwitness",
+  "videoUrl": null,
+  "devpostProjectUrl": null,
+  "organizerEligibilityConfirmed": false,
+  "independentPilotCompleted": false,
+  "operatorAuthorityEstablished": false,
+  "notes": "External evidence stays pending until actually obtained. Pilot and operator authority are optional evidence, not invented submission requirements."
+}

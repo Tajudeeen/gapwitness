@@ -14,6 +14,7 @@ INSPECT_GLOBAL_RATE_LIMIT=3000
 INSPECT_RATE_LIMIT=30
 INSPECT_RATE_WINDOW_SECONDS=60
 INSPECT_MAX_CONCURRENT=4
+REQUIRE_SHARED_QUOTA=true
 ```
 
 Use an owned persistent Redis REST store. Never commit credentials. Salt changes reset client identities. Limits are configurable deployment choices, not measured production capacity. Vercel client-IP headers are trusted only when running on Vercel, which overwrites them; other environments use the ASGI peer address and require an appropriate trusted-proxy deployment arrangement.
@@ -21,6 +22,18 @@ Use an owned persistent Redis REST store. Never commit credentials. Salt changes
 The retained shared-quota-integration.json records a real HTTPS Redis experiment: two independent limiter objects, twelve simultaneous requests from one synthetic client, a shared limit of three, three admissions and nine denials. Its store was a temporary 72-hour agent database, not production. A workspace-specific transport used a thirty-second test timeout; production retains a three-second HTTPX timeout. This does not measure production latency, load capacity, or uptime.
 
 Production shared quotas have not been activated. The Vercel environment connector denied environment access, so no persistent credentials were installed. The live status page reports the actual mode instead of assuming shared protection is enabled.
+
+`REQUIRE_SHARED_QUOTA=true` prevents a production deployment from silently starting with per-process quotas if a protected value is removed. Configure all three protected values before enabling it. Development defaults to false. `checker/.env.example` records the complete configuration without secrets.
+
+## Activate and verify
+
+1. Create an owned persistent Redis REST store. A temporary expiring agent database is unsuitable.
+2. In the existing `gapwitness-checker` production project's environment settings, install `QUOTA_REDIS_REST_URL`, `QUOTA_REDIS_REST_TOKEN`, and a random `QUOTA_HASH_SALT` of at least 32 characters as protected values. Do not put them in Git, a video, or the web project.
+3. Add `REQUIRE_SHARED_QUOTA=true` and the bounded limits above, then redeploy the checker. Install production values in production only.
+4. Run `python scripts/check_release.py --require-shared --output /tmp/gapwitness-release.json`. This checks live status, readiness and actual fixture admission. A PING response alone is insufficient.
+5. To test cross-instance behavior, use the retained `SharedQuota` integration harness against a separate test namespace/store. Do not load-test the public demo or count temporary-store results as production capacity.
+
+On October 18, the authenticated Vercel connection again returned HTTP 403 for the existing `deeencodes` scope. No local Vercel CLI credentials were available. The code and setup instructions are complete, but production activation must remain pending until project environment access is restored or the owner installs the values in the dashboard.
 
 /health proves process reachability. /status exposes bounded instance counters and quota configuration without CSV contents, client addresses, or credentials. /ready checks the configured Redis dependency using PING, cached for at most fifteen seconds, and returns 503 on dependency failure. With no configured dependency it explicitly says not configured. PING reachability alone does not prove write permission or successful admission; the atomic admission check remains fail-closed.
 

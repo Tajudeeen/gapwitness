@@ -18,7 +18,7 @@ def test_shared_quota_denials_and_bad_responses_do_not_allow_requests():
     quota=SharedQuota('https://quota.example','test-token','s'*32,30,60,3000)
     denied=httpx.MockTransport(lambda request:httpx.Response(200,json={'result':[0,30]}))
     assert asyncio.run(quota.allow('client',denied))==(False,30)
-    for result in [None,[],[1,0],[1,9999],['yes',30]]:
+    for result in [None,[],[1,0],[1,9999],['yes',30],[True,30],[1,True]]:
         bad=httpx.MockTransport(lambda request:httpx.Response(200,json={'result':result}))
         with pytest.raises(RuntimeError):asyncio.run(quota.allow('client',bad))
 
@@ -31,6 +31,19 @@ def test_shared_quota_configuration_and_metrics_are_bounded_and_private():
 
 def test_global_admission_precedes_client_key_allocation():
     assert QUOTA_SCRIPT.index('count>tonumber(ARGV[3])')<QUOTA_SCRIPT.index("local client=KEYS[2]")
+
+def test_required_shared_quota_cannot_silently_fall_back_to_process_local(monkeypatch):
+    from app.operations import configured_quota
+    for name in ['QUOTA_REDIS_REST_URL','QUOTA_REDIS_REST_TOKEN','QUOTA_HASH_SALT']:
+        monkeypatch.delenv(name,raising=False)
+    monkeypatch.setenv('REQUIRE_SHARED_QUOTA','true')
+    with pytest.raises(RuntimeError,match='required'):configured_quota(30,60)
+    monkeypatch.setenv('QUOTA_REDIS_REST_URL','https://owned-store.example')
+    monkeypatch.setenv('QUOTA_REDIS_REST_TOKEN','test-token')
+    monkeypatch.setenv('QUOTA_HASH_SALT','s'*32)
+    assert isinstance(configured_quota(30,60),SharedQuota)
+    monkeypatch.setenv('REQUIRE_SHARED_QUOTA','typo')
+    with pytest.raises(RuntimeError,match='must be true or false'):configured_quota(30,60)
 
 def test_forwarding_headers_are_only_trusted_on_vercel(monkeypatch):
     scope={'client':('192.0.2.1',1),'headers':[(b'x-vercel-forwarded-for',b'192.0.2.2')]}

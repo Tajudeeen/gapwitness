@@ -42,9 +42,6 @@ jobs:
         working-directory: web
       - run: npx playwright install --with-deps chromium
         working-directory: web
-      - name: Start checker
-        run: |
-          python -m uvicorn app.main:app --app-dir checker --host 127.0.0.1 --port 8000 > /tmp/checker.log 2>&1 &
       - run: npm run test:browser
         working-directory: web
         env:

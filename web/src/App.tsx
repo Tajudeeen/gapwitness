@@ -8,6 +8,7 @@ import { navigateLink } from "./lib/navigation";
 import { Footer } from "./components/Footer";
 import { ReviewPanel } from "./components/ReviewPanel";
 import { WitnessPanel } from "./components/WitnessPanel";
+import { WalletConnection } from './components/WalletConnection';
 import { WorkspaceNav } from "./components/WorkspaceNav";
 import { PageFrame } from "./components/PageFrame";
 import { PAGE_PATHS, readPage, type Page } from "./lib/navigation";
@@ -21,6 +22,7 @@ import {
 import {
   commitEvidence,
   connectWallet,
+  disconnectWallet,
   isContractConfigured,
   CONTRACT_ADDRESS,
   CONTRACT_VERSION,
@@ -139,6 +141,8 @@ function App() {
   const [windowStart, setWindowStart] = useState(DEFAULT_WINDOW_START);
   const [windowEnd, setWindowEnd] = useState(DEFAULT_WINDOW_END);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [walletBusy, setWalletBusy] = useState(false);
+  const walletRequest = useRef(0);
   const [commitBusy, setCommitBusy] = useState(false);
   const [txPublisher, setTxPublisher] = useState<string | null>(null);
   const [commitCreated, setCommitCreated] = useState(true);
@@ -178,7 +182,8 @@ function App() {
     return watchWalletEvents(({ address, chainId }) => {
       if (chainId === null) setWalletAddress(address);
       if (chainId !== null && chainId !== 11155111n) {
-        setMessage("Wallet network changed. Commitment requires Ethereum Sepolia.");
+        setWalletAddress(null);
+        setMessage(chainId === 0n ? 'Wallet disconnected. Inspection evidence is still available.' : "Wallet network changed. Commitment requires Ethereum Sepolia.");
       }
     });
   }, []);
@@ -360,8 +365,34 @@ function App() {
     }
   }
 
+  async function handleWalletConnect(mode: 'browser' | 'metamask') {
+    if (walletBusy || commitInFlight.current) return;
+    const id = ++walletRequest.current;
+    setWalletBusy(true);
+    setMessage(mode === 'metamask' ? 'Opening MetaMask pairing. Approve the connection, then return to this tab.' : 'Approve the browser wallet connection.');
+    try {
+      const wallet = await connectWallet(mode);
+      if (id !== walletRequest.current) return;
+      setWalletAddress(wallet.address);
+      setMessage('Connected on Sepolia. Choose commit evidence when you’re ready to publish.');
+    } catch (error) {
+      if (id === walletRequest.current) setMessage(error instanceof Error ? error.message : 'Wallet connection failed.');
+    } finally {
+      if (id === walletRequest.current) setWalletBusy(false);
+    }
+  }
+
+  async function handleWalletDisconnect() {
+    if (commitInFlight.current) return;
+    walletRequest.current += 1;
+    setWalletBusy(false); setWalletAddress(null);
+    setMessage('Wallet disconnected. Your inspection is still available.');
+    try { await disconnectWallet(); }
+    catch { setMessage('Connection cleared here. Close any pending pairing request in your wallet.'); }
+  }
+
   async function handleCommit() {
-    if (!result || busy || demoBusy || commitInFlight.current) return;
+    if (!result || busy || demoBusy || walletBusy || commitInFlight.current) return;
     commitInFlight.current = true;
     setCommitBusy(true);
     setConflict(null);
@@ -442,7 +473,7 @@ function App() {
 
   const witnessPanel = <WitnessPanel result={result} walletAddress={walletAddress} txHash={txHash}
     txPublisher={txPublisher} commitCreated={commitCreated} conflict={conflict} busy={busy} demoBusy={demoBusy}
-    commitBusy={commitBusy} checkerState={checkerState} showReceipt={showReceipt} setShowReceipt={setShowReceipt}
+    commitBusy={commitBusy || walletBusy} checkerState={checkerState} showReceipt={showReceipt} setShowReceipt={setShowReceipt}
     handleCommit={handleCommit} />;
   const emptyReview = <section className="page-card"><h2>Start with an inspection</h2><p>Declare the station and UTC window, then inspect the original CSV. No wallet is needed.</p><button onClick={() => navigate("inspect")}>Inspect a CSV</button></section>;
 
@@ -807,6 +838,7 @@ function App() {
         <div className="page-actions"><button onClick={() => navigate("evidence")}>Keep this evidence</button><button onClick={() => navigate("publish")}>Publish on Sepolia</button><button onClick={() => navigate("inspect")}>Edit source and window</button></div></> : emptyReview}
     </PageFrame> : view === "evidence" ? <EvidencePage current={evidencePackage()} csv={activeCsv} onOpen={openSaved} navigate={navigate} />
       : view === "publish" ? <PageFrame title="Publish a testnet witness" description="Optional Sepolia publication preserves your evidence in your publisher namespace. It is not a certificate of station authority.">
+        <WalletConnection address={walletAddress} busy={walletBusy} locked={commitBusy} onConnect={handleWalletConnect} onDisconnect={handleWalletDisconnect} />
         {result ? <section className="page-card"><h2>Station {result.stationId} · {result.verdict}</h2><p>{result.windowStart} to {result.windowEnd}</p><p>{result.missingTimestamps.length} missing hours. Original bytes independently checked in this browser.</p></section> : emptyReview}
         {witnessPanel}<p role="status" className="page-message">{message}</p>
         {txHash && <div className="page-actions"><button onClick={() => navigate("verify")}>Independently verify this witness</button><button onClick={() => navigate("evidence")}>Save CSV and receipt metadata</button></div>}

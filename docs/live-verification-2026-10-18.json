@@ -1,0 +1,17 @@
+{
+  "format": "gapwitness/live-verification/v1",
+  "requestMocks": false,
+  "originalCsvRecomputed": true,
+  "chainId": 11155111,
+  "contract": "0x9988b2aa76e532b9093624ea8672543f368aca82",
+  "publisher": "0x541291139b59570d1cd5d0e64df217b3f6efd7c8",
+  "commitmentKey": "0x696ed3671d6138bec75c0d15cf1919a58cc36f277fd008ddd1197bbf3413b657",
+  "snapshotBlock": 11940625,
+  "firstWitnessAt": "2026-10-14T07:57:24.000Z",
+  "runtimeMatched": true,
+  "fieldsMatched": true,
+  "transactionHash": "0xbca8fc950d106c7952ec78787bd8b57181d4ec4febb3882653318ea6dea7ad08",
+  "transactionBlock": 11911907,
+  "witnessEvent": true,
+  "checkedAt": "2026-10-18T10:57:56.360Z"
+}

@@ -39,7 +39,7 @@ return {1,ttl}
 class SharedQuota:
     def __init__(self,url,token,salt,limit,window,global_limit):
         parsed=urlparse(url)
-        if parsed.scheme!='https' or not parsed.netloc or parsed.username or parsed.password or parsed.query:
+        if parsed.scheme!='https' or not parsed.netloc or parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise RuntimeError('QUOTA_REDIS_REST_URL must be a credential-free HTTPS URL')
         if not token or len(salt)<32:raise RuntimeError('Shared quota requires a token and a salt of at least 32 characters')
         if not 1<=limit<=100000 or not 1<=global_limit<=100000 or not 1<=window<=3600:raise RuntimeError('Invalid shared quota bounds')
@@ -50,7 +50,7 @@ class SharedQuota:
         async with httpx.AsyncClient(timeout=3.0,transport=transport) as session:
             response=await session.post(self.url,json=command,headers={'Authorization':'Bearer '+self.token})
             response.raise_for_status();body=response.json();result=body.get('result')
-        if not isinstance(result,list) or len(result)!=2 or result[0] not in [0,1] or not isinstance(result[1],int) or not 1<=result[1]<=self.window+1:
+        if not isinstance(result,list) or len(result)!=2 or type(result[0]) is not int or result[0] not in [0,1] or type(result[1]) is not int or not 1<=result[1]<=self.window+1:
             raise RuntimeError('Invalid shared quota response')
         return bool(result[0]),result[1]
 
@@ -62,5 +62,8 @@ class SharedQuota:
 
 def configured_quota(limit,window):
     names=['QUOTA_REDIS_REST_URL','QUOTA_REDIS_REST_TOKEN','QUOTA_HASH_SALT'];values=[os.getenv(name,'') for name in names]
+    required=os.getenv('REQUIRE_SHARED_QUOTA','false').strip().lower()
+    if required not in {'true','false','1','0'}:raise RuntimeError('REQUIRE_SHARED_QUOTA must be true or false')
+    if required in {'true','1'} and not all(values):raise RuntimeError('Shared quota is required for this deployment; configure all protected quota variables')
     if any(values) and not all(values):raise RuntimeError('Shared quota configuration is incomplete')
     return SharedQuota(*values,limit,window,int(os.getenv('INSPECT_GLOBAL_RATE_LIMIT','3000'))) if all(values) else None

@@ -7,8 +7,9 @@ import {
   keccak256,
   isAddress,
 } from "ethers";
-import type { Eip1193Provider } from "ethers";
 import type { ChainCommitment } from "./checker";
+import { chooseWallet, currentWalletProvider, observeWallet, walletSessionVersion, type WalletMode } from './walletSession.ts';
+export { disconnectWallet } from './walletSession.ts';
 
 const config = import.meta.env ?? {};
 
@@ -79,24 +80,15 @@ export class CommitmentError extends Error {
   }
 }
 
-type EthereumWindow = Window & {
-  ethereum?: Eip1193EventsProvider;
-};
-
-type Eip1193EventsProvider = Eip1193Provider & {
-  on?: (event: string, listener: (...args: unknown[]) => void) => void;
-  removeListener?: (event: string, listener: (...args: unknown[]) => void) => void;
-};
-
 function getInjectedProvider(): BrowserProvider {
-  const ethereum = (window as EthereumWindow).ethereum;
+  const ethereum = currentWalletProvider();
   if (!ethereum) {
     throw new WalletError(
       "NO_WALLET",
-      "No EVM wallet was detected. Install or open a browser wallet, then retry.",
+      "No wallet is connected. Choose a browser wallet or pair MetaMask mobile / QR.",
     );
   }
-  return new BrowserProvider(ethereum);
+  return new BrowserProvider(ethereum, 'any');
 }
 
 async function ensureSepolia(provider: BrowserProvider): Promise<void> {
@@ -116,10 +108,14 @@ async function ensureSepolia(provider: BrowserProvider): Promise<void> {
       );
     }
     if (code === 4902) {
-      throw new WalletError(
-        "SEPOLIA_UNAVAILABLE",
-        "Sepolia is not available in this wallet. Add Sepolia, then retry.",
-      );
+      await provider.send('wallet_addEthereumChain', [{
+        chainId: SEPOLIA_CHAIN_HEX, chainName: 'Ethereum Sepolia',
+        nativeCurrency: {name: 'Sepolia Ether', symbol: 'ETH', decimals: 18},
+        rpcUrls: ['https://ethereum-sepolia-rpc.publicnode.com'],
+        blockExplorerUrls: ['https://sepolia.etherscan.io'],
+      }]);
+      await provider.send('wallet_switchEthereumChain', [{chainId: SEPOLIA_CHAIN_HEX}]);
+      return;
     }
     throw new WalletError(
       "WRONG_NETWORK",
@@ -207,50 +203,39 @@ async function findPriorTransaction(
 export function watchWalletEvents(
   handler: (state: { address: string | null; chainId: bigint | null }) => void,
 ): () => void {
-  const ethereum = (window as EthereumWindow).ethereum;
-  if (!ethereum?.on || !ethereum.removeListener) return () => undefined;
-
-  const accountsChanged = (...args: unknown[]) => {
-    const accounts = Array.isArray(args[0]) ? args[0] as string[] : [];
-    handler({
-      address: accounts[0] ?? null,
-      chainId: null,
-    });
-  };
-
-  const chainChanged = (...args: unknown[]) => {
-    const raw = typeof args[0] === "string" ? args[0] : "0x0";
-    handler({
-      address: null,
-      chainId: BigInt(raw),
-    });
-  };
-
-  ethereum.on("accountsChanged", accountsChanged);
-  ethereum.on("chainChanged", chainChanged);
-
-  return () => {
-    ethereum.removeListener?.("accountsChanged", accountsChanged);
-    ethereum.removeListener?.("chainChanged", chainChanged);
-  };
+  return observeWallet(handler);
 }
 
-export async function connectWallet(): Promise<{
+export async function connectWallet(mode: WalletMode = 'auto'): Promise<{
   address: string;
   chainId: bigint;
 }> {
+  try {
+    await chooseWallet(mode);
+  } catch (error) {
+    throw new WalletError('NO_WALLET', error instanceof Error ? error.message : 'Wallet pairing could not finish. Retry or use a browser wallet.');
+  }
   const provider = getInjectedProvider();
+  const session = walletSessionVersion();
+  const assertCurrent = () => {
+    if (session !== walletSessionVersion()) throw new WalletError('WALLET_REJECTED', 'Wallet connection cancelled.');
+  };
   try {
     await provider.send("eth_requestAccounts", []);
-  } catch {
+  } catch (error) {
+    if ((error as {code?: number}).code === -32002) throw new WalletError('WALLET_REJECTED', 'A wallet request is already pending. Open your wallet to finish or reject it.');
     throw new WalletError(
       "WALLET_REJECTED",
       "Wallet connection was rejected.",
     );
   }
 
+  assertCurrent();
   await ensureSepolia(provider);
+  assertCurrent();
+  if (BigInt(await provider.send('eth_chainId', [])) !== SEPOLIA_CHAIN_ID) throw new WalletError('WRONG_NETWORK', 'Select Ethereum Sepolia in your wallet before publishing.');
   const signer = await provider.getSigner();
+  assertCurrent();
   return {
     address: await signer.getAddress(),
     chainId: SEPOLIA_CHAIN_ID,
@@ -270,6 +255,7 @@ export async function commitEvidence(
   const provider = getInjectedProvider();
   await provider.send("eth_requestAccounts", []);
   await ensureSepolia(provider);
+  if (BigInt(await provider.send('eth_chainId', [])) !== SEPOLIA_CHAIN_ID) throw new WalletError('WRONG_NETWORK', 'Select Ethereum Sepolia in your wallet before publishing.');
 
   const code = await provider.getCode(CONTRACT_ADDRESS);
   if (code === "0x") {
@@ -297,6 +283,7 @@ export async function commitEvidence(
       commitment.gapHash,
       commitment.policyHash,
       commitment.verdict,
+      { chainId: SEPOLIA_CHAIN_ID },
     );
     const receipt = await tx.wait();
 

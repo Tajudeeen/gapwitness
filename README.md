@@ -8,7 +8,9 @@ A report can look complete after the inconvenient hours have been removed. A has
 
 [Explore GapWitness](https://gapwitness-web.vercel.app) · [Inspect](https://gapwitness-web.vercel.app/inspect) · [Review](https://gapwitness-web.vercel.app/review) · [Evidence](https://gapwitness-web.vercel.app/evidence) · [Publish](https://gapwitness-web.vercel.app/publish) · [Verify](https://gapwitness-web.vercel.app/verify) · [Checker health](https://gapwitness-checker.vercel.app/health) · [Contract explorer](https://sepolia.etherscan.io/address/0x9988b2aa76e532b9093624ea8672543f368aca82)
 
-**Submission:** [release checklist](docs/RELEASE_CHECKLIST.md) · [submission brief](docs/SUBMISSION.md) · [3–4 minute walkthrough script](docs/DEMO_SCRIPT.md). A public video link and final fresh-deployment verification are still required before submitting.
+**Submission:** [release checklist](docs/RELEASE_CHECKLIST.md) · [submission brief](docs/SUBMISSION.md) · [3–5 minute walkthrough script](docs/DEMO_SCRIPT.md). A public video link and final fresh-deployment verification are still required before submitting.
+
+**Release completion:** [mobile and QR publishing](docs/MOBILE_WALLET.md) · [production quota activation](docs/OPERATIONS.md#activate-and-verify) · [submission link record](docs/submission-links.json). Run `python scripts/check_release.py --output /tmp/gapwitness-release.json` for point-in-time deployment, fixture and corpus checks. Add `--expect-commit <full-sha>` to require the deployed frontend's `release.json` to match the tested commit, `--require-shared` after production quota activation, or `--require-submission` to reject missing external submission evidence. These checks do not invent a pilot, phone approval, or organizer response.
 
 ## Contents
 
@@ -78,7 +80,7 @@ The current lab focuses on hourly PM2.5 values in µg/m³. The selected track is
 - An hourly bar chart using the landing page’s green bars and amber hatched gaps, driven by checker-normalized in-window observations. The browser independently parses quoted CSV fields and UTC timestamps and checks the server evidence before rendering a committable result. Zero readings stay visible at the baseline; negative values extend below zero in red. Missing hours remain distinct from measurements.
 - An hourly timeline, missing-hour evidence, completeness, deterministic verdicts, and evidence hashes.
 - A two-state browser demonstration comparing a gapped file with a complete file for the same window.
-- An injected EVM wallet flow for Ethereum Sepolia, transaction explorer links, and an evidence receipt view.
+- An injected EVM wallet flow and optional MetaMask mobile/QR pairing for Ethereum Sepolia, separate connection/disconnection controls, transaction explorer links, and an evidence receipt view.
 - A resource footer with source attribution, documentation, independent verification links, last-known checker connectivity, and proof limits.
 
 The default URL opens the landing page. `?view=lab` opens the inspection lab directly; `?view=lab#source`, `#inspect`, `#commit`, and `#witness` link to its sections. In-app navigation preserves the selected file and inspection results, supports browser back and forward, and does not replay the launch splash. These query routes work with static hosting without server rewrite rules.

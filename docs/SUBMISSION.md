@@ -26,6 +26,12 @@ The Verify page now separates the evidence for completeness, public testnet publ
 
 Pilot instructions and a participant invitation are in PILOT_INVITATION.md. There are **no independent measurements yet**, and external reviewers must voluntarily share their local exports.
 
+## Mobile publishing and release checks
+
+The Publish page now supports injected browser wallets and on-demand MetaMask mobile/QR pairing. Connection and publication are separate controls, with disconnect, cancellation, Sepolia enforcement and retained evidence. Independent inspection and verification remain wallet-free. See MOBILE_WALLET.md for the real-phone acceptance check and verification limits.
+
+RELEASE_VALIDATION.md records the October 18 regression, contract, build and fresh public RPC checks. Production shared quota activation is still pending protected environment access. scripts/check_release.py checks the actual deployment, all source fixture responses, source corpus and explicit external submission gaps.
+
 ## Ready and remaining
 
 - Public code, documentation, deployed lab, frozen fixtures, and independent verification are provided through README.

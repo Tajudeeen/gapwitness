@@ -22,7 +22,7 @@ export function WitnessPanel({result,walletAddress,txHash,txPublisher,commitCrea
               {txHash && (
                 <p className="chain-success">
                   committed · <a href={explorerTransactionUrl(txHash)} target="_blank" rel="noreferrer">{txHash}</a>
-                  {walletAddress && <> · <a href={explorerAddressUrl(walletAddress)} target="_blank" rel="noreferrer">wallet</a></>}
+                  {txPublisher && <> · <a href={explorerAddressUrl(txPublisher)} target="_blank" rel="noreferrer">publisher</a></>}
                 </p>
               )}
               {conflict && (

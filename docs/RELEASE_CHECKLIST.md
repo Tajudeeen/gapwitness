@@ -6,6 +6,8 @@ Official rules: https://ieee-climatechain-hack.devpost.com/rules
 
 **Deadline:** October 25, 2026, 14:00 UTC / 15:00 WAT (17:00 MSK). Submit earlier in the allowed window. The rules page also contains inconsistent wording about when submissions open; confirm the active Devpost submission form and organizer updates before submitting.
 
+Latest engineering evidence: [October 18 release validation](RELEASE_VALIDATION.md). External submission evidence is recorded separately in [submission-links.json](submission-links.json).
+
 ## Required links
 
 | Asset | Link | State |
@@ -30,7 +32,7 @@ Official rules: https://ieee-climatechain-hack.devpost.com/rules
 - [ ] Load File B and confirm 24/24 observations and INTACT.
 - [ ] On Verify, choose the published File A example and perform **fresh** Sepolia verification. Check the runtime hash, publisher, chain record, mined transaction and event. Do not pass on cached metadata alone.
 - [ ] Check mobile layout, smooth navigation, keyboard focus and reduced-motion behavior.
-- [ ] Run the repository's checker, contract, web, and browser regression suites. Record final results and commit SHA; do not call unrun tests passed.
+- [x] Run the repository's checker, contract, web, and browser regression suites. October 18 results are retained in RELEASE_VALIDATION.md. Re-run checks if implementation changes.
 - [ ] Check public deployment after the latest frontend commit, and confirm the checker health and status endpoints from a real browser. A source commit alone does not prove Vercel has deployed it.
 - [ ] Check there are no committed keys, .env files, unlicensed third-party images, private pilot records or generated build artifacts.
 - [ ] Fill in the video URL and final project URL. Copy the concise, accurate product description from docs/SUBMISSION.md.
