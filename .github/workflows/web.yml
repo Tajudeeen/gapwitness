@@ -27,6 +27,7 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,7 +41,16 @@ jobs:
       - run: pip install -r checker/requirements.txt
       - run: npm ci
         working-directory: web
-      - run: npx playwright install --with-deps chromium
+      - name: Select installed Chrome or install Playwright Chromium
+        timeout-minutes: 5
+        run: |
+          chrome_path="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          if [ -n "$chrome_path" ]; then
+            echo "PLAYWRIGHT_CHROMIUM_EXECUTABLE=$chrome_path" >> "$GITHUB_ENV"
+            "$chrome_path" --version
+          else
+            npx playwright install --with-deps chromium
+          fi
         working-directory: web
       - run: npm run test:browser
         working-directory: web
