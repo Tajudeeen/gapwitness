@@ -37,9 +37,6 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import {existsSync,readFileSync} from 'node:fs';
-          import {execFileSync} from 'node:child_process';
-          const vite=JSON.parse(execFileSync('npm',['view','vite@7.3.7','--json'],{encoding:'utf8'}));
-          console.log('VITE_PATCH_METADATA '+JSON.stringify({version:vite.version,dist:vite.dist,dependencies:vite.dependencies,optionalDependencies:vite.optionalDependencies,engines:vite.engines,peerDependencies:vite.peerDependencies,peerDependenciesMeta:vite.peerDependenciesMeta}));
           if (existsSync('npm-audit.json')) {
             const report=JSON.parse(readFileSync('npm-audit.json','utf8'));
             for (const [name,record] of Object.entries(report.vulnerabilities??{})) {

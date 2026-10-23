@@ -37,3 +37,7 @@ The same dataset is still repeated. Counterbalance order and disclose learning e
 ## External verification remains separate
 
 No independent reviewers, phone-wallet approvals, station signatures or production shared-quota credentials are created by these changes. Follow PILOT.md, MOBILE_WALLET.md and OPERATIONS.md for those checks. The user's confirmed submission is distinct from repository fields whose public receipt/video URLs have not yet been recorded.
+
+## Dependency maintenance
+
+The existing npm audit identified the pinned Vite 7.3.6 as affected. This branch pins Vite 7.3.7 and its registry integrity in the lockfile, with no dependency-graph or major-version change. CI still audits both development and production dependencies. Audit failures now print the affected package, advisory links and available fix instead of requiring a separate artifact download.
