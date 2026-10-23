@@ -13,7 +13,7 @@ const offset=/(Z|[+-]\d{2}:?\d{2})$/;
 export function sourceCsv(bytes:Uint8Array) {
   if(!bytes.length||bytes.length>1_000_000)throw new Error('Source CSV must contain 1–1,000,000 bytes.');
   const text=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
-  const parsed=Papa.parse<string[]>(text,{skipEmptyLines:'greedy'});
+  const parsed=Papa.parse<string[]>(text,{skipEmptyLines:true});
   if(parsed.errors.length||parsed.data.length<2)throw new Error('Choose a UTF-8 CSV with a header and observations.');
   const [headers,...rows]=parsed.data;
   if(headers.length>128)throw new Error('Choose a CSV with at most 128 source columns.');

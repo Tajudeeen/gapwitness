@@ -32,6 +32,19 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Audit locked production and development dependencies
         run: npm audit --audit-level=high --json > npm-audit.json
+      - name: Explain dependency audit failures
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import {existsSync,readFileSync} from 'node:fs';
+          if (existsSync('npm-audit.json')) {
+            const report=JSON.parse(readFileSync('npm-audit.json','utf8'));
+            for (const [name,record] of Object.entries(report.vulnerabilities??{})) {
+              console.log(JSON.stringify({name,severity:record.severity,range:record.range,fixAvailable:record.fixAvailable,
+                advisories:record.via.filter(item=>typeof item==='object').map(item=>({title:item.title,url:item.url,range:item.range}))}));
+            }
+          }
+          NODE
       - uses: actions/upload-artifact@v4
         if: always()
         with:

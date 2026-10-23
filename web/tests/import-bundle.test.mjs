@@ -34,6 +34,7 @@ test('normalization rejects ambiguous timezones, duplicate UTC hours, missing me
     ['local_time,pm\n2026-02-30T08:00:00,1\n',mapping],
   ])assert.throws(()=>normalizeCsv(encoder.encode(csv),'source.csv',settings));
   assert.throws(()=>sourceCsv(new Uint8Array(1_000_001)),/1,000,000/);
+  assert.throws(()=>normalizeCsv(encoder.encode('local_time,pm\n2026-09-19T08:00:00,1\n, \n'),'source.csv',mapping));
 });
 test('UTC and per-row offsets require a declared interpretation and reproduce canonical hours',()=>{
   const bytes=encoder.encode('when,reading\n2026-09-19T07:00:00,1\n');
