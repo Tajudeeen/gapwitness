@@ -36,9 +36,9 @@ export function CsvImportAssistant({disabled,onPrepared}:{disabled:boolean;onPre
     <p>Preview the conversion locally. Only the normalized timestamp/value file is sent for inspection. The original stays available for your evidence bundle.</p>
     <label>Source CSV to map<input disabled={disabled||loading} type="file" accept=".csv,text/csv" onChange={e=>void select(e.target.files?.[0]??null)}/></label>
     {bytes&&<fieldset disabled={disabled||loading}><legend>Confirm the source format</legend>
-      <label>Timestamp column<select value={timestampColumn} onChange={e=>{invalidate();setTimestampColumn(e.target.value);}}>
+      <label>Timestamp column<select aria-label="Timestamp column" value={timestampColumn} onChange={e=>{invalidate();setTimestampColumn(e.target.value);}}>
         <option value="">Choose column</option>{headers.map(h=><option key={h} value={h}>{h}</option>)}</select></label>
-      <label>Measurement column<select value={valueColumn} onChange={e=>{invalidate();setValueColumn(e.target.value);}}>
+      <label>Measurement column<select aria-label="Measurement column" value={valueColumn} onChange={e=>{invalidate();setValueColumn(e.target.value);}}>
         <option value="">Choose column</option>{headers.map(h=><option key={h} value={h}>{h}</option>)}</select></label>
       <label>Source timestamp timezone<select value={timezone} onChange={e=>{invalidate();setTimezone(e.target.value);}}>
         <option value="embedded">Use explicit offsets from the file</option><option value="Z">No offsets in file, interpret as UTC</option>
