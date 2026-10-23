@@ -88,5 +88,7 @@ test('resaving a legacy browser record updates it without consuming a second lib
   await page.reload();await page.getByRole('button',{name:'Open and recheck',exact:true}).click();
   await expect(page).toHaveURL(/\/review$/);await nav();
   await page.getByRole('button',{name:'Save current inspection in this browser',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('Saved in this browser.');
+  await expect(page.getByRole('button',{name:'Save current inspection in this browser',exact:true})).toBeEnabled();
   await expect(page.getByRole('button',{name:'Open and recheck',exact:true})).toHaveCount(1);
 });
