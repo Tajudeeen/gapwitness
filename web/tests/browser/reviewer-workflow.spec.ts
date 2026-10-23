@@ -68,3 +68,25 @@ test('the import assistant fits a narrow phone viewport',async({page})=>{
   await page.getByRole('button',{name:'Preview normalized CSV'}).click();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
+
+test('resaving a legacy browser record updates it without consuming a second library slot',async({page})=>{
+  await page.goto('/inspect');await expect(page.getByText('checker ready',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'load File A · 7 deliberate gaps',exact:true}).click();
+  await expect(page.locator('.verdict')).toContainText('GAPPED');
+  const nav=()=>page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('link',{name:'Evidence',exact:true}).click();
+  await nav();await page.getByRole('button',{name:'Save current inspection in this browser',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Open and recheck',exact:true})).toHaveCount(1);
+  await page.evaluate(()=>new Promise<void>((resolve,reject)=>{
+    const request=indexedDB.open('gapwitness-evidence-v1',1);
+    request.onsuccess=()=>{
+      const db=request.result,tx=db.transaction('records','readwrite'),store=tx.objectStore('records'),all=store.getAll();
+      all.onsuccess=()=>{const row=all.result[0],e=row.package.evidence;
+        store.delete(row.id);row.id=JSON.stringify([e.stationId,e.windowStart,e.windowEnd,e.seriesHash,e.policyHash,row.package.chain?.publisher??null]);store.put(row);};
+      tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(new Error('Could not seed legacy record.'));
+    };
+  }));
+  await page.reload();await page.getByRole('button',{name:'Open and recheck',exact:true}).click();
+  await expect(page).toHaveURL(/\/review$/);await nav();
+  await page.getByRole('button',{name:'Save current inspection in this browser',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Open and recheck',exact:true})).toHaveCount(1);
+});
