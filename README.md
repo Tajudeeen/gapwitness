@@ -36,6 +36,10 @@ The frozen File A fixture deliberately removes seven hours from a complete AirNo
 
 The separate [retained corpus](docs/REAL_CORPUS.md) contains 13 unedited normalized windows from four stations and two providers, including naturally unavailable readings. [Evaluation](docs/EVALUATION.md) covers 601 controlled cases. Independent reviewer time savings and adoption haven't been established. The [pilot](docs/PILOT.md) collects actual paired observations without prefilled results.
 
+## Next-version reviewer workflow
+
+The [reviewer workflow](docs/REVIEWER_WORKFLOW.md) adds an explicit CSV column/timezone/unit preview, portable review bundles that retain original source bytes and replay normalization, and pilot summaries that include slower and incorrect attempts. These additions do not establish independent adoption or change the submitted contract evidence.
+
 ## Run locally
 
 Use Python 3.12, Node.js 22 or newer, and npm. Foundry is needed for contract work. Start from the repository root.

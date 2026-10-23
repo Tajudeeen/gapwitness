@@ -1,0 +1,94 @@
+import {test,expect} from '@playwright/test';
+import {readFileSync} from 'node:fs';
+test('mapped imports require confirmation and carry original source through download, restore and refresh',async({page})=>{
+  await page.goto('/inspect');await expect(page.getByText('checker ready',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Map a different CSV format'}).click();
+  const source=Buffer.from('\ufefflocal_time,pm,notes\r\n2026-09-19T08:00:00,0.012,retained\r\n2026-09-19T10:00:00,0.003,retained\r\n');
+  await page.getByLabel('Source CSV to map').setInputFiles({name:'source.csv',mimeType:'text/csv',buffer:source});
+  await page.getByLabel('Timestamp column',{exact:true}).selectOption('local_time');
+  await page.getByLabel('Measurement column',{exact:true}).selectOption('pm');
+  await page.getByLabel('Source timestamp timezone').selectOption('fixed');
+  await page.getByLabel('Source PM2.5 units').selectOption('mg/m3');
+  await page.getByRole('button',{name:'Preview normalized CSV'}).click();
+  await expect(page.getByLabel('Normalized CSV preview')).toContainText('2026-09-19T07:00:00Z,12');
+  await expect(page.getByRole('button',{name:'Inspect this normalized CSV'})).toBeDisabled();
+  await page.getByRole('checkbox',{name:/I checked the mapping/}).check();
+  await page.getByRole('button',{name:'Inspect this normalized CSV'}).click();
+  await expect(page.locator('.verdict')).toContainText('GAPPED');
+  await expect(page.locator('.message')).toContainText('2/24');
+  await page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('link',{name:'Evidence',exact:true}).click();
+  const download=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Download complete review bundle'}).click();
+  const artifact=await download,path=await artifact.path();expect(artifact.suggestedFilename()).toBe('gapwitness-review.json');
+  const bundle=JSON.parse(readFileSync(path!,'utf8'));
+  expect(Buffer.from(bundle.originalCsv.data,'base64')).toEqual(source);
+  expect(bundle.evidence.normalization.mapping.timezone).toBe('+01:00');
+  await page.reload();
+  await page.getByLabel('Open review bundle').setInputFiles(path!);
+  await expect(page).toHaveURL(/\/review$/);
+  await expect(page.getByRole('heading',{name:'Station 2178 · GAPPED'})).toBeVisible();
+  await page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('link',{name:'Evidence',exact:true}).click();
+  await page.getByRole('button',{name:'Save current inspection in this browser',exact:true}).click();
+  await expect(page.getByRole('region',{name:'Saved evidence records'})).toContainText('inspected.csv');
+  await page.reload();await page.getByRole('button',{name:'Open and recheck',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Station 2178 · GAPPED'})).toBeVisible();
+});
+test('editing a mapping invalidates its preview and oversized bundle input fails locally',async({page})=>{
+  await page.goto('/inspect');await page.getByRole('button',{name:'Map a different CSV format'}).click();
+  await page.getByLabel('Source CSV to map').setInputFiles({name:'source.csv',mimeType:'text/csv',buffer:Buffer.from('timestamp,value\n2026-09-19T07:00:00Z,1\n')});
+  await page.getByLabel('Source PM2.5 units').selectOption('ug/m3');
+  await page.getByRole('button',{name:'Preview normalized CSV'}).click();
+  await expect(page.getByLabel('Normalized CSV preview')).toBeVisible();
+  await page.getByLabel('Source PM2.5 units').selectOption('mg/m3');
+  await expect(page.getByLabel('Normalized CSV preview')).toHaveCount(0);
+  await page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('link',{name:'Evidence',exact:true}).click();
+  await page.getByLabel('Open review bundle').setInputFiles({name:'large.json',mimeType:'application/json',buffer:Buffer.alloc(5_000_001,32)});
+  await expect(page.getByRole('status')).toContainText('5 MB');
+});
+test('pilot task access follows the running method and does not show fabricated summary data',async({page})=>{
+  await page.goto('/pilot');
+  await expect(page.getByRole('button',{name:'Download task CSV'})).toBeDisabled();
+  await expect(page.getByRole('region',{name:'Observed pilot summary'})).toHaveCount(0);
+  await page.getByLabel('Anonymous participant code').fill('TEST_ONLY');await page.getByLabel('Your normal review method').fill('spreadsheet');
+  await page.getByRole('checkbox').check();await page.getByRole('button',{name:'Start normal method timer'}).click();
+  await expect(page.getByRole('button',{name:'Download task CSV'})).toBeEnabled();
+  await expect(page.getByRole('link',{name:/Open task in GapWitness/})).toHaveCount(0);
+  await page.getByRole('button',{name:'Submit answers and stop timer'}).click();
+  await page.getByRole('button',{name:'Start GapWitness timer'}).click();
+  await expect(page.getByRole('link',{name:/Open task in GapWitness/})).toBeVisible();
+  await page.getByRole('button',{name:'Submit answers and stop timer'}).click();
+  await page.getByRole('button',{name:'Save paired task locally'}).click();
+  await expect(page.getByRole('region',{name:'Observed pilot summary'})).toContainText('Recorded outcomes');
+});
+test('the import assistant fits a narrow phone viewport',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/inspect');await page.getByRole('button',{name:'Map a different CSV format'}).click();
+  await page.getByLabel('Source CSV to map').setInputFiles({name:'source.csv',mimeType:'text/csv',buffer:Buffer.from('timestamp,value\n2026-09-19T07:00:00Z,1\n')});
+  await page.getByLabel('Source PM2.5 units').selectOption('ug/m3');
+  await page.getByRole('button',{name:'Preview normalized CSV'}).click();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test('resaving a legacy browser record updates it without consuming a second library slot',async({page})=>{
+  await page.goto('/inspect');await expect(page.getByText('checker ready',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'load File A · 7 deliberate gaps',exact:true}).click();
+  await expect(page.locator('.verdict')).toContainText('GAPPED');
+  const nav=()=>page.getByRole('navigation',{name:'Workspace navigation'}).getByRole('link',{name:'Evidence',exact:true}).click();
+  await nav();await page.getByRole('button',{name:'Save current inspection in this browser',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Open and recheck',exact:true})).toHaveCount(1);
+  await page.evaluate(()=>new Promise<void>((resolve,reject)=>{
+    const request=indexedDB.open('gapwitness-evidence-v1',1);
+    request.onsuccess=()=>{
+      const db=request.result,tx=db.transaction('records','readwrite'),store=tx.objectStore('records'),all=store.getAll();
+      all.onsuccess=()=>{const row=all.result[0],e=row.package.evidence;
+        store.delete(row.id);row.id=JSON.stringify([e.stationId,e.windowStart,e.windowEnd,e.seriesHash,e.policyHash,row.package.chain?.publisher??null]);store.put(row);};
+      tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>reject(new Error('Could not seed legacy record.'));
+    };
+  }));
+  await page.reload();await page.getByRole('button',{name:'Open and recheck',exact:true}).click();
+  await expect(page).toHaveURL(/\/review$/);await nav();
+  await page.getByRole('button',{name:'Save current inspection in this browser',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('Saved in this browser.');
+  await expect(page.getByRole('button',{name:'Save current inspection in this browser',exact:true})).toBeEnabled();
+  await expect(page.getByRole('button',{name:'Open and recheck',exact:true})).toHaveCount(1);
+});

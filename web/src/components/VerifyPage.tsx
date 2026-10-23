@@ -14,8 +14,9 @@ const PUBLISHED:EvidencePackage={format:'gapwitness/evidence/v1',source:'publish
     transactionHash:publishedProof.firstReceipt.transactionHash,commitmentKey:publishedProof.commitmentKey},
   chainVerification:'recorded proof, no fresh RPC check',limits:publishedProof.limits};
 
-export function VerifyPage({current,csv}:{current:EvidencePackage|null;csv:File|null}) {
+export function VerifyPage({current,csv,originalCsv}:{current:EvidencePackage|null;csv:File|null;originalCsv:File|null}) {
   const [mode,setMode]=useState<'import'|'current'|'published'>('published');
+  const [sourceFile,setSourceFile]=useState<File|null>(null);
   const [jsonFile,setJsonFile]=useState<File|null>(null),[csvFile,setCsvFile]=useState<File|null>(null);
   const [publisher,setPublisher]=useState(PUBLISHED.chain!.publisher),[transaction,setTransaction]=useState(PUBLISHED.chain!.transactionHash);
   const [localMatch,setLocalMatch]=useState(false),[proof,setProof]=useState<ProofResult|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
@@ -27,7 +28,7 @@ export function VerifyPage({current,csv}:{current:EvidencePackage|null;csv:File|
     if(mode==='current') {clear();setPublisher(current?.chain?.publisher??'');setTransaction(current?.chain?.transactionHash??'');}
   },[mode,current?.evidence.seriesHash,current?.evidence.gapHash,current?.evidence.policyHash,
     current?.evidence.stationId,current?.evidence.windowStart,current?.evidence.windowEnd,
-    current?.chain?.transactionHash,current?.chain?.publisher,csv]);
+    current?.chain?.transactionHash,current?.chain?.publisher,csv,originalCsv]);
   function choose(next:typeof mode){clear();setMode(next);const bundle=next==='published'?PUBLISHED:next==='current'?current:null;
     setPublisher(bundle?.chain?.publisher??'');setTransaction(bundle?.chain?.transactionHash??'');}
   async function verify(){
@@ -42,7 +43,9 @@ export function VerifyPage({current,csv}:{current:EvidencePackage|null;csv:File|
         if(!jsonFile||jsonFile.size>2_000_000)throw new Error('Choose an evidence JSON of at most 2 MB.');
         raw=JSON.parse(await jsonFile.text());
       }
-      const checked=checkPackage(raw,new Uint8Array(await file.arrayBuffer()));
+      const source=mode==='current'?originalCsv:mode==='import'?sourceFile:null;
+      if(source&&source.size>1_000_000)throw new Error('Pre-normalization source exceeds 1 MB.');
+      const checked=checkPackage(raw,new Uint8Array(await file.arrayBuffer()),source?new Uint8Array(await source.arrayBuffer()):undefined);
       if(!isCurrent())return;setLocalMatch(true);setVerifiedStation(checked.evidence.stationId);
       const signal=AbortSignal.any([controller.signal,AbortSignal.timeout(45000)]);
       const result=await verifyChain(checked,publisher.trim(),rpcReader(signal),transaction.trim()||undefined);
@@ -58,6 +61,7 @@ export function VerifyPage({current,csv}:{current:EvidencePackage|null;csv:File|
       {mode==='published'&&<p>This frozen OpenAQ derivative has seven deliberately removed hours. Its public record includes a mined File A transaction. The published File B rejection is an eth_call simulation, not a mined failed transaction.</p>}
       {mode==='current'&&<p>Your current inspection is checked again from its retained bytes. A package chain claim is not a fresh chain check.</p>}
       {mode==='import'&&<div className="page-fields"><label>Original CSV<input type="file" accept=".csv,text/csv" onChange={e=>{clear();setCsvFile(e.target.files?.[0]??null);}}/></label>
+        <label>Source CSV before mapping, if applicable<input type="file" accept=".csv,text/csv" onChange={e=>{clear();setSourceFile(e.target.files?.[0]??null);}}/></label>
         <label>Evidence JSON<input type="file" accept=".json,application/json" onChange={e=>{clear();setJsonFile(e.target.files?.[0]??null);}}/></label></div>}
       <div className="page-fields"><label>Publisher wallet address<input value={publisher} onChange={e=>{clear();setPublisher(e.target.value);}} autoComplete="off"/></label>
         <label>Transaction hash, if available<input value={transaction} onChange={e=>{clear();setTransaction(e.target.value);}} autoComplete="off"/></label></div>
