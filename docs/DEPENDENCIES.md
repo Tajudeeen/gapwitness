@@ -34,3 +34,22 @@ GitHub-hosted Dependabot alerts, security-update settings, private reporting, an
 - [Dependabot configuration](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-version-updates)
 - [CodeQL Action](https://github.com/github/codeql-action)
 - [pip-audit action](https://github.com/pypa/gh-action-pip-audit)
+
+## Combined dependency integration
+
+The remaining update proposals are validated together because the React plugin 6 requires Vite 8. Installing that plugin with the previous Vite 7 lockfile fails peer resolution. The integration retains all eight PR heads in its merge ancestry and regenerates the combined lockfile without forcing or suppressing peer checks.
+
+| PR | Updated component | Integrated version |
+| --- | --- | --- |
+| #51 | FastAPI | 0.143.2 |
+| #52 | PyCryptodome | 4.0.0 |
+| #53 | React, React DOM, Playwright | 19.3.1, 19.3.1, 1.64.1 |
+| #54 | TypeScript | 7.0.2 |
+| #55 | Vite | 8.3.5 |
+| #56 | Vite React plugin | 6.1.2 |
+| #57 | GitHub Actions checkout | v7 |
+| #58 | GitHub Actions setup-python | v7 |
+
+Local combined checks passed 98 Python tests, 35 JavaScript tests, the TypeScript/production build and an npm audit with zero known vulnerabilities. Browser verification, Python dependency scanning, CodeQL, contract checks and the production-image fixture check are required on the integration PR before merging. Local browser installation was unavailable, so browser results must come from the CI run rather than an assumed local pass.
+
+The checker image uses Python 3.14 from an earlier merge. CI now builds that image and runs its baked checker against the complete retained File A evidence, including exact hashes. This exercises the new cryptography dependency in the actual container runtime, separately from the Python 3.12 test environment. Application source, CSV bytes, contract source and recorded receipts are unchanged by the dependency integration.

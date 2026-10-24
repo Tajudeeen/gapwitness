@@ -42,7 +42,7 @@ The [reviewer workflow](docs/REVIEWER_WORKFLOW.md) adds an explicit CSV column/t
 
 ## Run locally
 
-Use Python 3.12, Node.js 22 or newer, and npm. Foundry is needed for contract work. Start from the repository root.
+Use Python 3.12, Node.js 22.12 or newer, and npm. Foundry is needed for contract work. Start from the repository root.
 
 In the first terminal:
 

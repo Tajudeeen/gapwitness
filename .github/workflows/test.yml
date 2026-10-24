@@ -12,8 +12,8 @@ jobs:
   deployment-record:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: python scripts/test_record_sepolia_deployment.py
@@ -24,8 +24,8 @@ jobs:
       run:
         working-directory: checker
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -38,7 +38,14 @@ jobs:
       - run: python -m pytest -q ../scripts/test_check_release.py ../scripts/test_check_submission.py
       - run: python demo/run_demo.py
       - name: Build checker container
-        run: docker build -f Dockerfile ..
+        run: docker build -f Dockerfile -t gapwitness-checker-ci ..
+      - name: Reproduce the retained witness inside the built container
+        run: |
+          docker run --rm -e PYTHONPATH=/app \
+            -v "$PWD/../scripts/check_container_fixture.py:/fixture-check.py:ro" \
+            -v "$PWD/demo/file_a.csv:/fixture.csv:ro" \
+            -v "$PWD/../contracts/deployments/fixture-proof-v2.json:/expected.json:ro" \
+            gapwitness-checker-ci python /fixture-check.py /fixture.csv /expected.json
 
   contract:
     runs-on: ubuntu-latest
@@ -46,7 +53,7 @@ jobs:
       run:
         working-directory: contracts
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: foundry-rs/foundry-toolchain@v1
       - run: forge --version
       - run: forge install https://github.com/foundry-rs/forge-std --no-git
