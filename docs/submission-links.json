@@ -2,10 +2,27 @@
   "format": "gapwitness/submission-links/v1",
   "liveUrl": "https://gapwitness-web.vercel.app",
   "repositoryUrl": "https://github.com/Tajudeeen/gapwitness",
-  "videoUrl": null,
-  "devpostProjectUrl": null,
+  "videoUrl": "https://youtu.be/asl9kkF1EHo",
+  "devpostProjectUrl": "https://devpost.com/software/gapwitness",
   "organizerEligibilityConfirmed": false,
   "independentPilotCompleted": false,
   "operatorAuthorityEstablished": false,
-  "notes": "External evidence stays pending until actually obtained. Pilot and operator authority are optional evidence, not invented submission requirements."
+  "notes": "Public Devpost page lists the IEEE ClimateChain Global Hackathon under Submitted to and embeds the linked YouTube video. Exact submission time and organizer acceptance are not inferred. The public video is 153 seconds, below the rules' 180-second minimum. The separate retained 228.8-second walkthrough is not this upload. Overview/rules eligibility wording still conflicts, with no organizer reply recorded. Pilot and operator authority remain unestablished.",
+  "videoDurationSeconds": 153,
+  "videoPlaybackChecked": false,
+  "videoMetadata": {
+    "source": "vidIQ public YouTube video lookup",
+    "checkedOn": "2026-10-24",
+    "videoId": "asl9kkF1EHo",
+    "title": "GapWitness Demo | Find Missing Hours in Climate Data",
+    "channel": "Deeen_Codes",
+    "publishedAt": "2026-10-18T13:36:05Z",
+    "durationIso8601": "PT2M33S",
+    "limitation": "Metadata lookup does not establish signed-out playback or minimum-duration compliance."
+  },
+  "submissionStatus": "submitted-publicly-listed",
+  "submissionEvidenceUrl": "https://devpost.com/software/gapwitness",
+  "submissionCheckedOn": "2026-10-24",
+  "submittedAt": null,
+  "applicationReferenceCommit": "2cc309b84b07624abbcb7251e420e8cc0f738d36"
 }

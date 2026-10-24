@@ -2,6 +2,12 @@
 
 Track: Climate Data & Environmental Monitoring.
 
+[Public entry](https://devpost.com/software/gapwitness) · [Public demo](https://youtu.be/asl9kkF1EHo) · [Live app](https://gapwitness-web.vercel.app)
+
+The public Devpost page lists GapWitness as submitted to IEEE ClimateChain. Checked October 24, 2026. The public demo is 153 seconds, below the rules' 180-second minimum. Its duration and the separate retained 3:49 export must not be conflated. See [current submission status](SUBMISSION_STATUS.md) and the [judge guide](JUDGE_GUIDE.md).
+
+GapWitness uses deterministic validation, browser recomputation, and blockchain commitments. No AI model or inference is implemented or claimed. The current technical-execution rubric names blockchain, smart contracts, AI, data platforms, and environmental integration as examples; it does not separately mandate an AI component. Eligibility wording still conflicts between the overview and detailed rules.
+
 GapWitness helps environmental reviewers detect missing observations before accepting a report. It checks an hourly PM2.5 CSV against an independently declared UTC window, identifies missing timestamps and impossible negative measurements, and preserves independently reproducible evidence. The signing publisher can optionally commit compact evidence on Ethereum Sepolia.
 
 Target users are research groups, community air-quality projects, environmental reviewers, and data publishers. Adoption begins with existing station CSV exports and their reporting schedules. Browser inspection requires no wallet. Evidence export and local batch inspection fit into existing review records without requiring every observation to be stored on-chain.
@@ -32,19 +38,20 @@ The Publish page now supports injected browser wallets and on-demand MetaMask mo
 
 RELEASE_VALIDATION.md records the October 18 regression, contract, build and fresh public RPC checks. Production shared quota activation is still pending protected environment access. scripts/check_release.py checks the actual deployment, all source fixture responses, source corpus and explicit external submission gaps.
 
-## Ready and remaining
+## Current review and remaining evidence
 
-- Public code, documentation, deployed lab, frozen fixtures, and independent verification are provided through README.
-- The V2 publisher-scoped deployment and its source-backed proof are integrated. Its own namespace prevents another wallet from occupying the publisher’s station/window.
-- An updated captioned 3 minute 49 second walkthrough of the actual October 18 deployed app is complete and delivered as GapWitness-Demo.mp4. It shows the calculated impact, retained real-source gaps, evidence storage, mobile publishing controls and a fresh Sepolia check. docs/recorded-walkthrough.json retains its hash, duration and checked block. The prior recording metadata is preserved as docs/recorded-walkthrough-2026-10-14.json. Publish the delivered video through an accepted host and add the public URL. docs/VIDEO_UPLOAD.md provides the upload handoff. No public video URL or final Devpost submission is recorded yet.
-- Describe environmental impact as improved reviewability and transparency. No environmental outcome or adoption metric has been measured.
-- Organizer eligibility wording conflicts between the students-only overview and the rules allowing independent developers. Obtain confirmation before assuming eligibility as a graduate.
-- The official schedule and organizer update indicate submissions opened October 5 and close October 25 at 14:00 UTC, or 15:00 in Nigeria. An older rule sentence gives a contradictory opening time.
-- Sourcify verified an exact creation and runtime bytecode match for V2 on October 14. The retained result is contracts/deployments/sourcify-v2.json. Etherscan verification remains separate; its automatic relay hit the provider's daily submission limit.
+- The public Devpost entry and YouTube URL are now recorded in [submission-links.json](submission-links.json). Devpost visibly associates the project with the event; this does not prove organizer acceptance or prize eligibility.
+- The public upload is 2:33. The retained captioned 3:49 export is described in [recorded-walkthrough.json](recorded-walkthrough.json), but that metadata does not prove it was uploaded. See [video handoff](VIDEO_UPLOAD.md).
+- The live application identified clean commit `2cc309b84b07624abbcb7251e420e8cc0f738d36` when checked on October 24. Its `web/src`, `checker/app`, and `contracts/src` trees match the October 18 walkthrough implementation commit `7c6c37066bccd5fed872b54be4d3db89db1a3b45`. Dependency and documentation changes exist, so these are not identical whole-repository releases.
+- PR #61 contains newer reviewer-workflow improvements. It is unmerged and must not be presented as part of the submitted live release. The eleven Dependabot PRs are proposed maintenance, not eleven missing product features. [Current status](SUBMISSION_STATUS.md) records the review order.
+- The detailed rules allow independent developers and individual submissions. The overview still says students only. An organizer clarification remains unrecorded. Submission itself does not resolve this conflict.
+- The current schedule gives October 25, 2026 at 14:00 UTC / 15:00 WAT. Use the absolute date, not an aging countdown. The current rules no longer contain the previously noted opening-time sentence.
+- Sourcify's exact V2 creation/runtime match is retained. Etherscan's old relay rate limit is historical. The October 24 source-status lookup could not establish a current Etherscan result: the API requires a key and the explorer page returned HTTP 403.
+- Human time savings, adoption, operator authority, and environmental outcomes remain unestablished. The pilot and review tools are ready to collect evidence, rather than substitute for it.
 
-Official pages checked October 14, 2026:
+Official sources checked October 24, 2026:
 
+- https://devpost.com/software/gapwitness
 - https://ieee-climatechain-hack.devpost.com/
 - https://ieee-climatechain-hack.devpost.com/rules
 - https://ieee-climatechain-hack.devpost.com/details/dates
-- https://ieee-climatechain-hack.devpost.com/updates

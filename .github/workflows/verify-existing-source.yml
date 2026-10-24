@@ -1,0 +1,89 @@
+name: verify-existing-source
+
+on:
+  workflow_dispatch:
+  create:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gapwitness-source-verification
+  cancel-in-progress: false
+
+jobs:
+  etherscan:
+    if: github.actor == 'Tajudeeen' && (github.event_name == 'workflow_dispatch' || startsWith(github.ref_name, 'verify-source/'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: sepolia
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require the existing explorer credential
+        env:
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: test -n "$ETHERSCAN_API_KEY" || { echo 'ETHERSCAN_API_KEY is not configured in the sepolia environment or repository.'; exit 1; }
+      - name: Read and validate the pinned V2 deployment
+        id: deployment
+        run: |
+          python - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          record = json.loads(Path('contracts/deployments/sepolia-v2.json').read_text())
+          assert record['chainId'] == 11155111 and record['contract'] == 'GapWitnessV2'
+          assert re.fullmatch(r'0x[0-9a-fA-F]{40}', record['address'])
+          assert re.fullmatch(r'[0-9a-f]{40}', record['deploymentCommit'])
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('address=' + record['address'] + '\n')
+              output.write('source_commit=' + record['deploymentCommit'] + '\n')
+          PY
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Compile the exact deployment source
+        env:
+          SOURCE_COMMIT: ${{ steps.deployment.outputs.source_commit }}
+          ADDRESS: ${{ steps.deployment.outputs.address }}
+        run: |
+          git worktree add --detach /tmp/gapwitness-verify-source "$SOURCE_COMMIT"
+          cd /tmp/gapwitness-verify-source/contracts
+          forge install https://github.com/foundry-rs/forge-std --no-git
+          forge build
+          forge verify-contract "$ADDRESS" src/GapWitnessV2.sol:GapWitnessV2 \
+            --chain sepolia --compiler-version 0.8.24 --show-standard-json-input \
+            > "$GITHUB_WORKSPACE/verification-input.json"
+      - name: Verify source for the existing address
+        env:
+          ADDRESS: ${{ steps.deployment.outputs.address }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: |
+          cd /tmp/gapwitness-verify-source/contracts
+          forge verify-contract "$ADDRESS" src/GapWitnessV2.sol:GapWitnessV2 \
+            --chain sepolia --compiler-version 0.8.24 \
+            --etherscan-api-key "$ETHERSCAN_API_KEY" --watch
+      - name: Retain a successful provider result
+        env:
+          ADDRESS: ${{ steps.deployment.outputs.address }}
+          SOURCE_COMMIT: ${{ steps.deployment.outputs.source_commit }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          report = {'format': 'gapwitness/explorer-verification/v1', 'provider': 'Etherscan',
+                    'chainId': 11155111, 'address': os.environ['ADDRESS'],
+                    'deploymentCommit': os.environ['SOURCE_COMMIT'],
+                    'checkedAt': datetime.now(timezone.utc).isoformat(),
+                    'verificationCommandSucceeded': True,
+                    'workflowRun': os.environ['GITHUB_RUN_ID'], 'broadcastPerformed': False}
+          Path('etherscan-verification.json').write_text(json.dumps(report, indent=2) + '\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: existing-v2-source-verification
+          path: |
+            verification-input.json
+            etherscan-verification.json
+          if-no-files-found: warn
+          retention-days: 30

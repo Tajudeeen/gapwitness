@@ -14,6 +14,7 @@ Start with the [project README](../README.md). Commands in these documents run f
 | Configure quotas, monitor the checker, and assess scaling | [Operations](OPERATIONS.md), [adoption plan](ADOPTION.md) |
 | Collect actual reviewer observations | [Pilot](PILOT.md), [invitation](PILOT_INVITATION.md), [empty observation template](../data/pilot/observations-template.csv) |
 | Assess differentiation | [Related work](ORIGINALITY.md) |
+| Check the current submitted entry and judge path | [Current status](SUBMISSION_STATUS.md), [judge guide](JUDGE_GUIDE.md), [public Devpost entry](https://devpost.com/software/gapwitness) |
 | Prepare a submission and video | [Submission brief](SUBMISSION.md), [release checklist](RELEASE_CHECKLIST.md), [demo script](DEMO_SCRIPT.md), [video handoff](VIDEO_UPLOAD.md), [external link record](submission-links.json) |
 | Review open external evidence | [Proof requests](EXTERNAL_PROOF_REQUESTS.md), [organizer clarification](ORGANIZER_CLARIFICATION.md) |
 | Contribute changes | [Contributing](../CONTRIBUTING.md) |

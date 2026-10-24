@@ -1,34 +1,23 @@
-# Demo publishing handoff
+# Demo publication record and handoff
 
-Upload the refreshed `GapWitness-Demo.mp4` to the video host accepted by Devpost. Use public or unlisted playback, then check the link in a signed-out browser. Keep it between 3 and 5 minutes. Captions are burned into the delivered video. It contains a recording of the real deployed application, not a mock interface.
+The [published GapWitness demo](https://youtu.be/asl9kkF1EHo) is embedded on the [public Devpost entry](https://devpost.com/software/gapwitness). Public metadata checked October 24 reports 153 seconds, or 2:33. The [rules](https://ieee-climatechain-hack.devpost.com/rules) request a 3–5 minute demo, so the current upload does not meet the stated duration range.
 
-## Suggested title
+The retained `GapWitness-Demo.mp4` export is a different asset. [recorded-walkthrough.json](recorded-walkthrough.json) records its 228.8-second duration, SHA-256 and historical chain check. Those values must not be assigned to the published 2:33 video.
 
-GapWitness: Keep Missing Environmental Data Visible | ClimateChain Demo
+## Complete the duration requirement
 
-## Suggested description
+1. Recover the retained 3:49 export or record a new 3–5 minute walkthrough using [DEMO_SCRIPT.md](DEMO_SCRIPT.md). Check the actual file's duration, complete playback and claims before uploading. Historical recording metadata alone does not prove the file remains available.
+2. Publish the checked asset to an accepted video host with public or unlisted playback. Check signed-out playback, audio or captions, and the measured duration.
+3. Update the existing Devpost entry's video embed to that actual URL. Changing a repository URL does not change Devpost's embed or an existing YouTube upload.
+4. Update `videoUrl`, `videoDurationSeconds`, `videoMetadata` and `videoPlaybackChecked` in [submission-links.json](submission-links.json). Keep the shorter upload identifiable as a separate video.
+5. Run `python scripts/check_submission.py`. It checks recorded evidence and deliberately fails for the current short upload. The full deployed checker also uses this guard with `--require-submission`.
 
-A report can look complete after important hourly readings disappear. GapWitness compares an environmental CSV with a declared observation window, identifies the exact missing hours, and preserves evidence that another reviewer can reproduce.
+No new video upload or Devpost edit is performed by this repository cleanup. The public project's exact submission time, organizer acceptance and eligibility decision remain separate from URL discovery.
 
-This walkthrough shows a controlled seven-hour omission from a frozen OpenAQ/AirNow PM2.5 window, its effect on the reported arithmetic mean, a retained unedited dataset with naturally unavailable readings, local evidence storage, optional Sepolia publishing, and a fresh public testnet verification.
+## Presentation for the longer asset
 
-Live app: https://gapwitness-web.vercel.app
+Suggested title: GapWitness Demo | Find Missing Hours in Climate Data
 
-Source code and reproducibility: https://github.com/Tajudeeen/gapwitness
+Open with a reviewer receiving an incomplete environmental export. Show the seven deliberately missing hours, the resulting 8.87% arithmetic-mean difference, a real-source unavailable-reading example, retained evidence, and the optional Sepolia witness. End with who uses the workflow and the current limits.
 
-Track: Climate Data & Environmental Monitoring, IEEE ClimateChain Global Hackathon 2026.
-
-The Sepolia contract preserves submitted evidence and detects conflicts in the same publisher, station and observation window. It does not certify sensor accuracy, authenticate station ownership, or prove an environmental outcome. No independent pilot benefit is claimed. A new wallet transaction is not performed in this recording.
-
-## Suggested tags
-
-GapWitness, ClimateChain, environmental data, air quality, PM2.5, data integrity, OpenAQ, Ethereum Sepolia, blockchain, hackathon, Deeen Codes
-
-## Complete the submission record
-
-1. Put the actual playback URL in `docs/submission-links.json` as `videoUrl` and in RELEASE_CHECKLIST.md.
-2. Put the actual Devpost project URL in `devpostProjectUrl`. Confirm the final form was submitted, rather than inferring submission from a draft URL.
-3. Set `organizerEligibilityConfirmed` only after retaining an actual organizer reply resolving the conflicting eligibility wording.
-4. Run `python scripts/check_release.py --require-submission --output /tmp/gapwitness-submission-check.json`. This checks explicit records, not video duration/playback or the organizer reply itself.
-
-No video has been published to YouTube or Devpost by this repository. No organizer message has been sent by this release.
+Describe the implementation as deterministic data checking and reproducible blockchain evidence. Do not claim an AI model, operator authorization, measured reviewer time savings or downstream environmental impact. Show a fresh RPC result only when it actually succeeds. The [judge guide](JUDGE_GUIDE.md) gives an inspection path through the submitted implementation.

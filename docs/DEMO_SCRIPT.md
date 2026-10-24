@@ -1,6 +1,6 @@
 # GapWitness submission demo: 3 minutes 45 seconds
 
-The official rules require **3–5 minutes**. This is a narration plan. The refreshed 3:49 captioned walkthrough has been recorded and delivered, with metadata in recorded-walkthrough.json. It has not been published to an accepted public host. Record the currently deployed app only after the latest frontend passes checks. Use the real, retained fixtures and a **fresh** Sepolia verification result.
+The official rules require **3–5 minutes**. This is a narration plan. The refreshed 3:49 captioned walkthrough has been recorded and delivered, with metadata in recorded-walkthrough.json. This retained 3:49 export is separate from the [published 2:33 demo](https://youtu.be/asl9kkF1EHo). The public upload is shorter than the required minimum. See [current status](SUBMISSION_STATUS.md). Record the currently deployed app only after the latest frontend passes checks. Use the real, retained fixtures and a **fresh** Sepolia verification result.
 
 ## 00:00–00:25 | Home: the environmental problem
 Open https://gapwitness-web.vercel.app

@@ -10,7 +10,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlparse
+from check_submission import submission_gaps
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'checker'))
@@ -42,31 +42,13 @@ def inspect_fixture(base: str, name: str) -> dict:
     return {'httpStatus': status, 'verdict': actual['verdict'], 'observedHours': actual['observedHours'], 'expectedHours': actual['expectedHours'], 'missingHours': len(actual['missingTimestamps']), 'allEvidenceFieldsMatched': True}
 
 
-def public_https(value: object, host: str | None = None) -> bool:
-    if not isinstance(value, str):
-        return False
-    url = urlparse(value)
-    return url.scheme == 'https' and bool(url.hostname) and not url.username and not url.password and (not host or url.hostname == host)
-
-
-def submission_gaps(links: dict) -> list[str]:
-    gaps = []
-    if not public_https(links.get('videoUrl')):
-        gaps.append('Public 3–5 minute demo video URL is missing. Duration and playback require a separate check.')
-    if not public_https(links.get('devpostProjectUrl'), 'devpost.com'):
-        gaps.append('Devpost project URL is missing. A project URL alone does not confirm final submission.')
-    if links.get('organizerEligibilityConfirmed') is not True:
-        gaps.append('Written organizer eligibility confirmation is pending because the overview and rules conflict.')
-    return gaps
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--web-url', default='https://gapwitness-web.vercel.app')
     parser.add_argument('--checker-url', default='https://gapwitness-checker.vercel.app')
     parser.add_argument('--expect-commit', help='Fail unless release.json identifies this exact deployed 40-character Git SHA.')
     parser.add_argument('--require-shared', action='store_true', help='Fail unless the live checker reports shared quotas configured.')
-    parser.add_argument('--require-submission', action='store_true', help='Also fail for missing video, Devpost project, or eligibility confirmation.')
+    parser.add_argument('--require-submission', action='store_true', help='Also require recorded video length/playback, public submission listing, and eligibility clarification.')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     if args.expect_commit and not re.fullmatch(r'[a-fA-F0-9]{40}', args.expect_commit):

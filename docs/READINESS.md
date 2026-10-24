@@ -1,5 +1,7 @@
 # Evidence ledger, October 14, 2026
 
+Historical snapshot. Publication and release information below describes October 14. Use [current submission status](SUBMISSION_STATUS.md) for the public Devpost entry, published demo and remaining duration/eligibility checks.
+
 | Requirement or weakness | Delivered evidence | Remaining external evidence |
 | --- | --- | --- |
 | Understandable task pages | Inspect, Review, Evidence, Publish, Verify, Datasets, Pilot, Status; mobile browser checks | Observe independent reviewers |

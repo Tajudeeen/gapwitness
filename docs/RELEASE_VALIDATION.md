@@ -1,5 +1,7 @@
 # Submission release validation, October 18, 2026
 
+Historical engineering snapshot. For the public entry, video duration and current unresolved evidence, use [October 24 submission status](SUBMISSION_STATUS.md). The public entry is now listed as submitted; the public 2:33 video is a different asset from the 3:49 export below.
+
 The release adds on-demand MetaMask mobile/QR pairing, explicit connection and disconnect controls, cancellation protection, Sepolia-only transaction requests, a required-shared-quota startup guard, an exact-source frontend release manifest, and a read-only live-release checker.
 
 ## Completed checks

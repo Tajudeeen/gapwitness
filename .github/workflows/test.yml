@@ -35,7 +35,7 @@ jobs:
       - run: python -m pytest -q
       - run: python ../scripts/test_prepare_chain_demo.py
       - run: python -m pytest -q ../scripts/test_fixture_proof.py
-      - run: python -m pytest -q ../scripts/test_check_release.py
+      - run: python -m pytest -q ../scripts/test_check_release.py ../scripts/test_check_submission.py
       - run: python demo/run_demo.py
       - name: Build checker container
         run: docker build -f Dockerfile ..
