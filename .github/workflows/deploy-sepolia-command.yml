@@ -56,7 +56,7 @@ jobs:
         run: python ../scripts/prove_replay_onchain.py
 
       - name: Upload public replay proof
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gapwitness-replay-proof
           path: contracts/deployments/replay-proof.json
