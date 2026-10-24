@@ -36,6 +36,13 @@ def test_url_alone_does_not_prove_submission_or_playback():
     assert any('playback' in gap for gap in gaps)
 
 
+def test_published_replacement_does_not_silently_update_devpost_embed():
+    record = complete_record() | {'devpostVideoUpdatePending': True}
+    assert submission_gaps(record) == ['The new demo is published, but the Devpost video embed still needs updating.']
+    record['devpostVideoUpdatePending'] = False
+    assert submission_gaps(record) == []
+
+
 @pytest.mark.parametrize('url', ['https://devpost.com.evil.example/software/x',
                                  'https://user:secret@devpost.com/software/x',
                                  'https://devpost.com/', 'https://devpost.com/software/'])

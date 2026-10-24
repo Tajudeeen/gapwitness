@@ -2,9 +2,9 @@
 
 Track: Climate Data & Environmental Monitoring.
 
-[Public entry](https://devpost.com/software/gapwitness) · [Public demo](https://youtu.be/asl9kkF1EHo) · [Live app](https://gapwitness-web.vercel.app)
+[Public entry](https://devpost.com/software/gapwitness) · [Public demo](https://www.youtube.com/watch?v=i8ZCdidA6RU) · [Live app](https://gapwitness-web.vercel.app)
 
-The public Devpost page lists GapWitness as submitted to IEEE ClimateChain. Checked October 24, 2026. The public demo is 153 seconds, below the rules' 180-second minimum. Its duration and the separate retained 3:49 export must not be conflated. See [current submission status](SUBMISSION_STATUS.md) and the [judge guide](JUDGE_GUIDE.md).
+The public Devpost page lists GapWitness as submitted to IEEE ClimateChain. Checked October 24, 2026. The replacement public demo is 3:53, within the required duration. The owner still needs to update the Devpost embed. The older 3:49 export is separate from this narrated video. See [current submission status](SUBMISSION_STATUS.md) and the [judge guide](JUDGE_GUIDE.md).
 
 GapWitness uses deterministic validation, browser recomputation, and blockchain commitments. No AI model or inference is implemented or claimed. The current technical-execution rubric names blockchain, smart contracts, AI, data platforms, and environmental integration as examples; it does not separately mandate an AI component. Eligibility wording still conflicts between the overview and detailed rules.
 
@@ -41,9 +41,9 @@ RELEASE_VALIDATION.md records the October 18 regression, contract, build and fre
 ## Current review and remaining evidence
 
 - The public Devpost entry and YouTube URL are now recorded in [submission-links.json](submission-links.json). Devpost visibly associates the project with the event; this does not prove organizer acceptance or prize eligibility.
-- The public upload is 2:33. The retained captioned 3:49 export is described in [recorded-walkthrough.json](recorded-walkthrough.json), but that metadata does not prove it was uploaded. See [video handoff](VIDEO_UPLOAD.md).
+- The public replacement is 3:53, with male narration, captions, a new deployed-app recording and a generic hourly-policy demonstration. [Demo metadata](recorded-submission-demo.json) binds its hash, duration and proof boundaries. The owner will replace the prior Devpost video embed.
 - The live application identified clean commit `2cc309b84b07624abbcb7251e420e8cc0f738d36` when checked on October 24. Its `web/src`, `checker/app`, and `contracts/src` trees match the October 18 walkthrough implementation commit `7c6c37066bccd5fed872b54be4d3db89db1a3b45`. Dependency and documentation changes exist, so these are not identical whole-repository releases.
-- PR #61 contains newer reviewer-workflow improvements. It is unmerged and must not be presented as part of the submitted live release. The eleven Dependabot PRs are proposed maintenance, not eleven missing product features. [Current status](SUBMISSION_STATUS.md) records the review order.
+- PR #61 has since merged, adding explicit CSV mapping, portable evidence bundles and pilot improvements. The new video records the earlier core workflow at commit `2069bdb`; it does not claim to demonstrate every later addition. See [reviewer workflow](REVIEWER_WORKFLOW.md). Dependency PRs are maintenance, and their current merge state is visible on GitHub.
 - The detailed rules allow independent developers and individual submissions. The overview still says students only. An organizer clarification remains unrecorded. Submission itself does not resolve this conflict.
 - The current schedule gives October 25, 2026 at 14:00 UTC / 15:00 WAT. Use the absolute date, not an aging countdown. The current rules no longer contain the previously noted opening-time sentence.
 - Sourcify's exact V2 creation/runtime match is retained. Etherscan's old relay rate limit is historical. The October 24 source-only retry stopped before submission because `ETHERSCAN_API_KEY` is not configured in GitHub. The explorer page also returned HTTP 403. See the current status document for the retry run.

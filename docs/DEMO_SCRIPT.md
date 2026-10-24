@@ -1,6 +1,8 @@
 # GapWitness submission demo: 3 minutes 45 seconds
 
-The official rules require **3–5 minutes**. This is a narration plan. The refreshed 3:49 captioned walkthrough has been recorded and delivered, with metadata in recorded-walkthrough.json. This retained 3:49 export is separate from the [published 2:33 demo](https://youtu.be/asl9kkF1EHo). The public upload is shorter than the required minimum. See [current status](SUBMISSION_STATUS.md). Record the currently deployed app only after the latest frontend passes checks. Use the real, retained fixtures and a **fresh** Sepolia verification result.
+The rules require 3–5 minutes. The [published replacement](https://www.youtube.com/watch?v=i8ZCdidA6RU) is 3:53, with narration and captions. [New demo metadata](recorded-submission-demo.json) records its source snapshot and integrity. It opens with the 8.87% controlled mean distortion and recorded Sepolia witness. Its verification chapter explicitly distinguishes an October 18 successful check from the unsuccessful new RPC attempt.
+
+The timeline below is the earlier recording plan, retained for reference. Do not present historical RPC success as a fresh check. The separate 3:49 export is recorded in recorded-walkthrough.json.
 
 ## 00:00–00:25 | Home: the environmental problem
 Open https://gapwitness-web.vercel.app

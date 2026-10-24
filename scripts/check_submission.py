@@ -38,6 +38,8 @@ def submission_gaps(links: dict) -> list[str]:
         gaps.append('Devpost project URL is missing or invalid.')
     if links.get('submissionStatus') != 'submitted-publicly-listed' or not devpost_project(links.get('submissionEvidenceUrl')):
         gaps.append('A public submission listing has not been recorded. A draft URL alone is insufficient.')
+    if links.get('devpostVideoUpdatePending') is True:
+        gaps.append('The new demo is published, but the Devpost video embed still needs updating.')
     if links.get('organizerEligibilityConfirmed') is not True:
         gaps.append('Written organizer eligibility clarification remains unrecorded; overview and rules conflict.')
     return gaps

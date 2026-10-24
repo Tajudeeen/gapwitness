@@ -22,6 +22,8 @@ Start with the [project README](../README.md). Commands in these documents run f
 
 ## Retained release evidence
 
+- [Published 3:53 submission demo](https://www.youtube.com/watch?v=i8ZCdidA6RU) and [its metadata](recorded-submission-demo.json) describe the narrated replacement, source snapshot and explicit historical/current proof distinction.
+
 - [October 18 release validation](RELEASE_VALIDATION.md) explains the test results, deployment checks, and remaining external items.
 - [Deployed-release check](deployed-release-2026-10-18.json) and [live Sepolia verification](live-verification-2026-10-18.json) retain point-in-time machine-readable results.
 - [Recorded walkthrough](recorded-walkthrough.json) records the captioned 3:49 export and its hash. Its raw-capture timing is separate from the delivered duration.

@@ -1,23 +1,17 @@
-# Demo publication record and handoff
+# Published submission demo
 
-The [published GapWitness demo](https://youtu.be/asl9kkF1EHo) is embedded on the [public Devpost entry](https://devpost.com/software/gapwitness). Public metadata checked October 24 reports 153 seconds, or 2:33. The [rules](https://ieee-climatechain-hack.devpost.com/rules) request a 3–5 minute demo, so the current upload does not meet the stated duration range.
+[Watch the new 3:53 demo](https://www.youtube.com/watch?v=i8ZCdidA6RU). It is published publicly on Deeen_Codes. YouTube metadata confirms the duration and channel. The 1920 × 1080 local file decoded completely and its uploaded media bytes matched the checked file.
 
-The retained `GapWitness-Demo.mp4` export is a different asset. [recorded-walkthrough.json](recorded-walkthrough.json) records its 228.8-second duration, SHA-256 and historical chain check. Those values must not be assigned to the published 2:33 video.
+The new video leads with the 8.87% controlled mean distortion and recorded Sepolia witness, then shows inspection, a revision restoring seven hours, original evidence storage, retained real-source gaps, and an actual generic hourly-policy batch run. It includes synthetic male narration and burned-in English captions.
 
-## Complete the duration requirement
+The verification chapter labels an earlier successful RPC check as October 18. The newly recorded RPC attempt did not establish fresh confirmation, and the video shows the app withholding it. No new wallet approval, transaction, participant trial or environmental outcome is claimed.
 
-1. Recover the retained 3:49 export or record a new 3–5 minute walkthrough using [DEMO_SCRIPT.md](DEMO_SCRIPT.md). Check the actual file's duration, complete playback and claims before uploading. Historical recording metadata alone does not prove the file remains available.
-2. Publish the checked asset to an accepted video host with public or unlisted playback. Check signed-out playback, audio or captions, and the measured duration.
-3. Update the existing Devpost entry's video embed to that actual URL. Changing a repository URL does not change Devpost's embed or an existing YouTube upload.
-4. Update `videoUrl`, `videoDurationSeconds`, `videoMetadata` and `videoPlaybackChecked` in [submission-links.json](submission-links.json). Keep the shorter upload identifiable as a separate video.
-5. Run `python scripts/check_submission.py`. It checks recorded evidence and deliberately fails for the current short upload. The full deployed checker also uses this guard with `--require-submission`.
+[recorded-submission-demo.json](recorded-submission-demo.json) retains the final file hash, duration, source reference and proof boundaries. The older 3:49 export and 2:33 public upload remain distinct historical assets.
 
-No new video upload or Devpost edit is performed by this repository cleanup. The public project's exact submission time, organizer acceptance and eligibility decision remain separate from URL discovery.
+## Owner's remaining submission action
 
-## Presentation for the longer asset
+1. Edit the existing [Devpost entry](https://devpost.com/software/gapwitness) and replace its video embed with `https://www.youtube.com/watch?v=i8ZCdidA6RU`.
+2. Confirm the entry plays that new video while signed out. The last independently observed embed was the earlier 2:33 upload; YouTube publication does not change Devpost automatically.
+3. Once observed, update `devpostVideoUpdatePending` and `videoPlaybackChecked` in [submission-links.json](submission-links.json), then run `python scripts/check_submission.py`.
 
-Suggested title: GapWitness Demo | Find Missing Hours in Climate Data
-
-Open with a reviewer receiving an incomplete environmental export. Show the seven deliberately missing hours, the resulting 8.87% arithmetic-mean difference, a real-source unavailable-reading example, retained evidence, and the optional Sepolia witness. End with who uses the workflow and the current limits.
-
-Describe the implementation as deterministic data checking and reproducible blockchain evidence. Do not claim an AI model, operator authorization, measured reviewer time savings or downstream environmental impact. Show a fresh RPC result only when it actually succeeds. The [judge guide](JUDGE_GUIDE.md) gives an inspection path through the submitted implementation.
+This cleanup publishes the replacement on YouTube and records it in the repository. It does not edit the Devpost submission. Organizer eligibility clarification remains separate.

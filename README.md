@@ -6,7 +6,7 @@ GapWitness checks an hourly environmental CSV against a declared reporting windo
 
 A file hash preserves the file it receives. When hours have already been removed, a reviewer also needs the expected schedule and the exact missing timestamps. GapWitness keeps those questions together.
 
-[Open the app](https://gapwitness-web.vercel.app) · [Devpost entry](https://devpost.com/software/gapwitness) · [Public demo](https://youtu.be/asl9kkF1EHo) · [Verify the published example](https://gapwitness-web.vercel.app/verify) · [Real datasets](https://gapwitness-web.vercel.app/datasets) · [Service status](https://gapwitness-web.vercel.app/status) · [Documentation](docs/README.md)
+[Open the app](https://gapwitness-web.vercel.app) · [Devpost entry](https://devpost.com/software/gapwitness) · [Public demo](https://www.youtube.com/watch?v=i8ZCdidA6RU) · [Verify the published example](https://gapwitness-web.vercel.app/verify) · [Real datasets](https://gapwitness-web.vercel.app/datasets) · [Service status](https://gapwitness-web.vercel.app/status) · [Documentation](docs/README.md)
 
 [Report a vulnerability](SECURITY.md) · [Dependency maintenance and automated scans](docs/DEPENDENCIES.md) · [Report a bug](https://github.com/Tajudeeen/gapwitness/issues/new?template=bug_report.yml)
 
@@ -120,7 +120,7 @@ V2 namespaces each station/window record by publisher address. Identical replays
 
 ## Submission and attribution
 
-[Current submission status](docs/SUBMISSION_STATUS.md) was checked on October 24. The public Devpost page lists this project as submitted. The linked YouTube demo is 2:33; the rules request 3–5 minutes, so duration compliance remains open. The separate retained 3:49 walkthrough is a different export. [Judge guide](docs/JUDGE_GUIDE.md) gives a short path through the working product and its evidence.
+[Current submission status](docs/SUBMISSION_STATUS.md) was checked on October 24. The public Devpost page lists this project as submitted. The replacement YouTube demo is 3:53 and meets the stated 3–5 minute duration. Its original-file hash, source snapshot and historical/current proof boundaries are in [demo metadata](docs/recorded-submission-demo.json). Updating the video embed on Devpost remains a separate owner action. [Judge guide](docs/JUDGE_GUIDE.md) gives a short path through the working product and its evidence.
 
 The submitted application uses deterministic checks and optional blockchain commitments. It contains no AI inference component. The rules list several example technologies rather than a separate mandatory AI implementation requirement; see the current status document for the remaining eligibility wording conflict.
 

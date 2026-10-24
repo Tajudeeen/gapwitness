@@ -1,0 +1,108 @@
+{
+  "format": "gapwitness/submission-demo/v1",
+  "fileName": "GapWitness-Submission-Demo.mp4",
+  "fileSha256": "0ce0fa1771fdf6a8360502e24d973ed0d763383697a0b855834f17c41a741b3f",
+  "fileBytes": 13446036,
+  "durationSeconds": 232.760708,
+  "resolution": [
+    1920,
+    1080
+  ],
+  "frameRate": 25,
+  "audio": "AAC, 48 kHz stereo, synthetic male narration",
+  "captions": "Burned-in English captions",
+  "videoUrl": "https://www.youtube.com/watch?v=i8ZCdidA6RU",
+  "applicationReferenceCommit": "2069bdb82af7bc999d3276cb15477fe707dba23e",
+  "chapters": [
+    {
+      "start": 0,
+      "end": 27.16,
+      "title": "7 missing hours. An 8.87% shift."
+    },
+    {
+      "start": 27.16,
+      "end": 55.4,
+      "title": "Declare the window. Find the missing hours."
+    },
+    {
+      "start": 55.4,
+      "end": 82.52,
+      "title": "See what changed between revisions."
+    },
+    {
+      "start": 82.52,
+      "end": 108.8,
+      "title": "Keep the source with its evidence."
+    },
+    {
+      "start": 108.8,
+      "end": 147.72,
+      "title": "A public witness. A check that can fail."
+    },
+    {
+      "start": 147.72,
+      "end": 175.92,
+      "title": "Move beyond the edited example."
+    },
+    {
+      "start": 175.92,
+      "end": 204.2,
+      "title": "A focused browser. A broader hourly policy."
+    },
+    {
+      "start": 204.2,
+      "end": 232.72,
+      "title": "Make the review reproducible."
+    }
+  ],
+  "freshRpcCheckEstablished": false,
+  "currentRpcError": "Transaction is unmined, failed, or unrelated to this publisher and contract.",
+  "historicalSuccessfulCheck": {
+    "record": "docs/recorded-walkthrough.json",
+    "checkedAt": "2026-10-18T11:07:43.682Z",
+    "snapshotBlock": 11940673,
+    "sourceClipSeconds": [
+      94,
+      112
+    ],
+    "onScreenDateLabel": true
+  },
+  "sourceRecordingIncludes": [
+    "Inspect File A",
+    "Compare File B with prior File A",
+    "Save and reopen evidence",
+    "Attempt fresh verification",
+    "Inspect York retained source gaps",
+    "Optional publishing controls without connection",
+    "Empty pilot and homepage"
+  ],
+  "genericPolicyExample": {
+    "synthetic": true,
+    "actualLocalBatchRun": true,
+    "expectedHours": 4,
+    "observedHours": 3,
+    "missingTimestamps": [
+      "2026-10-01T02:00:00Z"
+    ],
+    "negativeValueAllowedByGenericPolicy": true,
+    "verdict": "GAPPED"
+  },
+  "requestMocks": false,
+  "newTransaction": false,
+  "walletApproval": false,
+  "syntheticPilotRecords": 0,
+  "validation": {
+    "fullDecodePassed": true,
+    "narrationIntegratedLufs": -16.18,
+    "narrationTruePeakDbtp": -4.23
+  },
+  "limits": [
+    "Controlled mean distortion is not a measured environmental outcome.",
+    "Recorded October 18 verification is distinct from the unsuccessful new RPC check.",
+    "No independent pilot benefit or authorized station identity is claimed.",
+    "Generic policy demonstration uses labeled synthetic numeric data."
+  ],
+  "publishedAt": "2026-10-24T22:48:50Z",
+  "youtubeDurationSeconds": 233,
+  "youtubeChannel": "Deeen_Codes"
+}
