@@ -1,27 +1,40 @@
 import {useEffect,useRef,useState} from 'react';
 import {normalizeCsv,sourceCsv,type CsvMapping,type PreparedImport} from '../lib/csv-import';
+import {inferCsvSchema,type InferredSchema} from '../lib/ai-analysis.ts';
 type Preview=ReturnType<typeof normalizeCsv>;
 export function CsvImportAssistant({disabled,onPrepared}:{disabled:boolean;onPrepared:(prepared:PreparedImport)=>void}) {
   const [file,setFile]=useState<File|null>(null),[bytes,setBytes]=useState<Uint8Array|null>(null),[headers,setHeaders]=useState<string[]>([]);
+  const [sampleRows,setSampleRows]=useState<string[][]>([]);
   const [timestampColumn,setTimestampColumn]=useState(''),[valueColumn,setValueColumn]=useState('');
   const [timezone,setTimezone]=useState('embedded'),[fixedOffset,setFixedOffset]=useState('+01:00'),[units,setUnits]=useState('');
   const [preview,setPreview]=useState<Preview|null>(null),[confirmed,setConfirmed]=useState(false),[error,setError]=useState(''),[loading,setLoading]=useState(false);
+  const [aiInference,setAiInference]=useState<InferredSchema|null>(null);
   const generation=useRef(0);
   useEffect(()=>()=>{generation.current+=1;},[]);
   function invalidate(){setPreview(null);setConfirmed(false);setError('');}
   async function select(next:File|null) {
-    const id=++generation.current;setFile(next);setBytes(null);setHeaders([]);invalidate();setLoading(false);
+    const id=++generation.current;setFile(next);setBytes(null);setHeaders([]);setSampleRows([]);setAiInference(null);invalidate();setLoading(false);
     if(!next)return;
     setLoading(true);
     try {
       if(next.size>1_000_000)throw new Error('Source CSV exceeds the 1 MB limit.');
       const data=new Uint8Array(await next.arrayBuffer()),parsed=sourceCsv(data);
       if(id!==generation.current)return;
-      setBytes(data);setHeaders(parsed.headers);
+      setBytes(data);setHeaders(parsed.headers);setSampleRows(parsed.rows.slice(0, 10));
       setTimestampColumn(parsed.headers.includes('timestamp')?'timestamp':'');
       setValueColumn(parsed.headers.includes('value')?'value':'');
     } catch(cause) {if(id===generation.current)setError((cause as Error).message);}
     finally {if(id===generation.current)setLoading(false);}
+  }
+  function autoDetect() {
+    if(!headers.length)return;
+    invalidate();
+    const inferred=inferCsvSchema(headers,sampleRows);
+    setTimestampColumn(inferred.timestampColumn);
+    setValueColumn(inferred.valueColumn);
+    setTimezone(inferred.timezone==='embedded'?'embedded':'Z');
+    setUnits(inferred.units);
+    setAiInference(inferred);
   }
   function buildPreview() {
     if(!bytes||!file)return;
@@ -36,6 +49,11 @@ export function CsvImportAssistant({disabled,onPrepared}:{disabled:boolean;onPre
     <p>Preview the conversion locally. Only the normalized timestamp/value file is sent for inspection. The original stays available for your evidence bundle.</p>
     <label>Source CSV to map<input disabled={disabled||loading} type="file" accept=".csv,text/csv" onChange={e=>void select(e.target.files?.[0]??null)}/></label>
     {bytes&&<fieldset disabled={disabled||loading}><legend>Confirm the source format</legend>
+      <button type="button" style={{margin:'8px 0 14px',padding:'8px 12px',cursor:'pointer'}} onClick={autoDetect}>✨ AI Auto-Detect Mapping</button>
+      {aiInference&&<div style={{padding:'8px 12px',marginBottom:'12px',background:'#e4ede6',borderRadius:'6px',fontSize:'12px'}}>
+        <strong>Inferred with {Math.round(aiInference.confidence*100)}% confidence:</strong>
+        <ul style={{margin:'4px 0 0 16px',padding:0}}>{aiInference.reasoning.map((r,i)=><li key={i}>{r}</li>)}</ul>
+      </div>}
       <label>Timestamp column<select aria-label="Timestamp column" value={timestampColumn} onChange={e=>{invalidate();setTimestampColumn(e.target.value);}}>
         <option value="">Choose column</option>{headers.map(h=><option key={h} value={h}>{h}</option>)}</select></label>
       <label>Measurement column<select aria-label="Measurement column" value={valueColumn} onChange={e=>{invalidate();setValueColumn(e.target.value);}}>

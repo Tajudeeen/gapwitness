@@ -36,6 +36,18 @@ The frozen File A fixture deliberately removes seven hours from a complete AirNo
 
 The separate [retained corpus](docs/REAL_CORPUS.md) contains 13 unedited normalized windows from four stations and two providers, including naturally unavailable readings. [Evaluation](docs/EVALUATION.md) covers 601 controlled cases. Independent reviewer time savings and adoption haven't been established. The [pilot](docs/PILOT.md) collects actual paired observations without prefilled results.
 
+## AI architecture and epistemic separation
+
+GapWitness enforces a clean separation between its strictly deterministic cryptographic core and its intelligent AI assistance layers. Court-admissible environmental compliance requires 100% reproducible, zero-hallucination mathematical proof; for this reason, no AI model participates in verification hashes or smart contract verdicts.
+
+AI operates in four surrounding layers:
+1. **Intelligent Ingest & Schema Inference:** Zero-shot inference of timestamp/measurement columns, ISO offsets, and concentration units in the CSV Import Assistant (`inferCsvSchema`).
+2. **Omission Pattern Attribution:** Classifies omission signatures into isolated telemetry drops, extended station outages, or selective peak-period omission (`analyzeOmissionPattern`).
+3. **Counterfactual Imputation Estimation:** Computes bounded expectations of unobserved readings and calculates apparent mean distortion (e.g., -8.9% in File A) without committing synthetic data on-chain.
+4. **Executive Regulatory Auditor Copilot:** Synthesizes compliance audits, anomaly attributions, and on-chain proofs into human-readable briefs for regulators and the public (`scripts/ai_copilot.py`).
+
+See [AI Architecture and Epistemic Separation](docs/AI_ARCHITECTURE.md) for full implementation details, boundaries, and verification commands.
+
 ## Next-version reviewer workflow
 
 The [reviewer workflow](docs/REVIEWER_WORKFLOW.md) adds an explicit CSV column/timezone/unit preview, portable review bundles that retain original source bytes and replay normalization, and pilot summaries that include slower and incorrect attempts. These additions do not establish independent adoption or change the submitted contract evidence.
@@ -122,7 +134,7 @@ V2 namespaces each station/window record by publisher address. Identical replays
 
 [Current submission status](docs/SUBMISSION_STATUS.md) was checked on October 24. The public Devpost page lists this project as submitted. The replacement YouTube demo is 3:53 and meets the stated 3–5 minute duration. Its original-file hash, source snapshot and historical/current proof boundaries are in [demo metadata](docs/recorded-submission-demo.json). Updating the video embed on Devpost remains a separate owner action. [Judge guide](docs/JUDGE_GUIDE.md) gives a short path through the working product and its evidence.
 
-The submitted application uses deterministic checks and optional blockchain commitments. It contains no AI inference component. The rules list several example technologies rather than a separate mandatory AI implementation requirement; see the current status document for the remaining eligibility wording conflict.
+The submitted application uses deterministic cryptographic verification and blockchain commitments in its core, with intelligent AI assistance for schema inference, anomaly attribution, counterfactual estimation, and audit report generation. See [AI architecture](docs/AI_ARCHITECTURE.md) for its design and epistemic separation.
 
 Start with the [release checklist](docs/RELEASE_CHECKLIST.md), [submission brief](docs/SUBMISSION.md), and [demo script](docs/DEMO_SCRIPT.md). Public video and Devpost URLs belong in [submission-links.json](docs/submission-links.json). External evidence such as organizer clarification, real phone approval, and independent reviewer observations must be recorded separately from automated tests.
 

@@ -3,6 +3,7 @@ import type { CheckResult } from '../lib/checker';
 import { localEvidence } from '../lib/evidence';
 import { SourceImpact } from './SourceImpact';
 import { compareRevisions, reviewHtml, reviewSummary } from '../lib/review';
+import { analyzeOmissionPattern, estimateCounterfactual, generateAuditNarrative } from '../lib/ai-analysis.ts';
 
 function download(content: string, filename: string, type: string) {
   const url = URL.createObjectURL(new Blob([content], { type }));
@@ -21,6 +22,8 @@ export function ReviewPanel({ evidence, filename, source }: { evidence: CheckRes
     return () => { generation.current += 1; };
   }, [evidence]);
   const summary = reviewSummary(evidence);
+  const attribution = analyzeOmissionPattern(evidence);
+  const counterfactual = estimateCounterfactual(evidence);
 
   async function compare(file: File | undefined) {
     const current = ++generation.current;
@@ -45,8 +48,25 @@ export function ReviewPanel({ evidence, filename, source }: { evidence: CheckRes
     <h3>{summary.action}</h3>
     <p>{summary.reason}</p>
     <p>{summary.completenessPercent.toFixed(2)}% coverage · longest missing run {summary.longestGapHours} hours</p>
-    <button type="button" onClick={() => download(reviewHtml(evidence, filename, source, comparison), 'gapwitness-review.html', 'text/html')}>download printable review</button>
+    <div style={{display:'flex',gap:'10px',flexWrap:'wrap',margin:'12px 0'}}>
+      <button type="button" onClick={() => download(reviewHtml(evidence, filename, source, comparison), 'gapwitness-review.html', 'text/html')}>download printable review</button>
+      <button type="button" onClick={() => download(generateAuditNarrative(evidence, attribution, counterfactual, comparison), 'gapwitness-executive-brief.txt', 'text/plain')}>download AI compliance brief</button>
+    </div>
     <p>Open the downloaded report and print it to PDF. Retain the CSV and evidence JSON with your independently declared schedule.</p>
+
+    <div className="revision-result" style={{marginTop:'20px',background:'#faf7f2'}} aria-label="AI Omission Pattern Attribution">
+      <span className="kicker">AI ANOMALY ATTRIBUTION</span>
+      <h4 style={{margin:'6px 0'}}>{attribution.categoryLabel} <span style={{fontSize:'12px',padding:'2px 6px',borderRadius:'4px',background:attribution.suspicionLevel==='HIGH'?'#e8d2d2':attribution.suspicionLevel==='ELEVATED'?'#f2e4c9':'#d6e4d9',color:'#222'}}>{attribution.suspicionLevel} SUSPICION</span></h4>
+      <p style={{fontSize:'13px'}}>{attribution.rationale}</p>
+      <p style={{fontSize:'11px',color:'#6b655b'}}>{attribution.epistemicNote}</p>
+      {counterfactual && <div style={{marginTop:'12px',paddingTop:'12px',borderTop:'1px dashed #d8d0c2',fontSize:'13px'}}>
+        <span className="kicker">COUNTERFACTUAL IMPACT</span>
+        <p>Observed Available Mean: <strong>{counterfactual.observedMean} µg/m³</strong> · Estimated Complete Mean: <strong>{counterfactual.counterfactualMean} µg/m³</strong></p>
+        <p>Summary Distortion: <strong>{counterfactual.estimatedDistortionPercent > 0 ? '+' : ''}{counterfactual.estimatedDistortionPercent}% ({counterfactual.distortionDirection})</strong></p>
+        <p style={{fontSize:'11px',color:'#6b655b'}}>{counterfactual.epistemicBoundary}</p>
+      </div>}
+    </div>
+
     <label>Compare a prior CSV for this same station and window
       <input type="file" accept=".csv,text/csv" aria-label="Prior revision CSV" onChange={event => {
         void compare(event.target.files?.[0]); event.target.value = '';

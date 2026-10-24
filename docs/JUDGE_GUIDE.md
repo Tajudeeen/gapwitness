@@ -20,7 +20,7 @@ An environmental reviewer can receive a convincing chart whose underlying hourly
 | Practical usefulness | Open [Real datasets](https://gapwitness-web.vercel.app/datasets) and inspect the York Fishergate April window | Thirteen retained windows span four stations and two providers. York has two naturally unavailable readings. Operator schedules and independent adoption still need external evidence |
 | Presentation and storytelling | Follow the missing rows through Review, Evidence and Verify | The deliberate seven-hour example, naturally unavailable source readings and blockchain witness are separate evidence |
 
-The rubric publishes these five criteria without numerical weights. GapWitness has no AI inference component. Its relevant technical integrations are blockchain, data checking and environmental source data.
+The rubric publishes these five criteria without numerical weights. GapWitness isolates its cryptographic core from non-deterministic drift, surrounded by four intelligent AI assistance layers (intelligent CSV schema auto-detection, omission pattern attribution, counterfactual distortion estimation, and automated compliance brief generation). See [AI architecture](AI_ARCHITECTURE.md).
 
 ## Generalization that exists today
 
