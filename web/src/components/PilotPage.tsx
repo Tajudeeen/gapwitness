@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {PageFrame} from './PageFrame';
 import {REAL_CORPUS,corpusCsv} from '../lib/corpus';
-import {pilotRows,pilotCsv,savePilot,scoreAnswers,type PilotRow} from '../lib/pilot';
+import {pilotRows,pilotCsv,savePilot,scoreAnswers,summarizePilot,type PilotRow} from '../lib/pilot';
 import {downloadFile} from '../lib/packages';
 type Result={seconds:number;correct:0|1};
 export function PilotPage(){
@@ -12,6 +12,7 @@ export function PilotPage(){
   const began=useRef<number|null>(null);const dataset=REAL_CORPUS.datasets.find(item=>item.id===datasetId)!;
   useEffect(()=>{try{setRows(pilotRows());}catch(error){setMessage((error as Error).message);}},[]);
   const first=order==='baseline-first'?'baseline':'tool';const next=baseline&&!tool?'tool':tool&&!baseline?'baseline':first;
+  const summary=summarizePilot(rows);
   function reset(){setBaseline(null);setTool(null);setPhase(null);began.current=null;setMissing('');setNegative('');setMessage('');}
   function start(){
     if(!/^[A-Za-z0-9_-]{1,40}$/.test(participant)||!method.trim()||!consent){setMessage('Provide an anonymous code, your normal method, and consent before starting.');return;}
@@ -41,8 +42,10 @@ export function PilotPage(){
         <label>Method order<select disabled={!!phase||!!baseline||!!tool} value={order} onChange={e=>{reset();setOrder(e.target.value as typeof order);}}><option value="baseline-first">Normal method first</option><option value="tool-first">GapWitness first</option></select></label></div>
       <label className="pilot-consent"><input type="checkbox" checked={consent} disabled={!!phase||!!baseline||!!tool} onChange={e=>setConsent(e.target.checked)}/> I agree to store anonymous trial records in this browser.</label>
       <p>Station {dataset.stationId}. Declared UTC window {dataset.windowStart} to {dataset.windowEnd}, end excluded. Identify all unavailable hours and all readings that violate the non-negative PM2.5 policy.</p>
-      <div className="page-actions"><button onClick={()=>void csv()}>Download task CSV</button><a href={'/inspect?dataset='+dataset.id} target="_blank" rel="noreferrer">Open task in GapWitness in another tab ↗</a></div>
-      <p>Keep this pilot tab open while using your normal method or the inspection tab. Unfinished phases are not saved. Leaving this page resets an unfinished timer.</p></section>
+      <div className="page-actions"><button disabled={!phase} onClick={()=>void csv()}>Download task CSV</button>
+        {phase==='tool'?<a href={'/inspect?dataset='+dataset.id} target="_blank" rel="noreferrer">Open task in GapWitness in another tab ↗</a>:
+          <span>Start the GapWitness timer to open its task link.</span>}</div>
+      <p>Start a method timer before downloading its task so file setup is included. Keep this pilot tab open while using your normal method or the inspection tab. Unfinished phases are not saved. Leaving this page resets an unfinished timer.</p></section>
     <section className="page-card"><h2>{phase?`Running ${phase==='baseline'?'normal method':'GapWitness'} review`:'Record a paired review'}</h2>
       {!phase&&!(baseline&&tool)&&<button onClick={start}>Start {next==='baseline'?'normal method':'GapWitness'} timer</button>}
       {phase&&<><div className="page-fields"><label>Unavailable timestamps, one ISO UTC timestamp per line<textarea value={missing} onChange={e=>setMissing(e.target.value)} rows={5}/></label>
@@ -57,6 +60,18 @@ export function PilotPage(){
       <p>No independent reviewer time saving, adoption, or environmental outcome is established until real results are collected and examined.</p>
     </section>
     <section className="page-card"><h2>{rows.length} paired tasks in this browser</h2><p>Export recorded observations for the paired analyzer. No result from this browser is automatically published as adoption or environmental impact.</p>
+      {summary&&<section aria-label="Observed pilot summary">
+        <h3>Recorded outcomes, including unfavorable results</h3>
+        <p>{summary.pairs} paired tasks from {summary.participantCodes} anonymous participant codes. Codes do not establish independent identity.</p>
+        <dl>
+          <dt>GapWitness faster / slower / equal</dt><dd>{summary.faster} / {summary.slower} / {summary.equal}</dd>
+          <dt>Exact answers, normal method / GapWitness</dt><dd>{summary.baselineCorrect} / {summary.pairs} and {summary.toolCorrect} / {summary.pairs}</dd>
+          <dt>Median paired seconds saved</dt><dd>{summary.medianSecondsSaved.toFixed(2)} seconds</dd>
+          <dt>Median paired time reduction</dt><dd>{summary.medianPercentReduction.toFixed(2)}%</dd>
+          <dt>Normal method first / GapWitness first</dt><dd>{summary.baselineFirst} / {summary.toolFirst}</dd>
+        </dl>
+        <p>Negative savings mean GapWitness was slower. Repeating a dataset, small samples and task order limit these descriptive results. No environmental benefit is measured.</p>
+      </section>}
       <button disabled={!rows.length} onClick={()=>downloadFile(new Blob([pilotCsv(rows)],{type:'text/csv'}),'gapwitness-pilot-observations.csv')}>Export observed pilot CSV</button>
       <p>Run scripts/analyze_pilot.py on the exported CSV. Report order, sample size, task definitions, accuracy, and limitations with any public time-saving claim.</p></section>
   </PageFrame>;

@@ -1150,3 +1150,14 @@ html { scroll-padding-top: 88px; }
   .impact-values { grid-template-columns: 1fr; }
   .impact-story-compact { padding: 18px; }
 }
+
+/* Local import preview stays readable inside the inspection rail. */
+.csv-import { min-width: 0; padding: 16px 0; border-block: 1px solid var(--line, #d8d5ce); }
+.csv-import fieldset { min-width: 0; margin: 12px 0; padding: 12px; }
+.csv-import label { display: grid; gap: 6px; margin: 12px 0; }
+.csv-import select, .csv-import input { width: 100%; min-width: 0; max-width: 100%; }
+.csv-import .pilot-consent { display: flex; align-items: flex-start; gap: 10px; }
+.csv-import .pilot-consent input { width: auto; flex: 0 0 auto; }
+.csv-import pre { overflow: auto; max-width: 100%; font-size: 11px; padding: 10px; background: #eeeae2; color: #202020; }
+.csv-import code { overflow-wrap: anywhere; white-space: normal; font-size: 11px; }
+.csv-import p { overflow-wrap: anywhere; }

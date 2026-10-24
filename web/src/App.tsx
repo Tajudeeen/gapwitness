@@ -32,11 +32,14 @@ import {
   WalletError,
 } from "./lib/wallet";
 
+import type {PreparedImport} from './lib/csv-import';
+
 type Point = { timestamp: string; value: number };
 
 const DEFAULT_STATION = "2178";
 const DEFAULT_WINDOW_START = "2026-09-19T07:00:00Z";
 const DEFAULT_WINDOW_END = "2026-09-20T07:00:00Z";
+const CsvImportAssistant = lazy(() => import('./components/CsvImportAssistant').then(module => ({default:module.CsvImportAssistant})));
 const EvidencePage = lazy(() => import("./components/EvidencePage").then(module => ({default:module.EvidencePage})));
 const VerifyPage = lazy(() => import("./components/VerifyPage").then(module => ({default:module.VerifyPage})));
 const DatasetsPage = lazy(() => import("./components/DatasetsPage").then(module => ({default:module.DatasetsPage})));
@@ -130,6 +133,9 @@ function App() {
   const [sourceKind, setSourceKind] = useState<"upload" | "synthetic" | "openaq" | "corpus">("upload");
   const [activeCorpusId,setActiveCorpusId]=useState<string|null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [showImportAssistant,setShowImportAssistant]=useState(false);
+  const [selectedImport,setSelectedImport]=useState<PreparedImport|null>(null);
+  const [activeImport,setActiveImport]=useState<PreparedImport|null>(null);
   const [activeCsv, setActiveCsv] = useState<File | null>(null);
   const [importedChain, setImportedChain] = useState<ChainClaim | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
@@ -190,6 +196,7 @@ function App() {
 
   function clearEvidence() {
     setActiveCsv(null);
+    setActiveImport(null);
     setImportedChain(null);
     setActiveCorpusId(null);
     setResult(null);
@@ -233,7 +240,7 @@ function App() {
     setMessage("Inputs changed. Inspect the selected CSV again before committing.");
   }
 
-  async function inspect(upload: File, context = { stationId: station.trim(), windowStart, windowEnd }, source: "upload" | "openaq" | "corpus" = "upload", corpusId:string|null=null) {
+  async function inspect(upload: File, context = { stationId: station.trim(), windowStart, windowEnd }, source: "upload" | "openaq" | "corpus" = "upload", corpusId:string|null=null, prepared:PreparedImport|null=selectedImport?.csv===upload?selectedImport:null) {
     if (commitInFlight.current) return;
     const request = beginInspection();
     setBusy(true);
@@ -248,6 +255,7 @@ function App() {
       if (!request.current()) return;
       setResult(next);
       setActiveCsv(upload);
+      setActiveImport(prepared);
       setActiveCorpusId(corpusId);
       setPrimaryResult(next);
       setPoints(next.observations);
@@ -274,6 +282,7 @@ function App() {
 
   function loadSourceFixture(name: "a" | "b" | "c") {
     if (commitInFlight.current) return;
+    setSelectedImport(null);
     const text = {a: sourceA, b: sourceB, c: sourceC}[name];
     const fixture = new File([text], `file_${name}${name === "c" ? "_impossible" : ""}.csv`, {type: "text/csv"});
     setStation(DEFAULT_STATION); setWindowStart(DEFAULT_WINDOW_START); setWindowEnd(DEFAULT_WINDOW_END); setFile(fixture);
@@ -290,6 +299,7 @@ function App() {
 
   async function loadCorpus(id:string) {
     if(commitInFlight.current)return;
+    setSelectedImport(null);
     const request=beginInspection();setBusy(true);setMessage('Loading retained source dataset…');
     try {const {corpusCsv}=await import('./lib/corpus');const {dataset,text}=await corpusCsv(id);
       if(!request.current())return;
@@ -305,7 +315,7 @@ function App() {
     const publisher = txPublisher;
     return {format: "gapwitness/evidence/v1", source: sourceKind,
       csvFilename: activeCsv?.name ?? file?.name ?? "original.csv", originalCsvRequired: true, browserEvidenceCheck: "matched",
-      evidence: result, chain: txHash && publisher ? {chainId: 11155111, contract: CONTRACT_ADDRESS,
+      evidence: result, ...(activeImport?{normalization:activeImport.record}:{}), chain: txHash && publisher ? {chainId: 11155111, contract: CONTRACT_ADDRESS,
         contractVersion: CONTRACT_VERSION, publisher, transactionHash: txHash,
         commitmentKey: getCommitmentKey(result.chainCommitment, publisher),
         operation: commitCreated ? "first-witness" : "exact-replay"} : importedChain,
@@ -314,10 +324,12 @@ function App() {
       limits: ["Wallet identity does not certify station authority.", "Temporal completeness does not prove measurement accuracy."]};
   }
 
-  function openSaved(bundle: EvidencePackage, original: File) {
+  function openSaved(bundle: EvidencePackage, original: File, source?:File) {
     if (commitInFlight.current) throw new Error("Wait for the wallet operation before opening another record.");
     if (bundle.evidence.seriesType !== "pm25") throw new Error("The web workspace supports PM2.5. Use the local batch reviewer for a generic series.");
     cancelInspection(); clearEvidence();
+    const prepared=bundle.normalization&&source?{csv:original,original:source,record:bundle.normalization}:null;
+    setSelectedImport(prepared);setActiveImport(prepared);
     setResult(bundle.evidence); setPoints(bundle.evidence.observations);setActiveCsv(original);setFile(original);
     setStation(bundle.evidence.stationId);setWindowStart(bundle.evidence.windowStart);setWindowEnd(bundle.evidence.windowEnd);
     setSourceKind("upload");setImportedChain(bundle.chain);
@@ -330,6 +342,7 @@ function App() {
     const request = beginInspection();
     setDemoBusy(true);
     setSourceKind("synthetic");
+    setSelectedImport(null);
     setStation(DEFAULT_STATION);
     setWindowStart(DEFAULT_WINDOW_START);
     setWindowEnd(DEFAULT_WINDOW_END);
@@ -435,8 +448,9 @@ function App() {
     if (commitInFlight.current) return;
     const next = event.target.files?.[0];
     if (!next) return;
+    setSelectedImport(null);
     setFile(next);
-    void inspect(next);
+    void inspect(next,undefined,"upload",null,null);
   }
 
   const timelineStart = result ? new Date(result.windowStart).getTime() : new Date(windowStart).getTime();
@@ -598,6 +612,12 @@ function App() {
             <span>1 MB max · timestamp,value</span>
           </label>
 
+          <button type="button" className="rail-demo" aria-expanded={showImportAssistant} disabled={commitBusy} onClick={()=>setShowImportAssistant(value=>!value)}>Map a different CSV format</button>
+          {showImportAssistant&&<CsvImportAssistant disabled={commitBusy||busy} onPrepared={prepared=>{
+            if(commitInFlight.current)return;
+            setSelectedImport(prepared);setFile(prepared.csv);
+            void inspect(prepared.csv,undefined,"upload",null,prepared);
+          }}/>}
           <button type="button" className="rail-demo" onClick={() => void runDemo()} disabled={busy || demoBusy || commitBusy || checkerState !== "ready"}>
             {demoBusy ? "running evidence demo…" : "try the built-in demo"}
           </button>
@@ -836,13 +856,13 @@ function App() {
       {result ? <><div className="page-card"><h2>Station {result.stationId} · {result.verdict}</h2><p>{result.windowStart} to {result.windowEnd}</p><span className="proof-label">Original bytes independently checked in this browser</span></div>
         <ReviewPanel evidence={result} filename={activeCsv?.name ?? "original.csv"} source={sourceKind} />
         <div className="page-actions"><button onClick={() => navigate("evidence")}>Keep this evidence</button><button onClick={() => navigate("publish")}>Publish on Sepolia</button><button onClick={() => navigate("inspect")}>Edit source and window</button></div></> : emptyReview}
-    </PageFrame> : view === "evidence" ? <EvidencePage current={evidencePackage()} csv={activeCsv} onOpen={openSaved} navigate={navigate} />
+    </PageFrame> : view === "evidence" ? <EvidencePage current={evidencePackage()} csv={activeCsv} onOpen={openSaved} navigate={navigate}  originalCsv={activeImport?.original??null}/>
       : view === "publish" ? <PageFrame title="Publish a testnet witness" description="Optional Sepolia publication preserves your evidence in your publisher namespace. It is not a certificate of station authority.">
         <WalletConnection address={walletAddress} busy={walletBusy} locked={commitBusy} onConnect={handleWalletConnect} onDisconnect={handleWalletDisconnect} />
         {result ? <section className="page-card"><h2>Station {result.stationId} · {result.verdict}</h2><p>{result.windowStart} to {result.windowEnd}</p><p>{result.missingTimestamps.length} missing hours. Original bytes independently checked in this browser.</p></section> : emptyReview}
         {witnessPanel}<p role="status" className="page-message">{message}</p>
         {txHash && <div className="page-actions"><button onClick={() => navigate("verify")}>Independently verify this witness</button><button onClick={() => navigate("evidence")}>Save CSV and receipt metadata</button></div>}
-      </PageFrame> : view === "verify" ? <VerifyPage current={evidencePackage()} csv={activeCsv} />
+      </PageFrame> : view === "verify" ? <VerifyPage current={evidencePackage()} csv={activeCsv}  originalCsv={activeImport?.original??null}/>
       : view === "datasets" ? <DatasetsPage /> : view === "status" ? <StatusPage />
       : view === "pilot" ? <PilotPage />
       : <PageFrame title="Page not found" description="Choose a page from the workspace navigation."><button onClick={() => navigate("inspect")}>Open inspection</button></PageFrame>}
