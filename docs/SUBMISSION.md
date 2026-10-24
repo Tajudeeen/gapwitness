@@ -46,7 +46,7 @@ RELEASE_VALIDATION.md records the October 18 regression, contract, build and fre
 - PR #61 contains newer reviewer-workflow improvements. It is unmerged and must not be presented as part of the submitted live release. The eleven Dependabot PRs are proposed maintenance, not eleven missing product features. [Current status](SUBMISSION_STATUS.md) records the review order.
 - The detailed rules allow independent developers and individual submissions. The overview still says students only. An organizer clarification remains unrecorded. Submission itself does not resolve this conflict.
 - The current schedule gives October 25, 2026 at 14:00 UTC / 15:00 WAT. Use the absolute date, not an aging countdown. The current rules no longer contain the previously noted opening-time sentence.
-- Sourcify's exact V2 creation/runtime match is retained. Etherscan's old relay rate limit is historical. The October 24 source-status lookup could not establish a current Etherscan result: the API requires a key and the explorer page returned HTTP 403.
+- Sourcify's exact V2 creation/runtime match is retained. Etherscan's old relay rate limit is historical. The October 24 source-only retry stopped before submission because `ETHERSCAN_API_KEY` is not configured in GitHub. The explorer page also returned HTTP 403. See the current status document for the retry run.
 - Human time savings, adoption, operator authority, and environmental outcomes remain unestablished. The pilot and review tools are ready to collect evidence, rather than substitute for it.
 
 Official sources checked October 24, 2026:
