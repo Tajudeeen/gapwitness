@@ -78,7 +78,7 @@ jobs:
                     'workflowRun': os.environ['GITHUB_RUN_ID'], 'broadcastPerformed': False}
           Path('etherscan-verification.json').write_text(json.dumps(report, indent=2) + '\n')
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: existing-v2-source-verification
