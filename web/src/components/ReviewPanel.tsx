@@ -60,7 +60,7 @@ export function ReviewPanel({ evidence, filename, source, schedule, onSchedule }
     <p>Open the downloaded report and print it to PDF. Retain the CSV and evidence JSON with your independently declared schedule.</p>
 
     <SchedulePanel key={evidence.seriesHash+evidence.windowStart} evidence={evidence} value={schedule} onChange={onSchedule}/>
-    <section className="revision-result" aria-label="Reporting claim check">
+    <section className="review-support" aria-label="Reporting claim check">
       <h4>Can this file support a full-window mean claim?</h4>
       <label>Claimed maximum arithmetic mean, µg/m³<input type="number" min="0" step="any" value={thresholdText} onChange={e=>setThreshold(e.target.value)}/></label>
       <p>This is your comparison threshold, not a regulatory standard. The default 3.1 is an illustrative choice for the controlled File A example.</p>
@@ -71,7 +71,7 @@ export function ReviewPanel({ evidence, filename, source, schedule, onSchedule }
         <p>{decision.limits}</p><button type="button" onClick={()=>download(JSON.stringify({decision,schedule},null,2),'gapwitness-reporting-decision.json','application/json')}>Download claim decision</button></>:
         <p role="alert">Enter a finite non-negative threshold.</p>}
     </section>
-    <section className="revision-result" aria-label="Missing-hour description"><h4>{attribution.categoryLabel}</h4><p>{attribution.rationale}</p><p>{attribution.epistemicNote}</p></section>
+    <section className="review-support" aria-label="Missing-hour description"><h4>{attribution.categoryLabel}</h4><p>{attribution.rationale}</p><p>{attribution.epistemicNote}</p></section>
 
     <label>Compare a prior CSV for this same station and window
       <input type="file" accept=".csv,text/csv" aria-label="Prior revision CSV" onChange={event => {
