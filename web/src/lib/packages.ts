@@ -1,3 +1,4 @@
+import {checkSchedule,type ScheduleSource} from './schedule.ts';
 import { isAddress } from 'ethers';
 import {verifyNormalization,type NormalizationRecord} from './csv-import.ts';
 import type { CheckResult } from './checker';
@@ -13,6 +14,7 @@ export type EvidencePackage = {
   chain: ChainClaim | null; chainVerification?: string; limits: string[];
   sourceDatasetId?:string;
   normalization?:NormalizationRecord;
+  schedule?:ScheduleSource;
 };
 
 export function checkPackage(raw: unknown, bytes: Uint8Array, originalBytes?:Uint8Array): EvidencePackage {
@@ -37,6 +39,7 @@ export function checkPackage(raw: unknown, bytes: Uint8Array, originalBytes?:Uin
     csvFilename:typeof value.csvFilename==='string'?value.csvFilename.slice(0,255):'original.csv',
     originalCsvRequired:true,browserEvidenceCheck:'matched',evidence:local,chain,
     ...(normalization?{normalization}:{}),
+    ...(value.schedule!==undefined?{schedule:checkSchedule(value.schedule,local)}:{}),
     chainVerification:'not independently checked',
     limits:['A source label does not authenticate origin.','Station authority and measurement accuracy need separate review.']};
 }

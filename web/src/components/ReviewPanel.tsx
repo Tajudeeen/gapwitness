@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CheckResult } from '../lib/checker';
 import { localEvidence } from '../lib/evidence';
+import {reportingDecision} from '../lib/reporting-decision';
+import {SchedulePanel} from './SchedulePanel';
+import type {ScheduleSource} from '../lib/schedule';
 import { SourceImpact } from './SourceImpact';
 import { compareRevisions, reviewHtml, reviewSummary } from '../lib/review';
-import { analyzeOmissionPattern, estimateCounterfactual, generateAuditNarrative } from '../lib/ai-analysis.ts';
+import { analyzeOmissionPattern, generateAuditNarrative } from '../lib/ai-analysis.ts';
 
 function download(content: string, filename: string, type: string) {
   const url = URL.createObjectURL(new Blob([content], { type }));
@@ -11,7 +14,7 @@ function download(content: string, filename: string, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function ReviewPanel({ evidence, filename, source }: { evidence: CheckResult; filename: string; source: string }) {
+export function ReviewPanel({ evidence, filename, source, schedule, onSchedule }: { evidence: CheckResult; filename: string; source: string; schedule:ScheduleSource|null; onSchedule:(s:ScheduleSource|null)=>void }) {
   const [comparison, setComparison] = useState<ReturnType<typeof compareRevisions> | null>(null);
   const [priorName, setPriorName] = useState('');
   const [error, setError] = useState('');
@@ -23,7 +26,9 @@ export function ReviewPanel({ evidence, filename, source }: { evidence: CheckRes
   }, [evidence]);
   const summary = reviewSummary(evidence);
   const attribution = analyzeOmissionPattern(evidence);
-  const counterfactual = estimateCounterfactual(evidence);
+  const [thresholdText,setThreshold]=useState('3.1');
+  const threshold=thresholdText.trim()?Number(thresholdText):NaN;
+  const decision=Number.isFinite(threshold)&&threshold>=0?reportingDecision(evidence,threshold):null;
 
   async function compare(file: File | undefined) {
     const current = ++generation.current;
@@ -49,23 +54,24 @@ export function ReviewPanel({ evidence, filename, source }: { evidence: CheckRes
     <p>{summary.reason}</p>
     <p>{summary.completenessPercent.toFixed(2)}% coverage · longest missing run {summary.longestGapHours} hours</p>
     <div style={{display:'flex',gap:'10px',flexWrap:'wrap',margin:'12px 0'}}>
-      <button type="button" onClick={() => download(reviewHtml(evidence, filename, source, comparison), 'gapwitness-review.html', 'text/html')}>download printable review</button>
-      <button type="button" onClick={() => download(generateAuditNarrative(evidence, attribution, counterfactual, comparison), 'gapwitness-executive-brief.txt', 'text/plain')}>download AI compliance brief</button>
+      <button type="button" disabled={!decision} onClick={() => download(reviewHtml(evidence, filename, source, comparison, decision?.threshold, schedule), 'gapwitness-review.html', 'text/html')}>download printable review</button>
+      <button type="button" disabled={!decision} onClick={() => download(generateAuditNarrative(evidence, attribution, comparison, decision?.threshold), 'gapwitness-executive-brief.txt', 'text/plain')}>download review brief</button>
     </div>
     <p>Open the downloaded report and print it to PDF. Retain the CSV and evidence JSON with your independently declared schedule.</p>
 
-    <div className="revision-result" style={{marginTop:'20px',background:'#faf7f2'}} aria-label="AI Omission Pattern Attribution">
-      <span className="kicker">AI ANOMALY ATTRIBUTION</span>
-      <h4 style={{margin:'6px 0'}}>{attribution.categoryLabel} <span style={{fontSize:'12px',padding:'2px 6px',borderRadius:'4px',background:attribution.suspicionLevel==='HIGH'?'#e8d2d2':attribution.suspicionLevel==='ELEVATED'?'#f2e4c9':'#d6e4d9',color:'#222'}}>{attribution.suspicionLevel} SUSPICION</span></h4>
-      <p style={{fontSize:'13px'}}>{attribution.rationale}</p>
-      <p style={{fontSize:'11px',color:'#6b655b'}}>{attribution.epistemicNote}</p>
-      {counterfactual && <div style={{marginTop:'12px',paddingTop:'12px',borderTop:'1px dashed #d8d0c2',fontSize:'13px'}}>
-        <span className="kicker">COUNTERFACTUAL IMPACT</span>
-        <p>Observed Available Mean: <strong>{counterfactual.observedMean} µg/m³</strong> · Estimated Complete Mean: <strong>{counterfactual.counterfactualMean} µg/m³</strong></p>
-        <p>Summary Distortion: <strong>{counterfactual.estimatedDistortionPercent > 0 ? '+' : ''}{counterfactual.estimatedDistortionPercent}% ({counterfactual.distortionDirection})</strong></p>
-        <p style={{fontSize:'11px',color:'#6b655b'}}>{counterfactual.epistemicBoundary}</p>
-      </div>}
-    </div>
+    <SchedulePanel key={evidence.seriesHash+evidence.windowStart} evidence={evidence} value={schedule} onChange={onSchedule}/>
+    <section className="revision-result" aria-label="Reporting claim check">
+      <h4>Can this file support a full-window mean claim?</h4>
+      <label>Claimed maximum arithmetic mean, µg/m³<input type="number" min="0" step="any" value={thresholdText} onChange={e=>setThreshold(e.target.value)}/></label>
+      <p>This is your comparison threshold, not a regulatory standard. The default 3.1 is an illustrative choice for the controlled File A example.</p>
+      {decision?<><p>Claim: full-window arithmetic mean at most {decision.threshold} µg/m³.</p>
+        <p>Available rows alone {decision.availableRowsOnly} this claim, with mean {decision.availableMean.toFixed(4)}.</p>
+        <p role="status">Full-window decision: {decision.status}. {decision.reason}</p>
+        <p>Lower bound {decision.lowerMean?.toFixed(4)??'unavailable'} · upper bound {decision.upperMean?.toFixed(4)??'unbounded or unavailable'}.</p>
+        <p>{decision.limits}</p><button type="button" onClick={()=>download(JSON.stringify({decision,schedule},null,2),'gapwitness-reporting-decision.json','application/json')}>Download claim decision</button></>:
+        <p role="alert">Enter a finite non-negative threshold.</p>}
+    </section>
+    <section className="revision-result" aria-label="Missing-hour description"><h4>{attribution.categoryLabel}</h4><p>{attribution.rationale}</p><p>{attribution.epistemicNote}</p></section>
 
     <label>Compare a prior CSV for this same station and window
       <input type="file" accept=".csv,text/csv" aria-label="Prior revision CSV" onChange={event => {

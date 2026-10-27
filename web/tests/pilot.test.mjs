@@ -36,3 +36,16 @@ test('invalid or damaged pilot observations cannot be stored, summarized or expo
   assert.throws(()=>pilotRows(),/positive observed/);
   assert.throws(()=>pilotCsv([{...valid,baseline_seconds:0}]),/positive observed/);
 });
+
+import {pilotAttempts,recordAttempt} from '../src/lib/pilot.ts';
+test('pilot retains starts, unfavorable completions and abandonments without inventing pairs',()=>{
+ const data=new Map();globalThis.localStorage={getItem:key=>data.get(key)??null,setItem:(key,value)=>data.set(key,value),removeItem:key=>data.delete(key)};
+ const a={id:'test-a',participant:'TEST_ONLY',task:'test',method:'spreadsheet',phase:'baseline',order:'baseline-first',sourceHash:'a'.repeat(64),startedAt:'2026-10-27T00:00:00Z',status:'started'};
+ recordAttempt(a);recordAttempt({...a,status:'completed',seconds:60,correct:0});
+ assert.throws(()=>recordAttempt({...a,status:'completed',seconds:1,correct:1}),/rewritten/);
+ const b={...a,id:'test-b',phase:'tool'};recordAttempt(b);recordAttempt({...b,status:'abandoned'});
+ recordAttempt({...a,id:'test-interrupted'});
+ assert.deepEqual(pilotAttempts().map(a=>a.status),['completed','abandoned','started']);
+ assert.deepEqual(pilotRows(),[]);assert.equal(summarizePilot(pilotRows()),null);
+ assert.throws(()=>summarizePilot([valid,valid]),/Duplicate/);
+});

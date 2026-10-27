@@ -1,29 +1,22 @@
-import pytest
 from pathlib import Path
-from ai_copilot import analyze_copilot
-
-ROOT = Path(__file__).resolve().parents[1]
-
-def test_ai_copilot_intact_window():
-    # 24 observations, no missing hours
-    obs = [{"timestamp": f"2026-09-19T{h:02d}:00:00Z", "value": 12.0} for h in range(24)]
-    res = analyze_copilot(obs, [], "2178", "2026-09-19T00:00:00Z", "2026-09-20T00:00:00Z")
-    assert res["attribution"]["category"] == "COMPLETE_RECORD"
-    assert res["attribution"]["suspicionLevel"] == "LOW"
-    assert res["counterfactual"] is None
-
-def test_ai_copilot_selective_peak_omission():
-    # Deliberate 7-hour missing run during peak hours (15:00 to 21:00)
-    obs = [{"timestamp": f"2026-09-19T{h:02d}:00:00Z", "value": 15.0} for h in range(24) if not (15 <= h <= 21)]
-    missing = [f"2026-09-19T{h:02d}:00:00Z" for h in range(15, 22)]
-    res = analyze_copilot(obs, missing, "2178", "2026-09-19T00:00:00Z", "2026-09-20T00:00:00Z")
-    assert res["attribution"]["category"] == "SELECTIVE_PEAK_OMISSION"
-    assert res["attribution"]["suspicionLevel"] == "ELEVATED"
-    assert res["attribution"]["longestRunHours"] == 7
-    assert res["counterfactual"]["distortionDirection"] == "neutral" or "suppressed"
-
-def test_ai_copilot_impossible_physical_violation():
-    obs = [{"timestamp": "2026-09-19T01:00:00Z", "value": -5.0}]
-    res = analyze_copilot(obs, [], "2178", "2026-09-19T00:00:00Z", "2026-09-20T00:00:00Z")
-    assert res["attribution"]["category"] == "IMPOSSIBLE_PHYSICAL_MEASUREMENT"
-    assert res["attribution"]["suspicionLevel"] == "HIGH"
+import pytest
+from ai_copilot import analyze_result,analyze_copilot
+from app.main import inspect_csv
+ROOT=Path(__file__).resolve().parents[1]
+INPUT=dict(station_id='2178',window_start='2026-09-19T07:00:00Z',window_end='2026-09-20T07:00:00Z')
+def fixture(name):return inspect_csv((ROOT/'checker/demo'/name).read_bytes(),**INPUT)
+def test_controlled_case_abstains_and_complete_source_rejects():
+    a=analyze_result(fixture('file_a.csv'));b=analyze_result(fixture('file_b.csv'))
+    assert a['decision']['status']=='UNRESOLVED'
+    assert a['decision']['upperMean'] is None
+    assert a['description']['longestRunHours']==7
+    assert b['decision']['status']=='NOT_SUPPORTED'
+    assert 'confidencePercent' not in a['description']
+def test_invalid_measurements_and_invalid_threshold_abstain_or_reject():
+    assert analyze_result(fixture('file_c_impossible.csv'),100)['decision']['status']=='UNRESOLVED'
+    for threshold in [-1,float('inf'),float('nan')]:
+        with pytest.raises(ValueError):analyze_result(fixture('file_a.csv'),threshold)
+def test_cli_adapter_rejects_false_missing_list():
+    e=fixture('file_a.csv')
+    with pytest.raises(ValueError,match='Provided gaps'):
+        analyze_copilot(e['observations'],[],e['stationId'],e['windowStart'],e['windowEnd'])

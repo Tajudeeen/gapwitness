@@ -26,7 +26,7 @@ Tasks should ask for the exact missing timestamps, negative readings, and an exp
 
 Use comparable datasets with the same duration and issue difficulty. If repeating the same dataset, counterbalance task order across reviewers and disclose the learning effect. Record `baseline-first` or `tool-first`. Start the stopwatch when the reviewer receives the task and stop when they submit their answer. Include any setup required by each method. Do not substitute server milliseconds for reviewer seconds.
 
-Record only anonymous participant codes, task codes, observed durations, and correctness. Keep permission and feedback records privately in your own system. Each row in `data/pilot/observations-template.csv` represents one paired task. Correctness is `1` only when the submitted answer matches the ground truth, otherwise `0`. Leave unfinished tasks out and document attrition separately.
+Record only anonymous participant codes, task codes, observed durations, and correctness. Keep permission and feedback records privately in your own system. Each row in `data/pilot/observations-template.csv` represents one paired task. Correctness is `1` only when the submitted answer matches the ground truth, otherwise `0`. Keep unfinished tasks out of paired timing statistics, and retain them in the separate attempt log. Export all starts, completions and explicit abandonments alongside the paired CSV. A started record surviving refresh is interrupted or unfinished, never an invented completion.
 
 ```bash
 python scripts/analyze_pilot.py your-observations.csv --output your-pilot-results.json

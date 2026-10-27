@@ -32,6 +32,7 @@ import {
   WalletError,
 } from "./lib/wallet";
 
+import type {ScheduleSource} from './lib/schedule';
 import type {PreparedImport} from './lib/csv-import';
 
 type Point = { timestamp: string; value: number };
@@ -139,6 +140,7 @@ function App() {
   const [activeCsv, setActiveCsv] = useState<File | null>(null);
   const [importedChain, setImportedChain] = useState<ChainClaim | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
+  const [schedule,setSchedule]=useState<ScheduleSource|null>(null);
   const [result, setResult] = useState<CheckResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [checkerState, setCheckerState] = useState<"checking" | "ready" | "offline">("checking");
@@ -195,6 +197,7 @@ function App() {
   }, []);
 
   function clearEvidence() {
+    setSchedule(null);
     setActiveCsv(null);
     setActiveImport(null);
     setImportedChain(null);
@@ -315,7 +318,7 @@ function App() {
     const publisher = txPublisher;
     return {format: "gapwitness/evidence/v1", source: sourceKind,
       csvFilename: activeCsv?.name ?? file?.name ?? "original.csv", originalCsvRequired: true, browserEvidenceCheck: "matched",
-      evidence: result, ...(activeImport?{normalization:activeImport.record}:{}), chain: txHash && publisher ? {chainId: 11155111, contract: CONTRACT_ADDRESS,
+      evidence: result, ...(schedule?{schedule}:{}), ...(activeImport?{normalization:activeImport.record}:{}), chain: txHash && publisher ? {chainId: 11155111, contract: CONTRACT_ADDRESS,
         contractVersion: CONTRACT_VERSION, publisher, transactionHash: txHash,
         commitmentKey: getCommitmentKey(result.chainCommitment, publisher),
         operation: commitCreated ? "first-witness" : "exact-replay"} : importedChain,
@@ -330,6 +333,7 @@ function App() {
     cancelInspection(); clearEvidence();
     const prepared=bundle.normalization&&source?{csv:original,original:source,record:bundle.normalization}:null;
     setSelectedImport(prepared);setActiveImport(prepared);
+    setSchedule(bundle.schedule??null);
     setResult(bundle.evidence); setPoints(bundle.evidence.observations);setActiveCsv(original);setFile(original);
     setStation(bundle.evidence.stationId);setWindowStart(bundle.evidence.windowStart);setWindowEnd(bundle.evidence.windowEnd);
     setSourceKind("upload");setImportedChain(bundle.chain);
@@ -829,7 +833,7 @@ function App() {
             </section>
           )}
 
-          {view === "lab" && result && <ReviewPanel evidence={result} filename={file?.name ?? "synthetic-demo.csv"} source={sourceKind} />}
+          {view === "lab" && result && <ReviewPanel schedule={schedule} onSchedule={setSchedule} evidence={result} filename={file?.name ?? "synthetic-demo.csv"} source={sourceKind} />}
 
           {view === "lab" && witnessPanel}
           {view === "inspect" && <div className="page-actions next-steps"><button disabled={!result || busy || demoBusy} onClick={() => navigate("review")}>Continue to review</button><button disabled={!result || busy || demoBusy} onClick={() => navigate("publish")}>Publish on Sepolia</button></div>}
@@ -854,7 +858,7 @@ function App() {
       <Footer checkerState={checkerState} navigate={navigate} />
     </main> : view === "review" ? <PageFrame title="Review the inspection" description="Decide what needs explanation, compare a prior revision, and keep a printable record.">
       {result ? <><div className="page-card"><h2>Station {result.stationId} · {result.verdict}</h2><p>{result.windowStart} to {result.windowEnd}</p><span className="proof-label">Original bytes independently checked in this browser</span></div>
-        <ReviewPanel evidence={result} filename={activeCsv?.name ?? "original.csv"} source={sourceKind} />
+        <ReviewPanel schedule={schedule} onSchedule={setSchedule} evidence={result} filename={activeCsv?.name ?? "original.csv"} source={sourceKind} />
         <div className="page-actions"><button onClick={() => navigate("evidence")}>Keep this evidence</button><button onClick={() => navigate("publish")}>Publish on Sepolia</button><button onClick={() => navigate("inspect")}>Edit source and window</button></div></> : emptyReview}
     </PageFrame> : view === "evidence" ? <EvidencePage current={evidencePackage()} csv={activeCsv} onOpen={openSaved} navigate={navigate}  originalCsv={activeImport?.original??null}/>
       : view === "publish" ? <PageFrame title="Publish a testnet witness" description="Optional Sepolia publication preserves your evidence in your publisher namespace. It is not a certificate of station authority.">
