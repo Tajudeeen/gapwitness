@@ -1,6 +1,6 @@
 # Reviewer workflow improvements
 
-This next-version branch preserves the submitted main release. It changes the reviewer workflow, not the contract or existing evidence rules.
+This follow-up changes the current reviewer workflow. Historical submission artifacts, contracts and existing on-chain evidence remain separate.
 
 ## Map a source CSV explicitly
 
@@ -41,3 +41,11 @@ No independent reviewers, phone-wallet approvals, station signatures or producti
 ## Dependency maintenance
 
 The existing npm audit identified the pinned Vite 7.3.6 as affected. This branch pins Vite 7.3.7 and its registry integrity in the lockfile, with no dependency-graph or major-version change. CI still audits both development and production dependencies. Audit failures now print the affected package, advisory links and available fix instead of requiring a separate artifact download.
+
+## Schedule-backed review and claim decisions
+
+Attach the independent schedule document from Review with its issuer, HTTPS reference and supporting section. The reviewer must check the source meaning. The exact document and declaration are fingerprinted, bound to this station/window and retained in the evidence bundle. Import verifies both fingerprints and the matching context. The attachment is reviewer-attested, not independently authenticated, and is not part of the existing Sepolia commitment. Legacy bundles without an attachment remain readable and explicitly lack source backing. Obtain an expected document fingerprint independently if adversarial package replacement is in scope.
+
+Enter a maximum arithmetic mean on Review. Available-row arithmetic and the full-window decision appear separately. Missing values are never reconstructed: under the non-negative PM2.5 policy the lower bound is known and the upper bound is unbounded. A threshold that could be crossed by unknown observations stays unresolved. The printable report and downloaded decision retain the threshold, bounds, input hash and limits.
+
+The pilot now retains all starts, completed phases and explicit abandonments. Closing the tab leaves an interrupted start, not a guessed completion. Export all attempts alongside paired results, including incomplete pairs. No independent identity or user benefit is authenticated by local storage.

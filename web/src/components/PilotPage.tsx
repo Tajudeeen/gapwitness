@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {PageFrame} from './PageFrame';
 import {REAL_CORPUS,corpusCsv} from '../lib/corpus';
-import {pilotRows,pilotCsv,savePilot,scoreAnswers,summarizePilot,type PilotRow} from '../lib/pilot';
+import {pilotRows,pilotCsv,savePilot,scoreAnswers,summarizePilot,pilotAttempts,recordAttempt,type PilotAttempt,type PilotRow} from '../lib/pilot';
 import {downloadFile} from '../lib/packages';
 type Result={seconds:number;correct:0|1};
 export function PilotPage(){
@@ -9,18 +9,23 @@ export function PilotPage(){
   const [datasetId,setDatasetId]=useState('uk-air-yk11-2025-04-01'),[order,setOrder]=useState<'baseline-first'|'tool-first'>('baseline-first');
   const [phase,setPhase]=useState<'baseline'|'tool'|null>(null),[baseline,setBaseline]=useState<Result|null>(null),[tool,setTool]=useState<Result|null>(null);
   const [missing,setMissing]=useState(''),[negative,setNegative]=useState(''),[message,setMessage]=useState(''),[rows,setRows]=useState<PilotRow[]>([]);
+  const [attempts,setAttempts]=useState<PilotAttempt[]>([]);
+  const activeAttempt=useRef<PilotAttempt|null>(null);
   const began=useRef<number|null>(null);const dataset=REAL_CORPUS.datasets.find(item=>item.id===datasetId)!;
-  useEffect(()=>{try{setRows(pilotRows());}catch(error){setMessage((error as Error).message);}},[]);
+  useEffect(()=>{try{setRows(pilotRows());setAttempts(pilotAttempts());}catch(error){setMessage((error as Error).message);}},[]);
   const first=order==='baseline-first'?'baseline':'tool';const next=baseline&&!tool?'tool':tool&&!baseline?'baseline':first;
   const summary=summarizePilot(rows);
-  function reset(){setBaseline(null);setTool(null);setPhase(null);began.current=null;setMissing('');setNegative('');setMessage('');}
+  function reset(){if(activeAttempt.current){try{recordAttempt({...activeAttempt.current,status:'abandoned'});setAttempts(pilotAttempts());activeAttempt.current=null;}catch(error){setMessage((error as Error).message);return;}}setBaseline(null);setTool(null);setPhase(null);began.current=null;setMissing('');setNegative('');setMessage('');}
   function start(){
     if(!/^[A-Za-z0-9_-]{1,40}$/.test(participant)||!method.trim()||!consent){setMessage('Provide an anonymous code, your normal method, and consent before starting.');return;}
+    try{const attempt:PilotAttempt={id:crypto.randomUUID(),participant,task:dataset.id,method:method.trim(),phase:next,order,sourceHash:dataset.csvSha256,startedAt:new Date().toISOString(),status:'started'};recordAttempt(attempt);activeAttempt.current=attempt;setAttempts(pilotAttempts());}catch(error){setMessage((error as Error).message);return;}
     setMissing('');setNegative('');setPhase(next);began.current=performance.now();setMessage('Timer running. Submit the exact timestamps when you finish reviewing.');
   }
   function finish(){
     if(!phase||began.current===null)return;
     try{const result={seconds:Math.max(.001,(performance.now()-began.current)/1000),correct:scoreAnswers(missing,negative,dataset.missingTimestamps,dataset.impossibleTimestamps)};
+      if(!activeAttempt.current)throw new Error('No retained attempt. Start a new task.');
+      recordAttempt({...activeAttempt.current,status:'completed',seconds:result.seconds,correct:result.correct});activeAttempt.current=null;setAttempts(pilotAttempts());
       if(phase==='baseline')setBaseline(result);else setTool(result);
       setPhase(null);began.current=null;setMessage('Phase recorded. Complete the other method before saving the paired task.');
     }catch(error){setMessage((error as Error).message);}
@@ -45,7 +50,7 @@ export function PilotPage(){
       <div className="page-actions"><button disabled={!phase} onClick={()=>void csv()}>Download task CSV</button>
         {phase==='tool'?<a href={'/inspect?dataset='+dataset.id} target="_blank" rel="noreferrer">Open task in GapWitness in another tab ↗</a>:
           <span>Start the GapWitness timer to open its task link.</span>}</div>
-      <p>Start a method timer before downloading its task so file setup is included. Keep this pilot tab open while using your normal method or the inspection tab. Unfinished phases are not saved. Leaving this page resets an unfinished timer.</p></section>
+      <p>Start a method timer before downloading its task so file setup is included. Keep this pilot tab open while using your normal method or the inspection tab. Every start is retained. Reset marks a running attempt abandoned. Closing or leaving this page leaves a started/interrupted record without inventing its duration.</p></section>
     <section className="page-card"><h2>{phase?`Running ${phase==='baseline'?'normal method':'GapWitness'} review`:'Record a paired review'}</h2>
       {!phase&&!(baseline&&tool)&&<button onClick={start}>Start {next==='baseline'?'normal method':'GapWitness'} timer</button>}
       {phase&&<><div className="page-fields"><label>Unavailable timestamps, one ISO UTC timestamp per line<textarea value={missing} onChange={e=>setMissing(e.target.value)} rows={5}/></label>
@@ -58,6 +63,11 @@ export function PilotPage(){
       <p>Use an existing competent method as the baseline. Repeating a dataset can make the second attempt easier even without this tool, so report both the successes and unfavorable results.</p>
       <p><a href="https://github.com/Tajudeeen/gapwitness/blob/main/docs/PILOT_INVITATION.md" target="_blank" rel="noreferrer">Open invitation and reviewer instructions ↗</a></p>
       <p>No independent reviewer time saving, adoption, or environmental outcome is established until real results are collected and examined.</p>
+    </section>
+    <section className="page-card" aria-label="Pilot attempt log"><h2>All attempts, including unfinished work</h2>
+      <p>{attempts.filter(a=>a.status==='completed').length} completed phases · {attempts.filter(a=>a.status==='abandoned').length} abandoned phases · {attempts.filter(a=>a.status==='started').length} started or interrupted phases.</p>
+      <p>Phase completions are not independent participants or completed pairs. The paired summary below excludes incomplete pairs. Disclose this log alongside it.</p>
+      <button disabled={!attempts.length} onClick={()=>downloadFile(new Blob([JSON.stringify({format:'gapwitness/pilot-attempts/v1',attempts},null,2)],{type:'application/json'}),'gapwitness-pilot-attempts.json')}>Export all pilot attempts</button>
     </section>
     <section className="page-card"><h2>{rows.length} paired tasks in this browser</h2><p>Export recorded observations for the paired analyzer. No result from this browser is automatically published as adoption or environmental impact.</p>
       {summary&&<section aria-label="Observed pilot summary">

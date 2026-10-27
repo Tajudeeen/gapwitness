@@ -21,6 +21,7 @@ const instructions=[
   'The inspected CSV is the exact file covered by the evidence and any chain commitment.',
   'For mapped imports, the original source CSV is separate. Reapply the recorded mapping to reproduce the inspected bytes. Both hashes must match.',
   'The station and reporting window are declared inputs. Confirm the reporting schedule independently of the uploaded rows.',
+  'An attached schedule retains exact document bytes and reviewer-confirmed metadata. Its fingerprint is rechecked locally, not authenticated by an issuer or included in the historical chain commitment.',
   'To check a published witness, open Verify and select Current inspection. A fresh RPC check is separate from local byte verification.',
   'File hashes and reproducible normalization do not authenticate a data provider, station operator or measurement accuracy.'
 ];

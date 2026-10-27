@@ -1,5 +1,7 @@
+import {reportingDecision} from './reporting-decision.ts';
+import type {ScheduleSource} from './schedule';
 import type { CheckResult } from './checker';
-import { analyzeOmissionPattern, estimateCounterfactual } from './ai-analysis.ts';
+import { analyzeOmissionPattern } from './ai-analysis.ts';
 
 export function reviewSummary(evidence: CheckResult) {
   const gaps = evidence.missingTimestamps;
@@ -44,10 +46,10 @@ const escapeHtml = (value: unknown) => String(value).replace(/[&<>"']/g, char =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
 
 export function reviewHtml(evidence: CheckResult, filename: string, source: string,
-  comparison: ReturnType<typeof compareRevisions> | null = null) {
+  comparison: ReturnType<typeof compareRevisions> | null = null, threshold=3.1, schedule:ScheduleSource|null=null) {
   const summary = reviewSummary(evidence);
   const attribution = analyzeOmissionPattern(evidence);
-  const counterfactual = estimateCounterfactual(evidence);
+  const decision = reportingDecision(evidence,threshold);
   const list = (values: string[]) => values.length ? `<ul>${values.map(value => `<li>${escapeHtml(value)}</li>`).join('')}</ul>` : '<p>None.</p>';
   const row = (label: string, value: unknown) => `<tr><th>${label}</th><td>${escapeHtml(value)}</td></tr>`;
   return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -55,8 +57,9 @@ export function reviewHtml(evidence: CheckResult, filename: string, source: stri
 <title>GapWitness review report</title><style>body{font:16px/1.6 system-ui,sans-serif;max-width:900px;margin:40px auto;padding:24px;color:#18352a}h1,h2{line-height:1.2}table{border-collapse:collapse;width:100%}th,td{text-align:left;vertical-align:top;padding:10px;border-bottom:1px solid #ccd8d0;overflow-wrap:anywhere}th{width:30%}code{overflow-wrap:anywhere}section{margin:30px 0}small{color:#42594d}@media print{body{margin:0;padding:0}h2{break-after:avoid}tr{break-inside:avoid}}</style>
 <h1>Environmental CSV review</h1><p>${escapeHtml(summary.action)}</p><p>${escapeHtml(summary.reason)}</p>
 <table>${row('File', filename)}${row('Source label', source)}${row('Station', evidence.stationId)}${row('Declared UTC window', `${evidence.windowStart} to ${evidence.windowEnd}, end excluded`)}${row('Policy', evidence.seriesType)}${row('Verdict', evidence.verdict)}${row('Coverage', `${evidence.observedHours}/${evidence.expectedHours} hours (${summary.completenessPercent.toFixed(2)}%)`)}${row('Longest gap', `${summary.longestGapHours} hours`)}</table>
-<section><h2>AI anomaly attribution</h2><p><strong>${escapeHtml(attribution.categoryLabel)}</strong> (Suspicion: ${escapeHtml(attribution.suspicionLevel)})</p><p>${escapeHtml(attribution.rationale)}</p><small>${escapeHtml(attribution.epistemicNote)}</small></section>
-${counterfactual ? `<section><h2>Counterfactual impact assessment</h2><p>Observed available mean: <strong>${escapeHtml(counterfactual.observedMean)} µg/m³</strong></p><p>Counterfactual estimated mean: <strong>${escapeHtml(counterfactual.counterfactualMean)} µg/m³</strong> (Estimated distortion: <strong>${counterfactual.estimatedDistortionPercent > 0 ? '+' : ''}${escapeHtml(counterfactual.estimatedDistortionPercent)}% [${escapeHtml(counterfactual.distortionDirection)}]</strong>)</p><small>${escapeHtml(counterfactual.epistemicBoundary)}</small></section>` : ''}
+<section><h2>Schedule source</h2><p>${escapeHtml(schedule?`${schedule.issuer}: ${schedule.sourceUrl}. ${schedule.reference}. Document ${schedule.documentHash}. Declaration ${schedule.bindingHash}. Reviewer-confirmed, not independently authenticated. Retain the source-bearing evidence bundle. Not included in the on-chain commitment.`:'No independent schedule source attached. The declared window remains a reviewer input.')}</p></section>
+<section><h2>Missing-hour description</h2><p>${escapeHtml(attribution.rationale)}</p><small>${escapeHtml(attribution.epistemicNote)}</small></section>
+<section><h2>Reporting claim check</h2><p>Full-window mean at most ${escapeHtml(threshold)} µg/m³: ${decision.status}.</p><p>${escapeHtml(decision.reason)}</p><p>Available-reading mean ${decision.availableMean}; full-window lower bound ${decision.lowerMean??'unavailable'}; upper bound ${decision.upperMean??'unbounded or unavailable'}.</p><small>${escapeHtml(decision.limits)}</small></section>
 <section><h2>Missing timestamps</h2>${list(evidence.missingTimestamps)}</section>
 <section><h2>Negative measurement timestamps</h2>${list(evidence.impossibleTimestamps)}</section>
 ${comparison ? `<section><h2>Revision comparison</h2><p>Exact bytes ${comparison.exactBytesChanged ? 'changed' : 'unchanged'}. ${comparison.addedHours.length} hours added, ${comparison.removedHours.length} removed, ${comparison.changedMeasurements.length} measurements changed.</p><h3>Added hours</h3>${list(comparison.addedHours)}<h3>Removed hours</h3>${list(comparison.removedHours)}<h3>Changed measurements</h3>${list(comparison.changedMeasurements.map(item => `${item.timestamp}: ${item.before} to ${item.after}`))}<p>Prior file hash: <code>${escapeHtml(comparison.priorSeriesHash)}</code></p><p>${escapeHtml(comparison.note)}</p></section>` : ''}

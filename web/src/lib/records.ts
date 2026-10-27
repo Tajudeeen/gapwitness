@@ -40,8 +40,9 @@ export async function saveRecord(bundle:EvidencePackage,csv:Blob,originalCsv?:Bl
       const id=JSON.stringify([bundle.evidence.stationId,bundle.evidence.windowStart,bundle.evidence.windowEnd,
         bundle.evidence.seriesHash,bundle.evidence.policyHash,bundle.chain?.publisher??null,...(bundle.normalization?[bundle.normalization.originalHash]:[])]);
       const remaining=records.filter(record=>record.id!==id);
-      if(remaining.length>=MAX_RECORDS || remaining.reduce((total,record)=>total+record.csv.size+(record.originalCsv?.size??0),0)+csv.size+(originalCsv?.size??0)>MAX_BYTES) {
-        failure='This browser library is limited to 20 records and 10 MB of CSVs. Delete an earlier record or download this evidence instead.';tx.abort();return;
+      const metadataBytes=(value:EvidencePackage)=>new Blob([JSON.stringify(value)]).size;
+      if(remaining.length>=MAX_RECORDS || remaining.reduce((total,record)=>total+record.csv.size+(record.originalCsv?.size??0)+metadataBytes(record.package),0)+csv.size+(originalCsv?.size??0)+metadataBytes(bundle)>MAX_BYTES) {
+        failure='This browser library is limited to 20 records and 10 MB of source files and evidence. Delete an earlier record or download this evidence instead.';tx.abort();return;
       }
       store.put({id,savedAt:new Date().toISOString(),package:bundle,csv,...(originalCsv?{originalCsv}:{})});
     };

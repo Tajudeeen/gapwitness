@@ -53,6 +53,7 @@ export function validatePilotRow(raw:unknown):asserts raw is PilotRow {
 }
 export function summarizePilot(rows:PilotRow[]) {
   rows.forEach(validatePilotRow);
+  if(new Set(rows.map(row=>JSON.stringify([row.participant,row.task]))).size!==rows.length)throw new Error('Duplicate participant/task pair.');
   if(!rows.length)return null;
   const median=(values:number[])=>{const sorted=[...values].sort((a,b)=>a-b),mid=Math.floor(sorted.length/2);return sorted.length%2?sorted[mid]:(sorted[mid-1]+sorted[mid])/2;};
   return {pairs:rows.length,participantCodes:new Set(rows.map(row=>row.participant)).size,
@@ -62,4 +63,29 @@ export function summarizePilot(rows:PilotRow[]) {
     baselineCorrect:rows.reduce((sum,row)=>sum+row.baseline_correct,0),toolCorrect:rows.reduce((sum,row)=>sum+row.tool_correct,0),
     medianSecondsSaved:median(rows.map(row=>row.baseline_seconds-row.tool_seconds)),
     medianPercentReduction:median(rows.map(row=>(row.baseline_seconds-row.tool_seconds)/row.baseline_seconds*100))};
+}
+
+export type PilotAttempt={id:string;participant:string;task:string;method:string;phase:'baseline'|'tool';order:'baseline-first'|'tool-first';
+  sourceHash:string;startedAt:string;status:'started'|'completed'|'abandoned';seconds?:number;correct?:0|1};
+const ATTEMPTS='gapwitness-pilot-attempts-v1';
+function validateAttempts(rows:unknown):asserts rows is PilotAttempt[]{
+  if(!Array.isArray(rows)||rows.length>1000)throw new Error('Invalid pilot attempt storage.');
+  const ids=new Set();
+  for(const a of rows){
+    if(!a||typeof a.id!=='string'||!a.id||ids.has(a.id)||!['participant','task'].every(k=>typeof a[k]==='string'&&/^[A-Za-z0-9_-]{1,40}$/.test(a[k]))||
+      !['baseline','tool'].includes(a.phase)||!['baseline-first','tool-first'].includes(a.order)||!['started','completed','abandoned'].includes(a.status)||
+      typeof a.method!=='string'||!a.method.trim()||a.method.length>100||typeof a.sourceHash!=='string'||!/^[a-f0-9]{64}$/.test(a.sourceHash)||
+      typeof a.startedAt!=='string'||!Number.isFinite(Date.parse(a.startedAt))||
+      (a.status==='completed'&&(!Number.isFinite(a.seconds)||a.seconds<=0||a.seconds>86400||![0,1].includes(a.correct))))throw new Error('Invalid pilot attempt.');
+    ids.add(a.id);
+  }
+}
+export function pilotAttempts():PilotAttempt[]{
+  const rows:unknown=JSON.parse(localStorage.getItem(ATTEMPTS)??'[]');validateAttempts(rows);return rows;
+}
+export function recordAttempt(attempt:PilotAttempt){
+  const rows=pilotAttempts(),index=rows.findIndex(a=>a.id===attempt.id);
+  if(index<0){if(attempt.status!=='started')throw new Error('Record an attempt start before its outcome.');if(rows.length>=1000)throw new Error('Export pilot attempts before recording more.');rows.push(attempt);}
+  else {const prior=rows[index];if(prior.status!=='started'||JSON.stringify({...prior,status:attempt.status,seconds:attempt.seconds,correct:attempt.correct})!==JSON.stringify(attempt))throw new Error('Completed attempts cannot be rewritten.');rows[index]=attempt;}
+  validateAttempts(rows);localStorage.setItem(ATTEMPTS,JSON.stringify(rows));
 }

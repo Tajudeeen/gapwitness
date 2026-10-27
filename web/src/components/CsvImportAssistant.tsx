@@ -49,9 +49,9 @@ export function CsvImportAssistant({disabled,onPrepared}:{disabled:boolean;onPre
     <p>Preview the conversion locally. Only the normalized timestamp/value file is sent for inspection. The original stays available for your evidence bundle.</p>
     <label>Source CSV to map<input disabled={disabled||loading} type="file" accept=".csv,text/csv" onChange={e=>void select(e.target.files?.[0]??null)}/></label>
     {bytes&&<fieldset disabled={disabled||loading}><legend>Confirm the source format</legend>
-      <button type="button" style={{margin:'8px 0 14px',padding:'8px 12px',cursor:'pointer'}} onClick={autoDetect}>✨ AI Auto-Detect Mapping</button>
+      <button type="button" style={{margin:'8px 0 14px',padding:'8px 12px',cursor:'pointer'}} onClick={autoDetect}>Suggest mapping from headers</button>
       {aiInference&&<div style={{padding:'8px 12px',marginBottom:'12px',background:'#e4ede6',borderRadius:'6px',fontSize:'12px'}}>
-        <strong>Inferred with {Math.round(aiInference.confidence*100)}% confidence:</strong>
+        <strong>Rule-based suggestions. Confirm timezone, columns and units before inspection.</strong>
         <ul style={{margin:'4px 0 0 16px',padding:0}}>{aiInference.reasoning.map((r,i)=><li key={i}>{r}</li>)}</ul>
       </div>}
       <label>Timestamp column<select aria-label="Timestamp column" value={timestampColumn} onChange={e=>{invalidate();setTimestampColumn(e.target.value);}}>
